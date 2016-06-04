@@ -1,0 +1,23 @@
+# File-Type exclusions for Visual Studio
+*.sdf
+*.suo
+*.pdb
+*.opensdf
+*.ipch
+*.cache
+*.user
+
+# Other generic exclusions
+*.log
+
+debug/
+release/
+obj/
+
+# Files that get built
+Builder.exe.config
+Builder.exe
+Builder.xml
+BuilderModes.dll
+Build/Plugins/**
+!Loadorder.cfg
