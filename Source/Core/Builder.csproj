@@ -187,6 +187,7 @@
     <Compile Include="Controls\PairedFloatControl.Designer.cs">
       <DependentUpon>PairedFloatControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="IO\RooMapSetIO.cs" />
     <Compile Include="Windows\ThingStatisticsForm.cs">
       <SubType>Form</SubType>
     </Compile>

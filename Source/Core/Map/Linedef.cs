@@ -76,7 +76,11 @@ namespace CodeImp.DoomBuilder.Map
 
 		// Clone
 		private int serializedindex;
-		
+
+		// Used for loading .roo files.
+		private int fileSidedef1;
+		private int fileSidedef2;
+
 		#endregion
 
 		#region ================== Properties
@@ -101,6 +105,8 @@ namespace CodeImp.DoomBuilder.Map
 		public RectangleF Rect { get { return rect; } }
 		public int[] Args { get { return args; } }
 		internal int SerializedIndex { get { return serializedindex; } set { serializedindex = value; } }
+		public int FileSidedef1 { get { return fileSidedef1; } set { fileSidedef1 = value; } }
+		public int FileSidedef2 { get { return fileSidedef2; } set { fileSidedef2 = value; } }
 		internal bool FrontInterior { get { return frontinterior; } set { frontinterior = value; } }
 		internal bool ImpassableFlag { get { return impassableflag; } }
 		internal int ColorPresetIndex { get { return colorPresetIndex; } } //mxd

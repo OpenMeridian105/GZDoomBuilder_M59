@@ -127,6 +127,7 @@ namespace CodeImp.DoomBuilder
 		public bool UDMF { get { return config.UDMF; } }
 		public bool HEXEN { get { return config.HEXEN; } }
 		public bool DOOM { get { return config.DOOM; } }
+		public bool MERIDIAN { get { return config.MERIDIAN; } }
 
 		//mxd. Scripts
 		internal Dictionary<string, ScriptItem> NamedScripts { get { return namedscripts; } }
