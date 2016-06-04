@@ -1189,7 +1189,7 @@ namespace CodeImp.DoomBuilder
 
 			// Open map file dialog
 			OpenFileDialog openfile = new OpenFileDialog();
-			openfile.Filter = "Doom WAD Files (*.wad)|*.wad";
+			openfile.Filter = "Roo files (*.roo)|*.roo|Doom WAD Files (*.wad)|*.wad";
 			openfile.Title = "Open Map";
 			if(!string.IsNullOrEmpty(settings.LastUsedMapFolder) && Directory.Exists(settings.LastUsedMapFolder)) //mxd
 			{
