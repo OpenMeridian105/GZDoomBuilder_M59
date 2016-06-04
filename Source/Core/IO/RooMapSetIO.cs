@@ -133,7 +133,9 @@ namespace CodeImp.DoomBuilder.IO
 			// Prepare to read the items
 			MemoryStream mem = new MemoryStream(lump.Stream.ReadAllBytes());
 			BinaryReader reader = new BinaryReader(mem);
-			
+
+			// Skip count
+			reader.ReadInt16();
 			// Read items from the lump
 			map.SetCapacity(0, 0, 0, 0, 2);
 			for(int i = 0; i < 2; i++)
@@ -144,12 +146,7 @@ namespace CodeImp.DoomBuilder.IO
 
 				// Make string flags
 				Dictionary<string, bool> stringflags = new Dictionary<string, bool>(StringComparer.Ordinal);
-				foreach(KeyValuePair<string, string> f in manager.Config.ThingFlags)
-				{
-					int fnum;
-					if(int.TryParse(f.Key, out fnum)) stringflags[f.Key] = ((0 & fnum) == fnum);
-				}
-				
+
 				// Create new item
 				Thing t = map.CreateThing();
 				t.Update(0, x, y, 0, 0, 0, 0, 1.0f, 1.0f, stringflags, 0, 0, args);

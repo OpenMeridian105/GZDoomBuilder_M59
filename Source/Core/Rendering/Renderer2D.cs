@@ -1124,6 +1124,39 @@ namespace CodeImp.DoomBuilder.Rendering
 			verts[offset].v = 1;
 		}
 		
+		/// <summary>
+		/// Renders a box using two things if only two things are present.
+		/// Used to draw a bounding box around a room for the Meridian 59
+		/// roo format.
+		/// </summary>
+		/// <param name="things"></param>
+		private void RenderThingBox(ICollection<Thing> things)
+		{
+			// Only draw a box if we have two things.
+			if (things == null || things.Count != 2)
+				return;
+
+			RectangleF rect;
+			PixelColor c = new PixelColor(255, 250, 0, 0);
+
+			float[] x = new float[2];
+			float[] y = new float[2];
+			int i = 0;
+
+			foreach (Thing thing in things)
+			{
+				x[i] = thing.Position.x;
+				y[i] = thing.Position.y;
+				++i;
+			}
+			if (x[0] <= x[1])
+				rect = new RectangleF(x[0], y[0], x[1] - x[0], y[1] - y[0]);
+			else
+				rect = new RectangleF(x[1], y[0], x[0] - x[1], y[0] - y[1]);
+
+			RenderRectangle(rect, 2.0f, c, true);
+		}
+
 		// This draws a set of things
 		private void RenderThingsBatch(ICollection<Thing> things, float alpha, bool fixedcolor, PixelColor c)
 		{
@@ -1165,6 +1198,10 @@ namespace CodeImp.DoomBuilder.Rendering
 				Dictionary<int, List<Thing>> thingsByType = new Dictionary<int, List<Thing>>();
 				Dictionary<int, List<Thing>> modelsByType = new Dictionary<int, List<Thing>>();
 				Dictionary<Thing, Vector3D> thingsByPosition = new Dictionary<Thing, Vector3D>();
+
+				// Render the box first for .roo things
+				if (General.Map.MERIDIAN)
+					RenderThingBox(things);
 
 				// Go for all things
 				int buffercount = 0;
