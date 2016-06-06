@@ -30,9 +30,9 @@ namespace CodeImp.DoomBuilder.IO
 {
 	public struct FileSidedef
 	{
-		int id;
-		int flags;
-		int animateSpeed;
+		public int id;
+		public int flags;
+		public int animateSpeed;
 	}
 
 	internal class RooMapSetIO : MapSetIO
@@ -104,11 +104,11 @@ namespace CodeImp.DoomBuilder.IO
 			// Create sectors list
 			Dictionary<int, Sector> sectorlink = new Dictionary<int, Sector>();
 
-			// Read linedefs, sidedefs and vertexes
-			ReadLinedefs(map, firstindex, vertexlink, sectorlink);
-
 			// Read sectors
 			ReadSectors(map, firstindex, sectorlink);
+
+			// Read linedefs, sidedefs and vertexes
+			ReadLinedefs(map, firstindex, vertexlink, sectorlink);
 
 			// Read things
 			ReadThings(map, firstindex);
@@ -183,24 +183,21 @@ namespace CodeImp.DoomBuilder.IO
 				ushort hceil = reader.ReadUInt16();
 				
 				byte bright = reader.ReadByte();
-				int flags = reader.ReadInt32();
+				int flags = reader.ReadInt32(); // Blakserv flags.
 				byte speed = reader.ReadByte(); // Need to fix how this gets handled in doombuilder.
 				
 				// Create new item
-				Sector s;
-				if (!link.TryGetValue(i, out s))
-					s = map.CreateSector();
-				s.Update(hfloor, hceil, "", "", speed, tag, bright);
+				Sector s = map.CreateSector(i);
+				s.Update(hfloor, hceil, "", "", 0, tag, bright);
 
 				// Should read slope data here?
 				if ((flags & 0x400) == 0x400)
 					reader.ReadBytes(46);
 				if ((flags & 0x800) == 0x800)
 					reader.ReadBytes(46);
+
 				// Add it to the lookup table
-				//link.TryGetValue
-				if (!link.TryGetValue(i, out s))
-					link.Add(i, s);
+				link.Add(i, s);
 			}
 
 			// Done
@@ -223,17 +220,6 @@ namespace CodeImp.DoomBuilder.IO
 			link.Add(vNum, v);
 
 			return vNum;
-		}
-
-		private void RooAddSector(MapSet map, Dictionary<int, Sector> link, int sc)
-		{
-			Sector s;
-			if (!link.TryGetValue(sc, out s))
-			{
-				map.SetCapacity(0, 0, 0, map.Sectors.Count + 1, 0);
-				s = map.CreateSector();
-				link.Add(sc, s);
-			}
 		}
 
 		// This reads the LINEDEFS and SIDEDEFS from WAD file
@@ -260,6 +246,20 @@ namespace CodeImp.DoomBuilder.IO
 			int numLineDefs = readline.ReadInt16();
 			int numSideDefs = readside.ReadInt16();
 
+			// Read in sidedefs.
+			Dictionary<int, FileSidedef> FileSD = new Dictionary<int, FileSidedef>(numSideDefs);
+			for (int i = 0; i < numSideDefs; ++i)
+			{
+				FileSidedef fsd = new FileSidedef();
+				fsd.id = readside.ReadUInt16();
+				int textureNormal = readside.ReadUInt16();
+				int textureAbove = readside.ReadUInt16();
+				int textureBelow = readside.ReadUInt16();
+				fsd.flags = readside.ReadInt32();
+				fsd.animateSpeed = readside.ReadByte();
+				FileSD.Add(i, fsd);
+			}
+
 			// Read items from the lump
 			map.SetCapacity(0, map.Linedefs.Count + numLineDefs, map.Sidedefs.Count + numSideDefs, 0, 0);
 			for (int i = 0; i < numLineDefs; ++i)
@@ -273,9 +273,7 @@ namespace CodeImp.DoomBuilder.IO
 				int s2YOffset = readline.ReadInt16();
 
 				int s1Sector = readline.ReadInt16();
-				RooAddSector(map, sectorlink, s1Sector);
 				int s2Sector = readline.ReadInt16();
-				RooAddSector(map, sectorlink, s2Sector);
 
 				int x0 = readline.ReadInt32();
 				int y0 = readline.ReadInt32();
@@ -297,49 +295,40 @@ namespace CodeImp.DoomBuilder.IO
 				{
 					Linedef l = map.CreateLinedef(vertexlink[v1], vertexlink[v2]);
 					l.Update(stringflags, (0 & manager.Config.LinedefActivationsFilter), new List<int> { 0 }, 0, args);
-					l.FileSidedef1 = s1;
-					l.FileSidedef2 = s2;
+					l.FileSidedef1 = s1 - 1;
+					l.FileSidedef2 = s2 - 1;
 					Sidedef side1, side2;
-					side1 = map.CreateSidedef(l, true, sectorlink[s1Sector]);
-					side1.Update(s1XOffset, s1YOffset, "", "", "");
-					side2 = map.CreateSidedef(l, false, sectorlink[s2Sector]);
-					side2.Update(s2XOffset, s2YOffset, "", "", "");
+					FileSidedef fsd;
+					if (s1Sector >= 0)
+					{
+						side1 = map.CreateSidedef(l, true, sectorlink[s1Sector]);
+						if (l.FileSidedef1 >= 0)
+						{
+							fsd = FileSD[l.FileSidedef1];
+							side1.Update(s1XOffset, s1YOffset, "", "", "", fsd.animateSpeed, fsd.id);
+						}
+						else
+						{
+							side1.Update(s1XOffset, s1YOffset, "", "", "", 0, 0);
+						}
+					}
+					if (s2Sector >= 0)
+					{
+						side2 = map.CreateSidedef(l, false, sectorlink[s2Sector]);
+						if (l.FileSidedef2 >= 0)
+						{
+							fsd = FileSD[l.FileSidedef2];
+							side2.Update(s2XOffset, s2YOffset, "", "", "", fsd.animateSpeed, fsd.id);
+						}
+						else
+						{
+							side2.Update(s2XOffset, s2YOffset, "", "", "", 0, 0);
+						}
+					}
 					l.UpdateCache();
 				}
 			}
 
-			Dictionary<int, FileSidedef> FileSD = new Dictionary<int, FileSidedef>(numSideDefs);
-			for (int i = 0; i < numSideDefs; ++i)
-			{
-				int id = readside.ReadUInt16();
-				int textureNormal = readside.ReadUInt16();
-				int textureAbove = readside.ReadUInt16();
-				int textureBelow = readside.ReadUInt16();
-				int flags = readside.ReadInt32();
-				int speed = readside.ReadByte();
-				//FileSD.Add(i, new FileSidedef{id, flags, speed});
-			}
-			Sidedef side;
-			int file_sd;
-			Linedef ld;
-			for (int i = 0; i < numLineDefs; ++i)
-			{
-				ld = map.GetLinedefByIndex(i);
-				file_sd = ld.FileSidedef1;
-				if (file_sd == -1)
-					ld.DetachSidedefP(ld.Front);
-				else
-				{
-					//SetFlags
-				}
-				file_sd = ld.FileSidedef2;
-				if (file_sd == -1)
-					ld.DetachSidedefP(ld.Back);
-				else
-				{
-					//SetFlags
-				}
-			}
 			// Done
 			linedefsmem.Dispose();
 			sidedefsmem.Dispose();

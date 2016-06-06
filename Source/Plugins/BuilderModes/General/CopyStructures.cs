@@ -35,14 +35,26 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		private bool doom = true;
 		private bool hexen = true;
 		private bool udmf = true;
+		private bool meridian = true;
 		private string description = "Unnamed field";
 
 		public bool DOOM { get { return doom; } set { doom = value; } }
 		public bool HEXEN { get { return hexen; } set { hexen = value; } }
 		public bool UDMF { get { return udmf; } set { udmf = value; } }
+		public bool MERIDIAN { get { return meridian; } set { meridian = value; } }
 		public string Description { get { return description; } set { description = value; } }
 
-		public bool SupportsCurrentMapFormat { get { return General.Map != null && (General.Map.DOOM && doom || General.Map.HEXEN && hexen || General.Map.UDMF && udmf); } }
+		public bool SupportsCurrentMapFormat
+		{
+			get
+			{
+				return General.Map != null
+					&& (General.Map.DOOM && doom
+						|| General.Map.HEXEN && hexen
+						|| General.Map.UDMF && udmf
+						|| General.Map.MERIDIAN && meridian);
+			}
+		}
 	}
 
 	public abstract class MapElementPropertiesCopySettings
@@ -409,7 +421,13 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		
 		[FieldDescription(Description = "Flags", DOOM = false, HEXEN = false)]
 		public bool Flags = true;
-		
+
+		[FieldDescription(Description = "Tag", DOOM = false, HEXEN = false)]
+		public bool Tag = true;
+
+		[FieldDescription(Description = "AnimateSpeed", DOOM = false, HEXEN = false)]
+		public bool AnimateSpeed = true;
+
 		[FieldDescription(Description = "Custom Fields", DOOM = false, HEXEN = false)]
 		public bool Fields = true;
 	}
@@ -426,6 +444,8 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		private readonly string lowtexture;
 		private readonly int offsetx;
 		private readonly int offsety;
+		private readonly int animatespeed;
+		private readonly int tag;
 		private readonly Dictionary<string, bool> flags; //mxd
 
 		public SidedefProperties(Sidedef s) : base(s.Fields, MapElementType.SIDEDEF)
@@ -435,6 +455,8 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			lowtexture = s.LowTexture;
 			offsetx = s.OffsetX;
 			offsety = s.OffsetY;
+			animatespeed = s.AnimateSpeed;
+			tag = s.Tag;
 			flags = s.GetFlags(); //mxd
 		}
 
@@ -452,6 +474,8 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			if(settings.LowerTexture) s.SetTextureLow(lowtexture);
 			if(settings.OffsetX) s.OffsetX = offsetx;
 			if(settings.OffsetY) s.OffsetY = offsety;
+			if(settings.Tag) s.Tag = tag;
+			if(settings.AnimateSpeed) s.AnimateSpeed = animatespeed;
 			if(settings.Flags)
 			{
 				s.ClearFlags(); //mxd
