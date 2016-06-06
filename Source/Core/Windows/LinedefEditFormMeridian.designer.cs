@@ -41,6 +41,8 @@ namespace CodeImp.DoomBuilder.Windows
 			System.Windows.Forms.Label activationlabel;
 			System.Windows.Forms.Label label1;
 			System.Windows.Forms.Label label6;
+			System.Windows.Forms.Label label7;
+			System.Windows.Forms.Label label13;
 			this.labelFrontTextureOffset = new System.Windows.Forms.Label();
 			this.labelBackTextureOffset = new System.Windows.Forms.Label();
 			this.cancel = new System.Windows.Forms.Button();
@@ -58,6 +60,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.tagSelector = new CodeImp.DoomBuilder.Controls.TagSelector();
 			this.frontside = new System.Windows.Forms.CheckBox();
 			this.frontgroup = new System.Windows.Forms.GroupBox();
+			this.fronttag = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
 			this.frontspeed = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
 			this.frontsector = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
 			this.frontlow = new CodeImp.DoomBuilder.Controls.TextureSelectorControl();
@@ -74,6 +77,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.backTextureOffset = new CodeImp.DoomBuilder.Controls.PairedIntControl();
 			this.panel = new System.Windows.Forms.Panel();
 			this.tooltip = new System.Windows.Forms.ToolTip(this.components);
+			this.backtag = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
 			label2 = new System.Windows.Forms.Label();
 			label3 = new System.Windows.Forms.Label();
 			label4 = new System.Windows.Forms.Label();
@@ -86,6 +90,8 @@ namespace CodeImp.DoomBuilder.Windows
 			activationlabel = new System.Windows.Forms.Label();
 			label1 = new System.Windows.Forms.Label();
 			label6 = new System.Windows.Forms.Label();
+			label7 = new System.Windows.Forms.Label();
+			label13 = new System.Windows.Forms.Label();
 			this.actiongroup.SuspendLayout();
 			this.hexenpanel.SuspendLayout();
 			this.flagsgroup.SuspendLayout();
@@ -208,6 +214,15 @@ namespace CodeImp.DoomBuilder.Windows
 			label6.TabIndex = 45;
 			label6.Text = "Animate Speed:";
 			label6.TextAlign = System.Drawing.ContentAlignment.TopRight;
+			// 
+			// label7
+			// 
+			label7.Location = new System.Drawing.Point(6, 120);
+			label7.Name = "label7";
+			label7.Size = new System.Drawing.Size(82, 14);
+			label7.TabIndex = 45;
+			label7.Text = "Tag:";
+			label7.TextAlign = System.Drawing.ContentAlignment.TopRight;
 			// 
 			// labelFrontTextureOffset
 			// 
@@ -387,6 +402,8 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			this.frontgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.frontgroup.Controls.Add(this.fronttag);
+			this.frontgroup.Controls.Add(label7);
 			this.frontgroup.Controls.Add(this.frontspeed);
 			this.frontgroup.Controls.Add(label1);
 			this.frontgroup.Controls.Add(this.labelFrontTextureOffset);
@@ -406,6 +423,23 @@ namespace CodeImp.DoomBuilder.Windows
 			this.frontgroup.TabIndex = 1;
 			this.frontgroup.TabStop = false;
 			this.frontgroup.Text = "     ";
+			// 
+			// fronttag
+			// 
+			this.fronttag.AllowDecimal = false;
+			this.fronttag.AllowNegative = false;
+			this.fronttag.AllowRelative = false;
+			this.fronttag.ButtonStep = 1;
+			this.fronttag.ButtonStepBig = 10F;
+			this.fronttag.ButtonStepFloat = 1F;
+			this.fronttag.ButtonStepSmall = 0.1F;
+			this.fronttag.ButtonStepsUseModifierKeys = false;
+			this.fronttag.ButtonStepsWrapAround = false;
+			this.fronttag.Location = new System.Drawing.Point(90, 115);
+			this.fronttag.Name = "fronttag";
+			this.fronttag.Size = new System.Drawing.Size(87, 24);
+			this.fronttag.StepValues = null;
+			this.fronttag.TabIndex = 46;
 			// 
 			// frontspeed
 			// 
@@ -505,6 +539,8 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			this.backgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.backgroup.Controls.Add(this.backtag);
+			this.backgroup.Controls.Add(label13);
 			this.backgroup.Controls.Add(this.backspeed);
 			this.backgroup.Controls.Add(label6);
 			this.backgroup.Controls.Add(this.labelBackTextureOffset);
@@ -625,6 +661,32 @@ namespace CodeImp.DoomBuilder.Windows
 			this.panel.Size = new System.Drawing.Size(553, 686);
 			this.panel.TabIndex = 5;
 			// 
+			// backtag
+			// 
+			this.backtag.AllowDecimal = false;
+			this.backtag.AllowNegative = false;
+			this.backtag.AllowRelative = false;
+			this.backtag.ButtonStep = 1;
+			this.backtag.ButtonStepBig = 10F;
+			this.backtag.ButtonStepFloat = 1F;
+			this.backtag.ButtonStepSmall = 0.1F;
+			this.backtag.ButtonStepsUseModifierKeys = false;
+			this.backtag.ButtonStepsWrapAround = false;
+			this.backtag.Location = new System.Drawing.Point(90, 115);
+			this.backtag.Name = "backtag";
+			this.backtag.Size = new System.Drawing.Size(87, 24);
+			this.backtag.StepValues = null;
+			this.backtag.TabIndex = 48;
+			// 
+			// label13
+			// 
+			label13.Location = new System.Drawing.Point(6, 120);
+			label13.Name = "label13";
+			label13.Size = new System.Drawing.Size(82, 14);
+			label13.TabIndex = 47;
+			label13.Text = "Tag:";
+			label13.TextAlign = System.Drawing.ContentAlignment.TopRight;
+			// 
 			// LinedefEditFormMeridian
 			// 
 			this.AcceptButton = this.apply;
@@ -695,5 +757,7 @@ namespace CodeImp.DoomBuilder.Windows
 		private CodeImp.DoomBuilder.Controls.ArgumentsControl argscontrol;
 		private Controls.ButtonsNumericTextbox frontspeed;
 		private Controls.ButtonsNumericTextbox backspeed;
+		private Controls.ButtonsNumericTextbox fronttag;
+		private Controls.ButtonsNumericTextbox backtag;
 	}
 }

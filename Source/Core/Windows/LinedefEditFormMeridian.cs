@@ -215,6 +215,7 @@ namespace CodeImp.DoomBuilder.Windows
 				frontlow.Required = fl.Front.LowRequired();
 				frontsector.Text = fl.Front.Sector.Index.ToString();
 				frontspeed.Text = fl.Front.AnimateSpeed.ToString();
+				fronttag.Text = fl.Front.Tag.ToString();
 				frontTextureOffset.SetValues(fl.Front.OffsetX, fl.Front.OffsetY, true); //mxd
 			}
 
@@ -229,6 +230,7 @@ namespace CodeImp.DoomBuilder.Windows
 				backlow.Required = fl.Back.LowRequired();
 				backsector.Text = fl.Back.Sector.Index.ToString();
 				backspeed.Text = fl.Back.AnimateSpeed.ToString();
+				backtag.Text = fl.Back.Tag.ToString();
 				backTextureOffset.SetValues(fl.Back.OffsetX, fl.Back.OffsetY, true); //mxd
 			}
 
@@ -309,6 +311,9 @@ namespace CodeImp.DoomBuilder.Windows
 					if (frontspeed.Text != l.Front.AnimateSpeed.ToString())
 						frontspeed.Text = "0";
 
+					if (fronttag.Text != l.Front.Tag.ToString())
+						fronttag.Text = "0";
+
 					frontTextureOffset.SetValues(l.Front.OffsetX, l.Front.OffsetY, false); //mxd
 				}
 
@@ -338,6 +343,9 @@ namespace CodeImp.DoomBuilder.Windows
 
 					if (backspeed.Text != l.Back.AnimateSpeed.ToString())
 						backspeed.Text = "0";
+
+					if (backtag.Text != l.Back.Tag.ToString())
+						backtag.Text = "0";
 
 					backTextureOffset.SetValues(l.Back.OffsetX, l.Back.OffsetY, false); //mxd
 				}
@@ -452,6 +460,13 @@ namespace CodeImp.DoomBuilder.Windows
 					{
 						l.Front.AnimateSpeed = index;
 					}
+					// Check tag.
+					index = (l.Front != null ? l.Front.Tag : -1);
+					index = fronttag.GetResult(index);
+					if (index > -1)
+					{
+						l.Front.Tag = index;
+					}
 				}
 
 				// Remove back side?
@@ -483,6 +498,13 @@ namespace CodeImp.DoomBuilder.Windows
 					if (index > -1)
 					{
 						l.Back.AnimateSpeed = index;
+					}
+					// Check tag.
+					index = (l.Back != null ? l.Back.Tag : -1);
+					index = backtag.GetResult(index);
+					if (index > -1)
+					{
+						l.Back.Tag = index;
 					}
 				}
 			}
