@@ -39,6 +39,8 @@ namespace CodeImp.DoomBuilder.Windows
 			System.Windows.Forms.Label label11;
 			System.Windows.Forms.Label label12;
 			System.Windows.Forms.Label activationlabel;
+			System.Windows.Forms.Label label1;
+			System.Windows.Forms.Label label6;
 			this.labelFrontTextureOffset = new System.Windows.Forms.Label();
 			this.labelBackTextureOffset = new System.Windows.Forms.Label();
 			this.cancel = new System.Windows.Forms.Button();
@@ -56,6 +58,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.tagSelector = new CodeImp.DoomBuilder.Controls.TagSelector();
 			this.frontside = new System.Windows.Forms.CheckBox();
 			this.frontgroup = new System.Windows.Forms.GroupBox();
+			this.frontspeed = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
 			this.frontsector = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
 			this.frontlow = new CodeImp.DoomBuilder.Controls.TextureSelectorControl();
 			this.frontmid = new CodeImp.DoomBuilder.Controls.TextureSelectorControl();
@@ -63,6 +66,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.frontTextureOffset = new CodeImp.DoomBuilder.Controls.PairedIntControl();
 			this.backside = new System.Windows.Forms.CheckBox();
 			this.backgroup = new System.Windows.Forms.GroupBox();
+			this.backspeed = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
 			this.backsector = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
 			this.backlow = new CodeImp.DoomBuilder.Controls.TextureSelectorControl();
 			this.backmid = new CodeImp.DoomBuilder.Controls.TextureSelectorControl();
@@ -80,6 +84,8 @@ namespace CodeImp.DoomBuilder.Windows
 			label11 = new System.Windows.Forms.Label();
 			label12 = new System.Windows.Forms.Label();
 			activationlabel = new System.Windows.Forms.Label();
+			label1 = new System.Windows.Forms.Label();
+			label6 = new System.Windows.Forms.Label();
 			this.actiongroup.SuspendLayout();
 			this.hexenpanel.SuspendLayout();
 			this.flagsgroup.SuspendLayout();
@@ -185,6 +191,24 @@ namespace CodeImp.DoomBuilder.Windows
 			activationlabel.TabIndex = 10;
 			activationlabel.Text = "Trigger:";
 			// 
+			// label1
+			// 
+			label1.Location = new System.Drawing.Point(6, 100);
+			label1.Name = "label1";
+			label1.Size = new System.Drawing.Size(82, 14);
+			label1.TabIndex = 43;
+			label1.Text = "Animate Speed:";
+			label1.TextAlign = System.Drawing.ContentAlignment.TopRight;
+			// 
+			// label6
+			// 
+			label6.Location = new System.Drawing.Point(6, 100);
+			label6.Name = "label6";
+			label6.Size = new System.Drawing.Size(82, 14);
+			label6.TabIndex = 45;
+			label6.Text = "Animate Speed:";
+			label6.TextAlign = System.Drawing.ContentAlignment.TopRight;
+			// 
 			// labelFrontTextureOffset
 			// 
 			this.labelFrontTextureOffset.Location = new System.Drawing.Point(6, 70);
@@ -228,8 +252,8 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// actiongroup
 			// 
-			this.actiongroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-						| System.Windows.Forms.AnchorStyles.Right)));
+			this.actiongroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.actiongroup.Controls.Add(this.argscontrol);
 			this.actiongroup.Controls.Add(this.actionhelp);
 			this.actiongroup.Controls.Add(this.hexenpanel);
@@ -305,8 +329,8 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// flagsgroup
 			// 
-			this.flagsgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-						| System.Windows.Forms.AnchorStyles.Right)));
+			this.flagsgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.flagsgroup.Controls.Add(this.flags);
 			this.flagsgroup.Location = new System.Drawing.Point(6, 314);
 			this.flagsgroup.Name = "flagsgroup";
@@ -317,9 +341,9 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// flags
 			// 
-			this.flags.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-						| System.Windows.Forms.AnchorStyles.Left)
-						| System.Windows.Forms.AnchorStyles.Right)));
+			this.flags.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.flags.AutoScroll = true;
 			this.flags.Columns = 3;
 			this.flags.Location = new System.Drawing.Point(8, 17);
@@ -331,8 +355,8 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// idgroup
 			// 
-			this.idgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-						| System.Windows.Forms.AnchorStyles.Right)));
+			this.idgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.idgroup.Controls.Add(this.tagSelector);
 			this.idgroup.Location = new System.Drawing.Point(6, 620);
 			this.idgroup.Name = "idgroup";
@@ -361,8 +385,10 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// frontgroup
 			// 
-			this.frontgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-						| System.Windows.Forms.AnchorStyles.Right)));
+			this.frontgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.frontgroup.Controls.Add(this.frontspeed);
+			this.frontgroup.Controls.Add(label1);
 			this.frontgroup.Controls.Add(this.labelFrontTextureOffset);
 			this.frontgroup.Controls.Add(this.frontsector);
 			this.frontgroup.Controls.Add(label11);
@@ -380,6 +406,23 @@ namespace CodeImp.DoomBuilder.Windows
 			this.frontgroup.TabIndex = 1;
 			this.frontgroup.TabStop = false;
 			this.frontgroup.Text = "     ";
+			// 
+			// frontspeed
+			// 
+			this.frontspeed.AllowDecimal = false;
+			this.frontspeed.AllowNegative = false;
+			this.frontspeed.AllowRelative = false;
+			this.frontspeed.ButtonStep = 1;
+			this.frontspeed.ButtonStepBig = 10F;
+			this.frontspeed.ButtonStepFloat = 1F;
+			this.frontspeed.ButtonStepSmall = 0.1F;
+			this.frontspeed.ButtonStepsUseModifierKeys = false;
+			this.frontspeed.ButtonStepsWrapAround = false;
+			this.frontspeed.Location = new System.Drawing.Point(90, 95);
+			this.frontspeed.Name = "frontspeed";
+			this.frontspeed.Size = new System.Drawing.Size(87, 24);
+			this.frontspeed.StepValues = null;
+			this.frontspeed.TabIndex = 44;
 			// 
 			// frontsector
 			// 
@@ -460,8 +503,10 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// backgroup
 			// 
-			this.backgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-						| System.Windows.Forms.AnchorStyles.Right)));
+			this.backgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.backgroup.Controls.Add(this.backspeed);
+			this.backgroup.Controls.Add(label6);
 			this.backgroup.Controls.Add(this.labelBackTextureOffset);
 			this.backgroup.Controls.Add(this.backsector);
 			this.backgroup.Controls.Add(label12);
@@ -479,6 +524,23 @@ namespace CodeImp.DoomBuilder.Windows
 			this.backgroup.TabIndex = 1;
 			this.backgroup.TabStop = false;
 			this.backgroup.Text = "     ";
+			// 
+			// backspeed
+			// 
+			this.backspeed.AllowDecimal = false;
+			this.backspeed.AllowNegative = false;
+			this.backspeed.AllowRelative = false;
+			this.backspeed.ButtonStep = 1;
+			this.backspeed.ButtonStepBig = 10F;
+			this.backspeed.ButtonStepFloat = 1F;
+			this.backspeed.ButtonStepSmall = 0.1F;
+			this.backspeed.ButtonStepsUseModifierKeys = false;
+			this.backspeed.ButtonStepsWrapAround = false;
+			this.backspeed.Location = new System.Drawing.Point(90, 95);
+			this.backspeed.Name = "backspeed";
+			this.backspeed.Size = new System.Drawing.Size(87, 24);
+			this.backspeed.StepValues = null;
+			this.backspeed.TabIndex = 46;
 			// 
 			// backsector
 			// 
@@ -548,8 +610,8 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// panel
 			// 
-			this.panel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-						| System.Windows.Forms.AnchorStyles.Right)));
+			this.panel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.panel.BackColor = System.Drawing.SystemColors.Window;
 			this.panel.Controls.Add(this.backside);
 			this.panel.Controls.Add(this.frontside);
@@ -577,7 +639,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.MaximizeBox = false;
 			this.MinimizeBox = false;
 			this.Name = "LinedefEditFormMeridian";
-			this.Opacity = 1;
+			this.Opacity = 1D;
 			this.ShowIcon = false;
 			this.ShowInTaskbar = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
@@ -631,5 +693,7 @@ namespace CodeImp.DoomBuilder.Windows
 		private System.Windows.Forms.Label labelFrontTextureOffset;
 		private System.Windows.Forms.Label labelBackTextureOffset;
 		private CodeImp.DoomBuilder.Controls.ArgumentsControl argscontrol;
+		private Controls.ButtonsNumericTextbox frontspeed;
+		private Controls.ButtonsNumericTextbox backspeed;
 	}
 }

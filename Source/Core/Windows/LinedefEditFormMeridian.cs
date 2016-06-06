@@ -69,6 +69,9 @@ namespace CodeImp.DoomBuilder.Windows
 			public readonly string MiddleTexture;
 			public readonly string LowTexture;
 
+			public readonly int AnimateSpeed;
+			public readonly int Tag;
+
 			public SidedefProperties(Sidedef side) 
 			{
 				// Offset
@@ -79,6 +82,9 @@ namespace CodeImp.DoomBuilder.Windows
 				HighTexture = side.HighTexture;
 				MiddleTexture = side.MiddleTexture;
 				LowTexture = side.LowTexture;
+
+				AnimateSpeed = side.AnimateSpeed;
+				Tag = side.Tag;
 			}
 		}
 
@@ -208,6 +214,7 @@ namespace CodeImp.DoomBuilder.Windows
 				frontmid.Required = fl.Front.MiddleRequired();
 				frontlow.Required = fl.Front.LowRequired();
 				frontsector.Text = fl.Front.Sector.Index.ToString();
+				frontspeed.Text = fl.Front.AnimateSpeed.ToString();
 				frontTextureOffset.SetValues(fl.Front.OffsetX, fl.Front.OffsetY, true); //mxd
 			}
 
@@ -221,6 +228,7 @@ namespace CodeImp.DoomBuilder.Windows
 				backmid.Required = fl.Back.MiddleRequired();
 				backlow.Required = fl.Back.LowRequired();
 				backsector.Text = fl.Back.Sector.Index.ToString();
+				backspeed.Text = fl.Back.AnimateSpeed.ToString();
 				backTextureOffset.SetValues(fl.Back.OffsetX, fl.Back.OffsetY, true); //mxd
 			}
 
@@ -298,6 +306,9 @@ namespace CodeImp.DoomBuilder.Windows
 					}
 					if(frontsector.Text != l.Front.Sector.Index.ToString()) frontsector.Text = string.Empty;
 
+					if (frontspeed.Text != l.Front.AnimateSpeed.ToString())
+						frontspeed.Text = "0";
+
 					frontTextureOffset.SetValues(l.Front.OffsetX, l.Front.OffsetY, false); //mxd
 				}
 
@@ -324,6 +335,9 @@ namespace CodeImp.DoomBuilder.Windows
 						backlow.TextureName = string.Empty;
 					}
 					if(backsector.Text != l.Back.Sector.Index.ToString()) backsector.Text = string.Empty;
+
+					if (backspeed.Text != l.Back.AnimateSpeed.ToString())
+						backspeed.Text = "0";
 
 					backTextureOffset.SetValues(l.Back.OffsetX, l.Back.OffsetY, false); //mxd
 				}
@@ -431,6 +445,13 @@ namespace CodeImp.DoomBuilder.Windows
 							if(l.Front != null && l.Front.Sector != s) l.Front.SetSector(s);
 						}
 					}
+					// Check animate speed.
+					index = (l.Front != null ? l.Front.AnimateSpeed : -1);
+					index = frontspeed.GetResult(index);
+					if (index > -1)
+					{
+						l.Front.AnimateSpeed = index;
+					}
 				}
 
 				// Remove back side?
@@ -455,6 +476,13 @@ namespace CodeImp.DoomBuilder.Windows
 							// Change sector?
 							if(l.Back != null && l.Back.Sector != s) l.Back.SetSector(s);
 						}
+					}
+					// Check animate speed.
+					index = (l.Back != null ? l.Back.AnimateSpeed : -1);
+					index = backspeed.GetResult(index);
+					if (index > -1)
+					{
+						l.Back.AnimateSpeed = index;
 					}
 				}
 			}
