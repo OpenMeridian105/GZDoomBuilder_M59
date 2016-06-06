@@ -188,6 +188,12 @@
       <DependentUpon>PairedFloatControl.cs</DependentUpon>
     </Compile>
     <Compile Include="IO\RooMapSetIO.cs" />
+    <Compile Include="Windows\LinedefEditFormMeridian.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Windows\LinedefEditFormMeridian.designer.cs">
+      <DependentUpon>LinedefEditFormMeridian.cs</DependentUpon>
+    </Compile>
     <Compile Include="Windows\ThingStatisticsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -562,6 +568,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Controls\PairedFloatControl.resx">
       <DependentUpon>PairedFloatControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Windows\LinedefEditFormMeridian.resx">
+      <DependentUpon>LinedefEditFormMeridian.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Windows\ThingStatisticsForm.resx">
       <DependentUpon>ThingStatisticsForm.cs</DependentUpon>

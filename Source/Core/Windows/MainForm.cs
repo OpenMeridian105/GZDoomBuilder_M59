@@ -3890,6 +3890,18 @@ namespace CodeImp.DoomBuilder.Windows
 				editformopen = false; //mxd
 				f.Dispose();
 			}
+			else if (General.Map.MERIDIAN)
+			{
+				LinedefEditFormMeridian f = new LinedefEditFormMeridian();
+				DisableProcessing(); //mxd
+				f.Setup(lines);
+				EnableProcessing(); //mxd
+				f.OnValuesChanged += EditForm_OnValuesChanged;
+				editformopen = true; //mxd
+				result = f.ShowDialog(this);
+				editformopen = false; //mxd
+				f.Dispose();
+			}
 			else
 			{
 				LinedefEditForm f = new LinedefEditForm();
