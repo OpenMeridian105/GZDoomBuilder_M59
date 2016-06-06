@@ -108,13 +108,6 @@ namespace CodeImp.DoomBuilder.Windows
 			foreach(KeyValuePair<string, string> lf in General.Map.Config.LinedefFlags)
 				flags.Add(lf.Value, lf.Key);
 
-			// Fill actions list
-			action.GeneralizedCategories = General.Map.Config.GenActionCategories;
-			action.AddInfo(General.Map.Config.SortedLinedefActions.ToArray());
-
-			// Fill activations list
-			activation.Items.AddRange(General.Map.Config.LinedefActivates.ToArray());
-			
 			// Initialize image selectors
 			fronthigh.Initialize();
 			frontmid.Initialize();
@@ -123,34 +116,6 @@ namespace CodeImp.DoomBuilder.Windows
 			backmid.Initialize();
 			backlow.Initialize();
 			
-			// Mixed activations?
-			if(General.Map.FormatInterface.HasPresetActivations)
-				hexenpanel.Visible = true;
-			
-			// Action arguments?
-			if(General.Map.FormatInterface.HasActionArgs) argscontrol.Visible = true;
-			
-			// Arrange panels
-			if(!General.Map.FormatInterface.HasMixedActivations &&
-					!General.Map.FormatInterface.HasActionArgs &&
-					!General.Map.FormatInterface.HasPresetActivations)
-			{
-				actiongroup.Height = argscontrol.Top + argscontrol.Margin.Top; //mxd
-			}
-			
-			// Arrange or hide Identification panel
-			if(General.Map.FormatInterface.HasLinedefTag)
-			{
-				// Match position after the action group
-				idgroup.Top = actiongroup.Bottom + actiongroup.Margin.Bottom + idgroup.Margin.Top;
-				panel.Height = idgroup.Bottom + idgroup.Margin.Bottom * 2;
-			}
-			else
-			{
-				idgroup.Visible = false;
-				panel.Height = actiongroup.Bottom + actiongroup.Margin.Bottom * 2;
-			}
-
 			// Arrange Apply/Cancel buttons
 			apply.Top = panel.Bottom + panel.Margin.Bottom + apply.Margin.Top;
 			cancel.Top = apply.Top;
@@ -183,23 +148,7 @@ namespace CodeImp.DoomBuilder.Windows
 			// Flags
 			foreach(CheckBox c in flags.Checkboxes)
 				if(fl.Flags.ContainsKey(c.Tag.ToString())) c.Checked = fl.Flags[c.Tag.ToString()];
-			
-			// Activations
-			foreach(LinedefActivateInfo ai in activation.Items)
-				if((fl.Activate & ai.Index) == ai.Index) activation.SelectedItem = ai;
 
-			// Action/tags
-			action.Value = fl.Action;
-
-			if(General.Map.FormatInterface.HasLinedefTag) //mxd
-			{
-				tagSelector.Setup(UniversalType.LinedefTag);
-				tagSelector.SetTag(fl.Tag);
-			}
-
-			//mxd. Args
-			argscontrol.SetValue(fl, true);
-			
 			// Front side and back side checkboxes
 			frontside.Checked = (fl.Front != null);
 			backside.Checked = (fl.Back != null);
@@ -252,22 +201,6 @@ namespace CodeImp.DoomBuilder.Windows
 					}
 				}
 
-				// Activations
-				if(activation.Items.Count > 0)
-				{
-					LinedefActivateInfo sai = (activation.Items[0] as LinedefActivateInfo);
-					foreach(LinedefActivateInfo ai in activation.Items)
-						if((l.Activate & ai.Index) == ai.Index) sai = ai;
-					if(sai != activation.SelectedItem) activation.SelectedIndex = -1;
-				}
-
-				// Action/tags
-				if(l.Action != action.Value) action.Empty = true;
-				if(General.Map.FormatInterface.HasLinedefTag && l.Tag != fl.Tag) tagSelector.ClearTag(); //mxd
-
-				//mxd. Arguments
-				argscontrol.SetValue(l, false);
-				
 				// Front side checkbox
 				if((l.Front != null) != frontside.Checked)
 				{
@@ -364,9 +297,6 @@ namespace CodeImp.DoomBuilder.Windows
 
 			preventchanges = false;
 
-			argscontrol.UpdateScriptControls(); //mxd
-			actionhelp.UpdateAction(action.GetValue()); //mxd
-
 			//mxd. Update some labels
 			if(frontside.CheckState != CheckState.Unchecked) 
 			{
@@ -405,31 +335,12 @@ namespace CodeImp.DoomBuilder.Windows
 					return;
 				}
 			}
-			
-			// Verify the action
-			if((action.Value < General.Map.FormatInterface.MinAction) || (action.Value > General.Map.FormatInterface.MaxAction))
-			{
-				General.ShowWarningMessage("Linedef action must be between " + General.Map.FormatInterface.MinAction + " and " + General.Map.FormatInterface.MaxAction + ".", MessageBoxButtons.OK);
-				return;
-			}
 
 			MakeUndo(); //mxd
-			
+
 			// Go for all the lines
-			int tagoffset = 0; //mxd
 			foreach(Linedef l in lines)
 			{
-				// Apply chosen activation flag
-				if(activation.SelectedIndex > -1)
-					l.Activate = (activation.SelectedItem as LinedefActivateInfo).Index;
-				
-				// Action/tags
-				l.Tag = General.Clamp(tagSelector.GetSmartTag(l.Tag, tagoffset++), General.Map.FormatInterface.MinTag, General.Map.FormatInterface.MaxTag); //mxd
-				if(!action.Empty) l.Action = action.Value;
-
-				//mxd. Apply args
-				argscontrol.Apply(l);
-				
 				// Remove front side?
 				if((l.Front != null) && (frontside.CheckState == CheckState.Unchecked))
 				{
@@ -544,33 +455,6 @@ namespace CodeImp.DoomBuilder.Windows
 			// Enable/disable panel
 			// NOTE: Also enabled when checkbox is grayed!
 			backgroup.Enabled = (backside.CheckState != CheckState.Unchecked);
-		}
-
-		// Action changes
-		private void action_ValueChanges(object sender, EventArgs e)
-		{
-			int showaction = 0;
-			
-			// Only when line type is known
-			if(General.Map.Config.LinedefActions.ContainsKey(action.Value)) showaction = action.Value;
-			
-			//mxd. Change the argument descriptions
-			argscontrol.UpdateAction(showaction, preventchanges);
-
-			if(!preventchanges) 
-			{
-				MakeUndo(); //mxd
-
-				//mxd. Update what must be updated
-				argscontrol.UpdateScriptControls();
-				actionhelp.UpdateAction(showaction);
-			} 
-		}
-
-		// Browse Action clicked
-		private void browseaction_Click(object sender, EventArgs e)
-		{
-			action.Value = ActionBrowserForm.BrowseAction(this, action.Value);
 		}
 
 		//mxd. Store window location
