@@ -1152,7 +1152,7 @@ namespace CodeImp.DoomBuilder.Rendering
 			if (x[0] <= x[1])
 				rect = new RectangleF(x[0], y[0], x[1] - x[0], y[1] - y[0]);
 			else
-				rect = new RectangleF(x[1], y[0], x[0] - x[1], y[0] - y[1]);
+				rect = new RectangleF(x[1], y[1], x[0] - x[1], y[0] - y[1]);
 
 			RenderRectangle(rect, 2.0f, c, true);
 		}
