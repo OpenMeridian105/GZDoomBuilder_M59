@@ -209,6 +209,13 @@ namespace CodeImp.DoomBuilder.IO
 		
 		private int RooAddVertex(MapSet map, Dictionary<int, Vertex> link, int x, int y)
 		{
+			// Return existing vertex num if it exists already.
+			foreach(KeyValuePair<int, Vertex> entry in link)
+			{
+				if (entry.Value.Position.x == x
+					&& entry.Value.Position.y == y)
+					return entry.Key;
+			}
 			int vNum = map.Vertices.Count + 1;
 
 			map.SetCapacity(vNum, 0, 0, 0, 0);
