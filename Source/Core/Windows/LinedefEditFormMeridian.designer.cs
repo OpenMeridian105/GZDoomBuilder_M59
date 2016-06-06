@@ -166,7 +166,7 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// label11
 			// 
-			label11.Location = new System.Drawing.Point(6, 40);
+			label11.Location = new System.Drawing.Point(6, 30);
 			label11.Name = "label11";
 			label11.Size = new System.Drawing.Size(80, 14);
 			label11.TabIndex = 13;
@@ -175,7 +175,7 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// label12
 			// 
-			label12.Location = new System.Drawing.Point(6, 40);
+			label12.Location = new System.Drawing.Point(6, 30);
 			label12.Name = "label12";
 			label12.Size = new System.Drawing.Size(80, 14);
 			label12.TabIndex = 16;
@@ -193,7 +193,7 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// label1
 			// 
-			label1.Location = new System.Drawing.Point(6, 100);
+			label1.Location = new System.Drawing.Point(6, 90);
 			label1.Name = "label1";
 			label1.Size = new System.Drawing.Size(82, 14);
 			label1.TabIndex = 43;
@@ -202,7 +202,7 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// label6
 			// 
-			label6.Location = new System.Drawing.Point(6, 100);
+			label6.Location = new System.Drawing.Point(6, 90);
 			label6.Name = "label6";
 			label6.Size = new System.Drawing.Size(82, 14);
 			label6.TabIndex = 45;
@@ -211,7 +211,7 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// labelFrontTextureOffset
 			// 
-			this.labelFrontTextureOffset.Location = new System.Drawing.Point(6, 70);
+			this.labelFrontTextureOffset.Location = new System.Drawing.Point(6, 60);
 			this.labelFrontTextureOffset.Name = "labelFrontTextureOffset";
 			this.labelFrontTextureOffset.Size = new System.Drawing.Size(80, 14);
 			this.labelFrontTextureOffset.TabIndex = 42;
@@ -220,7 +220,7 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			// labelBackTextureOffset
 			// 
-			this.labelBackTextureOffset.Location = new System.Drawing.Point(6, 70);
+			this.labelBackTextureOffset.Location = new System.Drawing.Point(6, 60);
 			this.labelBackTextureOffset.Name = "labelBackTextureOffset";
 			this.labelBackTextureOffset.Size = new System.Drawing.Size(80, 14);
 			this.labelBackTextureOffset.TabIndex = 43;
@@ -418,7 +418,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.frontspeed.ButtonStepSmall = 0.1F;
 			this.frontspeed.ButtonStepsUseModifierKeys = false;
 			this.frontspeed.ButtonStepsWrapAround = false;
-			this.frontspeed.Location = new System.Drawing.Point(90, 95);
+			this.frontspeed.Location = new System.Drawing.Point(90, 85);
 			this.frontspeed.Name = "frontspeed";
 			this.frontspeed.Size = new System.Drawing.Size(87, 24);
 			this.frontspeed.StepValues = null;
@@ -435,7 +435,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.frontsector.ButtonStepSmall = 0.1F;
 			this.frontsector.ButtonStepsUseModifierKeys = false;
 			this.frontsector.ButtonStepsWrapAround = false;
-			this.frontsector.Location = new System.Drawing.Point(90, 35);
+			this.frontsector.Location = new System.Drawing.Point(90, 25);
 			this.frontsector.Name = "frontsector";
 			this.frontsector.Size = new System.Drawing.Size(130, 24);
 			this.frontsector.StepValues = null;
@@ -484,7 +484,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.frontTextureOffset.ButtonStepSmall = 1F;
 			this.frontTextureOffset.ButtonStepsUseModifierKeys = true;
 			this.frontTextureOffset.DefaultValue = 0;
-			this.frontTextureOffset.Location = new System.Drawing.Point(87, 65);
+			this.frontTextureOffset.Location = new System.Drawing.Point(87, 55);
 			this.frontTextureOffset.Name = "frontTextureOffset";
 			this.frontTextureOffset.Size = new System.Drawing.Size(186, 26);
 			this.frontTextureOffset.TabIndex = 41;
@@ -536,7 +536,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.backspeed.ButtonStepSmall = 0.1F;
 			this.backspeed.ButtonStepsUseModifierKeys = false;
 			this.backspeed.ButtonStepsWrapAround = false;
-			this.backspeed.Location = new System.Drawing.Point(90, 95);
+			this.backspeed.Location = new System.Drawing.Point(90, 85);
 			this.backspeed.Name = "backspeed";
 			this.backspeed.Size = new System.Drawing.Size(87, 24);
 			this.backspeed.StepValues = null;
@@ -553,7 +553,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.backsector.ButtonStepSmall = 0.1F;
 			this.backsector.ButtonStepsUseModifierKeys = false;
 			this.backsector.ButtonStepsWrapAround = false;
-			this.backsector.Location = new System.Drawing.Point(90, 35);
+			this.backsector.Location = new System.Drawing.Point(90, 25);
 			this.backsector.Name = "backsector";
 			this.backsector.Size = new System.Drawing.Size(130, 24);
 			this.backsector.StepValues = null;
@@ -602,7 +602,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.backTextureOffset.ButtonStepSmall = 1F;
 			this.backTextureOffset.ButtonStepsUseModifierKeys = true;
 			this.backTextureOffset.DefaultValue = 0;
-			this.backTextureOffset.Location = new System.Drawing.Point(87, 65);
+			this.backTextureOffset.Location = new System.Drawing.Point(87, 55);
 			this.backTextureOffset.Name = "backTextureOffset";
 			this.backTextureOffset.Size = new System.Drawing.Size(186, 26);
 			this.backTextureOffset.TabIndex = 42;
