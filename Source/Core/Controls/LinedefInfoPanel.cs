@@ -341,6 +341,8 @@ namespace CodeImp.DoomBuilder.Controls
 
 					//mxd. Sector index
 					frontpanel.Text += ". Sector " + l.Front.Sector.Index + " ";
+					if (General.Map.MERIDIAN && l.Front.Tag > 0)
+						frontpanel.Text += ". Tag " + l.Front.Tag + " ";
 
 					//visibility
 					frontTopUDMFOffsetLabel.Visible = false;
@@ -469,6 +471,8 @@ namespace CodeImp.DoomBuilder.Controls
 
 					// Sector index
 					backpanel.Text += ". Sector " + l.Back.Sector.Index + " ";
+					if (General.Map.MERIDIAN && l.Back.Tag > 0)
+						backpanel.Text += ". Tag " + l.Back.Tag + " ";
 				}
 
 				//mxd. Set texture names, update panel sizes
