@@ -188,6 +188,7 @@
       <DependentUpon>PairedFloatControl.cs</DependentUpon>
     </Compile>
     <Compile Include="IO\RooMapSetIO.cs" />
+    <Compile Include="Map\SDScrollFlags.cs" />
     <Compile Include="Windows\LinedefEditFormMeridian.cs">
       <SubType>Form</SubType>
     </Compile>
