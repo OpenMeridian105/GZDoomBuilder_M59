@@ -87,6 +87,16 @@ namespace CodeImp.DoomBuilder.Windows
 			this.backTextureOffset = new CodeImp.DoomBuilder.Controls.PairedIntControl();
 			this.panel = new System.Windows.Forms.Panel();
 			this.tooltip = new System.Windows.Forms.ToolTip(this.components);
+			this.frontscrollspeed = new System.Windows.Forms.GroupBox();
+			this.frontNone = new System.Windows.Forms.RadioButton();
+			this.frontMedium = new System.Windows.Forms.RadioButton();
+			this.frontSlow = new System.Windows.Forms.RadioButton();
+			this.frontFast = new System.Windows.Forms.RadioButton();
+			this.backscrollspeed = new System.Windows.Forms.GroupBox();
+			this.backFast = new System.Windows.Forms.RadioButton();
+			this.backSlow = new System.Windows.Forms.RadioButton();
+			this.backMedium = new System.Windows.Forms.RadioButton();
+			this.backNone = new System.Windows.Forms.RadioButton();
 			label3 = new System.Windows.Forms.Label();
 			label4 = new System.Windows.Forms.Label();
 			label5 = new System.Windows.Forms.Label();
@@ -106,6 +116,8 @@ namespace CodeImp.DoomBuilder.Windows
 			this.backgroup.SuspendLayout();
 			this.backscrolldirection.SuspendLayout();
 			this.panel.SuspendLayout();
+			this.frontscrollspeed.SuspendLayout();
+			this.backscrollspeed.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// label3
@@ -323,6 +335,7 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			this.frontgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.frontgroup.Controls.Add(this.frontscrollspeed);
 			this.frontgroup.Controls.Add(this.frontscrolldirection);
 			this.frontgroup.Controls.Add(this.fronttag);
 			this.frontgroup.Controls.Add(label7);
@@ -356,7 +369,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.frontscrolldirection.Controls.Add(this.frontSW);
 			this.frontscrolldirection.Controls.Add(this.frontW);
 			this.frontscrolldirection.Controls.Add(this.frontNW);
-			this.frontscrolldirection.Location = new System.Drawing.Point(255, 147);
+			this.frontscrolldirection.Location = new System.Drawing.Point(255, 148);
 			this.frontscrolldirection.Name = "frontscrolldirection";
 			this.frontscrolldirection.Size = new System.Drawing.Size(265, 90);
 			this.frontscrolldirection.TabIndex = 47;
@@ -566,6 +579,7 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			this.backgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.backgroup.Controls.Add(this.backscrollspeed);
 			this.backgroup.Controls.Add(this.backscrolldirection);
 			this.backgroup.Controls.Add(this.backside);
 			this.backgroup.Controls.Add(this.backtag);
@@ -602,7 +616,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.backscrolldirection.Controls.Add(this.backNW);
 			this.backscrolldirection.Location = new System.Drawing.Point(255, 148);
 			this.backscrolldirection.Name = "backscrolldirection";
-			this.backscrolldirection.Size = new System.Drawing.Size(265, 91);
+			this.backscrolldirection.Size = new System.Drawing.Size(265, 90);
 			this.backscrolldirection.TabIndex = 49;
 			this.backscrolldirection.TabStop = false;
 			this.backscrolldirection.Text = "Scroll Direction";
@@ -810,6 +824,120 @@ namespace CodeImp.DoomBuilder.Windows
 			this.panel.Size = new System.Drawing.Size(553, 686);
 			this.panel.TabIndex = 5;
 			// 
+			// frontscrollspeed
+			// 
+			this.frontscrollspeed.Controls.Add(this.frontFast);
+			this.frontscrollspeed.Controls.Add(this.frontSlow);
+			this.frontscrollspeed.Controls.Add(this.frontMedium);
+			this.frontscrollspeed.Controls.Add(this.frontNone);
+			this.frontscrollspeed.Location = new System.Drawing.Point(120, 148);
+			this.frontscrollspeed.Name = "frontscrollspeed";
+			this.frontscrollspeed.Size = new System.Drawing.Size(129, 90);
+			this.frontscrollspeed.TabIndex = 48;
+			this.frontscrollspeed.TabStop = false;
+			this.frontscrollspeed.Text = "Scroll Speed";
+			// 
+			// frontNone
+			// 
+			this.frontNone.AutoSize = true;
+			this.frontNone.Location = new System.Drawing.Point(6, 20);
+			this.frontNone.Name = "frontNone";
+			this.frontNone.Size = new System.Drawing.Size(51, 17);
+			this.frontNone.TabIndex = 0;
+			this.frontNone.TabStop = true;
+			this.frontNone.Text = "None";
+			this.frontNone.UseVisualStyleBackColor = true;
+			// 
+			// frontMedium
+			// 
+			this.frontMedium.AutoSize = true;
+			this.frontMedium.Location = new System.Drawing.Point(64, 20);
+			this.frontMedium.Name = "frontMedium";
+			this.frontMedium.Size = new System.Drawing.Size(62, 17);
+			this.frontMedium.TabIndex = 1;
+			this.frontMedium.TabStop = true;
+			this.frontMedium.Text = "Medium";
+			this.frontMedium.UseVisualStyleBackColor = true;
+			// 
+			// frontSlow
+			// 
+			this.frontSlow.AutoSize = true;
+			this.frontSlow.Location = new System.Drawing.Point(6, 54);
+			this.frontSlow.Name = "frontSlow";
+			this.frontSlow.Size = new System.Drawing.Size(48, 17);
+			this.frontSlow.TabIndex = 2;
+			this.frontSlow.TabStop = true;
+			this.frontSlow.Text = "Slow";
+			this.frontSlow.UseVisualStyleBackColor = true;
+			// 
+			// frontFast
+			// 
+			this.frontFast.AutoSize = true;
+			this.frontFast.Location = new System.Drawing.Point(64, 54);
+			this.frontFast.Name = "frontFast";
+			this.frontFast.Size = new System.Drawing.Size(45, 17);
+			this.frontFast.TabIndex = 3;
+			this.frontFast.TabStop = true;
+			this.frontFast.Text = "Fast";
+			this.frontFast.UseVisualStyleBackColor = true;
+			// 
+			// backscrollspeed
+			// 
+			this.backscrollspeed.Controls.Add(this.backFast);
+			this.backscrollspeed.Controls.Add(this.backSlow);
+			this.backscrollspeed.Controls.Add(this.backMedium);
+			this.backscrollspeed.Controls.Add(this.backNone);
+			this.backscrollspeed.Location = new System.Drawing.Point(120, 148);
+			this.backscrollspeed.Name = "backscrollspeed";
+			this.backscrollspeed.Size = new System.Drawing.Size(129, 90);
+			this.backscrollspeed.TabIndex = 50;
+			this.backscrollspeed.TabStop = false;
+			this.backscrollspeed.Text = "Scroll Speed";
+			// 
+			// backFast
+			// 
+			this.backFast.AutoSize = true;
+			this.backFast.Location = new System.Drawing.Point(64, 54);
+			this.backFast.Name = "backFast";
+			this.backFast.Size = new System.Drawing.Size(45, 17);
+			this.backFast.TabIndex = 3;
+			this.backFast.TabStop = true;
+			this.backFast.Text = "Fast";
+			this.backFast.UseVisualStyleBackColor = true;
+			// 
+			// backSlow
+			// 
+			this.backSlow.AutoSize = true;
+			this.backSlow.Location = new System.Drawing.Point(6, 54);
+			this.backSlow.Name = "backSlow";
+			this.backSlow.Size = new System.Drawing.Size(48, 17);
+			this.backSlow.TabIndex = 2;
+			this.backSlow.TabStop = true;
+			this.backSlow.Text = "Slow";
+			this.backSlow.UseVisualStyleBackColor = true;
+			// 
+			// backMedium
+			// 
+			this.backMedium.AutoSize = true;
+			this.backMedium.Location = new System.Drawing.Point(64, 20);
+			this.backMedium.Name = "backMedium";
+			this.backMedium.Size = new System.Drawing.Size(62, 17);
+			this.backMedium.TabIndex = 1;
+			this.backMedium.TabStop = true;
+			this.backMedium.Text = "Medium";
+			this.backMedium.UseVisualStyleBackColor = true;
+			// 
+			// backNone
+			// 
+			this.backNone.AutoSize = true;
+			this.backNone.Location = new System.Drawing.Point(6, 20);
+			this.backNone.Name = "backNone";
+			this.backNone.Size = new System.Drawing.Size(51, 17);
+			this.backNone.TabIndex = 0;
+			this.backNone.TabStop = true;
+			this.backNone.Text = "None";
+			this.backNone.UseVisualStyleBackColor = true;
+			// 
 			// LinedefEditFormMeridian
 			// 
 			this.AcceptButton = this.apply;
@@ -842,6 +970,10 @@ namespace CodeImp.DoomBuilder.Windows
 			this.backscrolldirection.PerformLayout();
 			this.panel.ResumeLayout(false);
 			this.panel.PerformLayout();
+			this.frontscrollspeed.ResumeLayout(false);
+			this.frontscrollspeed.PerformLayout();
+			this.backscrollspeed.ResumeLayout(false);
+			this.backscrollspeed.PerformLayout();
 			this.ResumeLayout(false);
 
 		}
@@ -894,5 +1026,15 @@ namespace CodeImp.DoomBuilder.Windows
 		private System.Windows.Forms.RadioButton backSW;
 		private System.Windows.Forms.RadioButton backW;
 		private System.Windows.Forms.RadioButton backNW;
+		private System.Windows.Forms.GroupBox frontscrollspeed;
+		private System.Windows.Forms.RadioButton frontNone;
+		private System.Windows.Forms.RadioButton frontFast;
+		private System.Windows.Forms.RadioButton frontSlow;
+		private System.Windows.Forms.RadioButton frontMedium;
+		private System.Windows.Forms.GroupBox backscrollspeed;
+		private System.Windows.Forms.RadioButton backFast;
+		private System.Windows.Forms.RadioButton backSlow;
+		private System.Windows.Forms.RadioButton backMedium;
+		private System.Windows.Forms.RadioButton backNone;
 	}
 }
