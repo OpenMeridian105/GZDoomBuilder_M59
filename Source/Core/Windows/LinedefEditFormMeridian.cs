@@ -20,10 +20,11 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Linq;
 using CodeImp.DoomBuilder.Config;
 using CodeImp.DoomBuilder.Map;
 using CodeImp.DoomBuilder.Types;
-
+using CodeImp.DoomBuilder;
 #endregion
 
 namespace CodeImp.DoomBuilder.Windows
@@ -51,12 +52,16 @@ namespace CodeImp.DoomBuilder.Windows
 			public readonly Dictionary<string, bool> Flags;
 			public readonly SidedefProperties Front;
 			public readonly SidedefProperties Back;
+			public readonly SDScrollFlags FrontScrollFlags;
+			public readonly SDScrollFlags BackScrollFlags;
 
 			public LinedefProperties(Linedef line) 
 			{
 				Front = (line.Front != null ? new SidedefProperties(line.Front) : null);
 				Back = (line.Back != null ? new SidedefProperties(line.Back) : null);
 				Flags = line.GetFlags();
+				FrontScrollFlags = line.FrontScrollFlags;
+				BackScrollFlags = line.BackScrollFlags;
 			}
 		}
 
@@ -152,8 +157,16 @@ namespace CodeImp.DoomBuilder.Windows
 			// Front side and back side checkboxes
 			frontside.Checked = (fl.Front != null);
 			backside.Checked = (fl.Back != null);
+			string speedStr = fl.FrontScrollFlags.ScrollSpeed(fl.FrontScrollFlags.Speed);
+			string dirStr = fl.FrontScrollFlags.ScrollDirection(fl.FrontScrollFlags.Direction);
+			RadioButton checkedButton = frontscrolldirection.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Text == dirStr);
+			if (checkedButton != null)
+				checkedButton.Checked = true;
+			dirStr = fl.BackScrollFlags.ScrollDirection(fl.BackScrollFlags.Direction);
+			checkedButton = backscrolldirection.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Text == dirStr);
+			if (checkedButton != null)
+				checkedButton.Checked = true;
 
-			// Front settings
 			if(fl.Front != null)
 			{
 				fronthigh.TextureName = fl.Front.HighTexture;

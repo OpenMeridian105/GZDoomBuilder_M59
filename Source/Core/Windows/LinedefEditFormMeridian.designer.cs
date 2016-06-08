@@ -51,6 +51,15 @@ namespace CodeImp.DoomBuilder.Windows
 			this.tagSelector = new CodeImp.DoomBuilder.Controls.TagSelector();
 			this.frontside = new System.Windows.Forms.CheckBox();
 			this.frontgroup = new System.Windows.Forms.GroupBox();
+			this.frontscrolldirection = new System.Windows.Forms.GroupBox();
+			this.frontSE = new System.Windows.Forms.RadioButton();
+			this.frontE = new System.Windows.Forms.RadioButton();
+			this.frontNE = new System.Windows.Forms.RadioButton();
+			this.frontS = new System.Windows.Forms.RadioButton();
+			this.frontN = new System.Windows.Forms.RadioButton();
+			this.frontSW = new System.Windows.Forms.RadioButton();
+			this.frontW = new System.Windows.Forms.RadioButton();
+			this.frontNW = new System.Windows.Forms.RadioButton();
 			this.fronttag = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
 			this.frontspeed = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
 			this.frontsector = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
@@ -60,6 +69,15 @@ namespace CodeImp.DoomBuilder.Windows
 			this.frontTextureOffset = new CodeImp.DoomBuilder.Controls.PairedIntControl();
 			this.backside = new System.Windows.Forms.CheckBox();
 			this.backgroup = new System.Windows.Forms.GroupBox();
+			this.backscrolldirection = new System.Windows.Forms.GroupBox();
+			this.backSE = new System.Windows.Forms.RadioButton();
+			this.backE = new System.Windows.Forms.RadioButton();
+			this.backNE = new System.Windows.Forms.RadioButton();
+			this.backS = new System.Windows.Forms.RadioButton();
+			this.backN = new System.Windows.Forms.RadioButton();
+			this.backSW = new System.Windows.Forms.RadioButton();
+			this.backW = new System.Windows.Forms.RadioButton();
+			this.backNW = new System.Windows.Forms.RadioButton();
 			this.backtag = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
 			this.backspeed = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
 			this.backsector = new CodeImp.DoomBuilder.Controls.ButtonsNumericTextbox();
@@ -84,7 +102,9 @@ namespace CodeImp.DoomBuilder.Windows
 			this.flagsgroup.SuspendLayout();
 			this.idgroup.SuspendLayout();
 			this.frontgroup.SuspendLayout();
+			this.frontscrolldirection.SuspendLayout();
 			this.backgroup.SuspendLayout();
+			this.backscrolldirection.SuspendLayout();
 			this.panel.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -248,9 +268,9 @@ namespace CodeImp.DoomBuilder.Windows
 			this.flagsgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.flagsgroup.Controls.Add(this.flags);
-			this.flagsgroup.Location = new System.Drawing.Point(6, 519);
+			this.flagsgroup.Location = new System.Drawing.Point(6, 509);
 			this.flagsgroup.Name = "flagsgroup";
-			this.flagsgroup.Size = new System.Drawing.Size(541, 159);
+			this.flagsgroup.Size = new System.Drawing.Size(541, 169);
 			this.flagsgroup.TabIndex = 0;
 			this.flagsgroup.TabStop = false;
 			this.flagsgroup.Text = " Flags";
@@ -264,7 +284,7 @@ namespace CodeImp.DoomBuilder.Windows
 			this.flags.Columns = 3;
 			this.flags.Location = new System.Drawing.Point(8, 17);
 			this.flags.Name = "flags";
-			this.flags.Size = new System.Drawing.Size(532, 136);
+			this.flags.Size = new System.Drawing.Size(532, 146);
 			this.flags.TabIndex = 0;
 			this.flags.VerticalSpacing = 1;
 			this.flags.OnValueChanged += new System.EventHandler(this.flags_OnValueChanged);
@@ -303,6 +323,7 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			this.frontgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.frontgroup.Controls.Add(this.frontscrolldirection);
 			this.frontgroup.Controls.Add(this.fronttag);
 			this.frontgroup.Controls.Add(label7);
 			this.frontgroup.Controls.Add(this.frontspeed);
@@ -320,10 +341,115 @@ namespace CodeImp.DoomBuilder.Windows
 			this.frontgroup.Enabled = false;
 			this.frontgroup.Location = new System.Drawing.Point(6, 6);
 			this.frontgroup.Name = "frontgroup";
-			this.frontgroup.Size = new System.Drawing.Size(541, 253);
+			this.frontgroup.Size = new System.Drawing.Size(541, 245);
 			this.frontgroup.TabIndex = 1;
 			this.frontgroup.TabStop = false;
 			this.frontgroup.Text = "     ";
+			// 
+			// frontscrolldirection
+			// 
+			this.frontscrolldirection.Controls.Add(this.frontSE);
+			this.frontscrolldirection.Controls.Add(this.frontE);
+			this.frontscrolldirection.Controls.Add(this.frontNE);
+			this.frontscrolldirection.Controls.Add(this.frontS);
+			this.frontscrolldirection.Controls.Add(this.frontN);
+			this.frontscrolldirection.Controls.Add(this.frontSW);
+			this.frontscrolldirection.Controls.Add(this.frontW);
+			this.frontscrolldirection.Controls.Add(this.frontNW);
+			this.frontscrolldirection.Location = new System.Drawing.Point(255, 147);
+			this.frontscrolldirection.Name = "frontscrolldirection";
+			this.frontscrolldirection.Size = new System.Drawing.Size(265, 90);
+			this.frontscrolldirection.TabIndex = 47;
+			this.frontscrolldirection.TabStop = false;
+			this.frontscrolldirection.Text = "Scroll Direction";
+			// 
+			// frontSE
+			// 
+			this.frontSE.AutoSize = true;
+			this.frontSE.Location = new System.Drawing.Point(190, 66);
+			this.frontSE.Name = "frontSE";
+			this.frontSE.Size = new System.Drawing.Size(39, 17);
+			this.frontSE.TabIndex = 7;
+			this.frontSE.TabStop = true;
+			this.frontSE.Text = "SE";
+			this.frontSE.UseVisualStyleBackColor = true;
+			// 
+			// frontE
+			// 
+			this.frontE.AutoSize = true;
+			this.frontE.Location = new System.Drawing.Point(190, 43);
+			this.frontE.Name = "frontE";
+			this.frontE.Size = new System.Drawing.Size(46, 17);
+			this.frontE.TabIndex = 6;
+			this.frontE.TabStop = true;
+			this.frontE.Text = "East";
+			this.frontE.UseVisualStyleBackColor = true;
+			// 
+			// frontNE
+			// 
+			this.frontNE.AutoSize = true;
+			this.frontNE.Location = new System.Drawing.Point(190, 20);
+			this.frontNE.Name = "frontNE";
+			this.frontNE.Size = new System.Drawing.Size(40, 17);
+			this.frontNE.TabIndex = 5;
+			this.frontNE.TabStop = true;
+			this.frontNE.Text = "NE";
+			this.frontNE.UseVisualStyleBackColor = true;
+			// 
+			// frontS
+			// 
+			this.frontS.AutoSize = true;
+			this.frontS.Location = new System.Drawing.Point(99, 66);
+			this.frontS.Name = "frontS";
+			this.frontS.Size = new System.Drawing.Size(53, 17);
+			this.frontS.TabIndex = 4;
+			this.frontS.TabStop = true;
+			this.frontS.Text = "South";
+			this.frontS.UseVisualStyleBackColor = true;
+			// 
+			// frontN
+			// 
+			this.frontN.AutoSize = true;
+			this.frontN.Location = new System.Drawing.Point(99, 20);
+			this.frontN.Name = "frontN";
+			this.frontN.Size = new System.Drawing.Size(51, 17);
+			this.frontN.TabIndex = 3;
+			this.frontN.TabStop = true;
+			this.frontN.Text = "North";
+			this.frontN.UseVisualStyleBackColor = true;
+			// 
+			// frontSW
+			// 
+			this.frontSW.AutoSize = true;
+			this.frontSW.Location = new System.Drawing.Point(7, 66);
+			this.frontSW.Name = "frontSW";
+			this.frontSW.Size = new System.Drawing.Size(43, 17);
+			this.frontSW.TabIndex = 2;
+			this.frontSW.TabStop = true;
+			this.frontSW.Text = "SW";
+			this.frontSW.UseVisualStyleBackColor = true;
+			// 
+			// frontW
+			// 
+			this.frontW.AutoSize = true;
+			this.frontW.Location = new System.Drawing.Point(7, 43);
+			this.frontW.Name = "frontW";
+			this.frontW.Size = new System.Drawing.Size(50, 17);
+			this.frontW.TabIndex = 1;
+			this.frontW.TabStop = true;
+			this.frontW.Text = "West";
+			this.frontW.UseVisualStyleBackColor = true;
+			// 
+			// frontNW
+			// 
+			this.frontNW.AutoSize = true;
+			this.frontNW.Location = new System.Drawing.Point(7, 20);
+			this.frontNW.Name = "frontNW";
+			this.frontNW.Size = new System.Drawing.Size(44, 17);
+			this.frontNW.TabIndex = 0;
+			this.frontNW.TabStop = true;
+			this.frontNW.Text = "NW";
+			this.frontNW.UseVisualStyleBackColor = true;
 			// 
 			// fronttag
 			// 
@@ -440,6 +566,7 @@ namespace CodeImp.DoomBuilder.Windows
 			// 
 			this.backgroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.backgroup.Controls.Add(this.backscrolldirection);
 			this.backgroup.Controls.Add(this.backside);
 			this.backgroup.Controls.Add(this.backtag);
 			this.backgroup.Controls.Add(label13);
@@ -456,12 +583,117 @@ namespace CodeImp.DoomBuilder.Windows
 			this.backgroup.Controls.Add(label9);
 			this.backgroup.Controls.Add(label10);
 			this.backgroup.Enabled = false;
-			this.backgroup.Location = new System.Drawing.Point(6, 265);
+			this.backgroup.Location = new System.Drawing.Point(6, 257);
 			this.backgroup.Name = "backgroup";
-			this.backgroup.Size = new System.Drawing.Size(541, 248);
+			this.backgroup.Size = new System.Drawing.Size(541, 246);
 			this.backgroup.TabIndex = 1;
 			this.backgroup.TabStop = false;
 			this.backgroup.Text = "     ";
+			// 
+			// backscrolldirection
+			// 
+			this.backscrolldirection.Controls.Add(this.backSE);
+			this.backscrolldirection.Controls.Add(this.backE);
+			this.backscrolldirection.Controls.Add(this.backNE);
+			this.backscrolldirection.Controls.Add(this.backS);
+			this.backscrolldirection.Controls.Add(this.backN);
+			this.backscrolldirection.Controls.Add(this.backSW);
+			this.backscrolldirection.Controls.Add(this.backW);
+			this.backscrolldirection.Controls.Add(this.backNW);
+			this.backscrolldirection.Location = new System.Drawing.Point(255, 148);
+			this.backscrolldirection.Name = "backscrolldirection";
+			this.backscrolldirection.Size = new System.Drawing.Size(265, 91);
+			this.backscrolldirection.TabIndex = 49;
+			this.backscrolldirection.TabStop = false;
+			this.backscrolldirection.Text = "Scroll Direction";
+			// 
+			// backSE
+			// 
+			this.backSE.AutoSize = true;
+			this.backSE.Location = new System.Drawing.Point(190, 66);
+			this.backSE.Name = "backSE";
+			this.backSE.Size = new System.Drawing.Size(39, 17);
+			this.backSE.TabIndex = 7;
+			this.backSE.TabStop = true;
+			this.backSE.Text = "SE";
+			this.backSE.UseVisualStyleBackColor = true;
+			// 
+			// backE
+			// 
+			this.backE.AutoSize = true;
+			this.backE.Location = new System.Drawing.Point(190, 43);
+			this.backE.Name = "backE";
+			this.backE.Size = new System.Drawing.Size(46, 17);
+			this.backE.TabIndex = 6;
+			this.backE.TabStop = true;
+			this.backE.Text = "East";
+			this.backE.UseVisualStyleBackColor = true;
+			// 
+			// backNE
+			// 
+			this.backNE.AutoSize = true;
+			this.backNE.Location = new System.Drawing.Point(190, 20);
+			this.backNE.Name = "backNE";
+			this.backNE.Size = new System.Drawing.Size(40, 17);
+			this.backNE.TabIndex = 5;
+			this.backNE.TabStop = true;
+			this.backNE.Text = "NE";
+			this.backNE.UseVisualStyleBackColor = true;
+			// 
+			// backS
+			// 
+			this.backS.AutoSize = true;
+			this.backS.Location = new System.Drawing.Point(99, 66);
+			this.backS.Name = "backS";
+			this.backS.Size = new System.Drawing.Size(53, 17);
+			this.backS.TabIndex = 4;
+			this.backS.TabStop = true;
+			this.backS.Text = "South";
+			this.backS.UseVisualStyleBackColor = true;
+			// 
+			// backN
+			// 
+			this.backN.AutoSize = true;
+			this.backN.Location = new System.Drawing.Point(99, 20);
+			this.backN.Name = "backN";
+			this.backN.Size = new System.Drawing.Size(51, 17);
+			this.backN.TabIndex = 3;
+			this.backN.TabStop = true;
+			this.backN.Text = "North";
+			this.backN.UseVisualStyleBackColor = true;
+			// 
+			// backSW
+			// 
+			this.backSW.AutoSize = true;
+			this.backSW.Location = new System.Drawing.Point(7, 66);
+			this.backSW.Name = "backSW";
+			this.backSW.Size = new System.Drawing.Size(43, 17);
+			this.backSW.TabIndex = 2;
+			this.backSW.TabStop = true;
+			this.backSW.Text = "SW";
+			this.backSW.UseVisualStyleBackColor = true;
+			// 
+			// backW
+			// 
+			this.backW.AutoSize = true;
+			this.backW.Location = new System.Drawing.Point(7, 43);
+			this.backW.Name = "backW";
+			this.backW.Size = new System.Drawing.Size(50, 17);
+			this.backW.TabIndex = 1;
+			this.backW.TabStop = true;
+			this.backW.Text = "West";
+			this.backW.UseVisualStyleBackColor = true;
+			// 
+			// backNW
+			// 
+			this.backNW.AutoSize = true;
+			this.backNW.Location = new System.Drawing.Point(7, 20);
+			this.backNW.Name = "backNW";
+			this.backNW.Size = new System.Drawing.Size(44, 17);
+			this.backNW.TabIndex = 0;
+			this.backNW.TabStop = true;
+			this.backNW.Text = "NW";
+			this.backNW.UseVisualStyleBackColor = true;
 			// 
 			// backtag
 			// 
@@ -602,8 +834,12 @@ namespace CodeImp.DoomBuilder.Windows
 			this.flagsgroup.ResumeLayout(false);
 			this.idgroup.ResumeLayout(false);
 			this.frontgroup.ResumeLayout(false);
+			this.frontscrolldirection.ResumeLayout(false);
+			this.frontscrolldirection.PerformLayout();
 			this.backgroup.ResumeLayout(false);
 			this.backgroup.PerformLayout();
+			this.backscrolldirection.ResumeLayout(false);
+			this.backscrolldirection.PerformLayout();
 			this.panel.ResumeLayout(false);
 			this.panel.PerformLayout();
 			this.ResumeLayout(false);
@@ -640,5 +876,23 @@ namespace CodeImp.DoomBuilder.Windows
 		private Controls.ButtonsNumericTextbox backspeed;
 		private Controls.ButtonsNumericTextbox fronttag;
 		private Controls.ButtonsNumericTextbox backtag;
+		private System.Windows.Forms.GroupBox frontscrolldirection;
+		private System.Windows.Forms.RadioButton frontSE;
+		private System.Windows.Forms.RadioButton frontE;
+		private System.Windows.Forms.RadioButton frontNE;
+		private System.Windows.Forms.RadioButton frontS;
+		private System.Windows.Forms.RadioButton frontN;
+		private System.Windows.Forms.RadioButton frontSW;
+		private System.Windows.Forms.RadioButton frontW;
+		private System.Windows.Forms.RadioButton frontNW;
+		private System.Windows.Forms.GroupBox backscrolldirection;
+		private System.Windows.Forms.RadioButton backSE;
+		private System.Windows.Forms.RadioButton backE;
+		private System.Windows.Forms.RadioButton backNE;
+		private System.Windows.Forms.RadioButton backS;
+		private System.Windows.Forms.RadioButton backN;
+		private System.Windows.Forms.RadioButton backSW;
+		private System.Windows.Forms.RadioButton backW;
+		private System.Windows.Forms.RadioButton backNW;
 	}
 }
