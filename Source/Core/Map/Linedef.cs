@@ -77,9 +77,13 @@ namespace CodeImp.DoomBuilder.Map
 		// Clone
 		private int serializedindex;
 
-		// Used for loading .roo files.
+		// Used for loading/saving Meridian 59 .roo files.
 		private int fileSidedef1;
 		private int fileSidedef2;
+
+		// Sidedef scroll flags for Meridian 59 .roo files.
+		private SDScrollFlags frontScrollFlags;
+		private SDScrollFlags backScrollFlags;
 
 		#endregion
 
@@ -105,8 +109,37 @@ namespace CodeImp.DoomBuilder.Map
 		public RectangleF Rect { get { return rect; } }
 		public int[] Args { get { return args; } }
 		internal int SerializedIndex { get { return serializedindex; } set { serializedindex = value; } }
+
+		// Meridian 59 specific properties.
 		public int FileSidedef1 { get { return fileSidedef1; } set { fileSidedef1 = value; } }
 		public int FileSidedef2 { get { return fileSidedef2; } set { fileSidedef2 = value; } }
+		public SDScrollFlags FrontScrollFlags
+		{
+			get
+			{
+				return frontScrollFlags;
+			}
+			set
+			{
+				frontScrollFlags.Speed = value.Speed;
+				frontScrollFlags.Direction = value.Direction;
+
+			}
+		}
+		public SDScrollFlags BackScrollFlags
+		{
+			get
+			{
+				return backScrollFlags;
+			}
+			set
+			{
+				backScrollFlags.Speed = value.Speed;
+				backScrollFlags.Direction = value.Direction;
+
+			}
+		}
+
 		internal bool FrontInterior { get { return frontinterior; } set { frontinterior = value; } }
 		internal bool ImpassableFlag { get { return impassableflag; } }
 		internal int ColorPresetIndex { get { return colorPresetIndex; } } //mxd
@@ -128,7 +161,8 @@ namespace CodeImp.DoomBuilder.Map
 			this.tags = new List<int> { 0 }; //mxd
 			this.flags = new Dictionary<string, bool>(StringComparer.Ordinal);
 			this.colorPresetIndex = -1;//mxd
-			
+			this.frontScrollFlags = new SDScrollFlags();
+			this.backScrollFlags = new SDScrollFlags();
 			// Attach to vertices
 			this.start = start;
 			this.startvertexlistitem = start.AttachLinedefP(this);
@@ -215,6 +249,10 @@ namespace CodeImp.DoomBuilder.Map
 					s.wString(f.Key);
 					s.wBool(f.Value);
 				}
+				s.wInt(frontScrollFlags.Speed);
+				s.wInt(frontScrollFlags.Direction);
+				s.wInt(backScrollFlags.Speed);
+				s.wInt(backScrollFlags.Direction);
 			}
 			else
 			{
@@ -227,6 +265,15 @@ namespace CodeImp.DoomBuilder.Map
 					bool b; s.rBool(out b);
 					flags.Add(t, b);
 				}
+				int temp = 0;
+				s.rwInt(ref temp);
+				frontScrollFlags.Speed = temp;
+				s.rwInt(ref temp);
+				frontScrollFlags.Direction = temp;
+				s.rwInt(ref temp);
+				backScrollFlags.Speed = temp;
+				s.rwInt(ref temp);
+				backScrollFlags.Direction = temp;
 			}
 
 			s.rwInt(ref action);
@@ -315,6 +362,8 @@ namespace CodeImp.DoomBuilder.Map
 			l.updateneeded = true;
 			l.activate = activate;
 			l.impassableflag = impassableflag;
+			l.frontScrollFlags = new SDScrollFlags(frontScrollFlags.Speed, frontScrollFlags.Direction);
+			l.backScrollFlags = new SDScrollFlags(backScrollFlags.Speed, backScrollFlags.Direction);
 			l.UpdateColorPreset();//mxd
 			base.CopyPropertiesTo(l);
 		}

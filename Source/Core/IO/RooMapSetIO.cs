@@ -39,6 +39,38 @@ namespace CodeImp.DoomBuilder.IO
 	{
 		#region ================== Constants
 
+		private const uint BF_POS_BACKWARDS   = 0x00000001;  // Draw + side bitmap right/left reversed
+		private const uint BF_NEG_BACKWARDS   = 0x00000002;  // Draw - side bitmap right/left reversed
+		private const uint BF_POS_TRANSPARENT = 0x00000004;  // + side bitmap has some transparency
+		private const uint BF_NEG_TRANSPARENT = 0x00000008;  // - side bitmap has some transparency
+		private const uint BF_POS_PASSABLE    = 0x00000010;  // + side bitmap can be walked through
+		private const uint BF_NEG_PASSABLE    = 0x00000020;  // - side bitmap can be walked through
+		private const uint BF_MAP_NEVER       = 0x00000040;  // Don't show wall on map
+		private const uint BF_MAP_ALWAYS      = 0x00000080;  // Always show wall on map
+
+		private const uint BF_POS_NOLOOKTHROUGH = 0x00000400; // + side bitmap can't be seen through even though it's transparent
+		private const uint BF_NEG_NOLOOKTHROUGH = 0x00000800; // - side bitmap can't be seen through even though it's transparent
+
+		private const uint BF_POS_ABOVE_BUP    = 0x00001000; // + side above texture bottom up
+		private const uint BF_NEG_ABOVE_BUP    = 0x00002000; // - side above texture bottom up
+		private const uint BF_POS_BELOW_TDOWN  = 0x00004000; // + side below texture top down
+		private const uint BF_NEG_BELOW_TDOWN  = 0x00008000; // - side below texture top down
+		private const uint BF_POS_NORMAL_TDOWN = 0x00010000; // + side normal texture top down
+		private const uint BF_NEG_NORMAL_TDOWN = 0x00020000; // - side normal texture top down
+		private const uint BF_POS_NO_VTILE     = 0x00040000; // + side no vertical tile
+		private const uint BF_NEG_NO_VTILE     = 0x00080000; // - side no vertical tile
+		
+		private const uint WF_BACKWARDS      = 0x00000001;   // Draw bitmap right/left reversed   
+		private const uint WF_TRANSPARENT    = 0x00000002;   // normal wall has some transparency
+		private const uint WF_PASSABLE       = 0x00000004;   // wall can be walked through
+		private const uint WF_MAP_NEVER      = 0x00000008;   // Don't show wall on map
+		private const uint WF_MAP_ALWAYS     = 0x00000010;   // Always show wall on map
+		private const uint WF_NOLOOKTHROUGH  = 0x00000020;   // bitmap can't be seen through even though it's transparent
+		private const uint WF_ABOVE_BOTTOMUP = 0x00000040;   // Draw upper texture bottom-up
+		private const uint WF_BELOW_TOPDOWN  = 0x00000080;   // Draw lower texture top-down
+		private const uint WF_NORMAL_TOPDOWN = 0x00000100;   // Draw normal texture top-down
+		private const uint WF_NO_VTILE       = 0x00000200;   // Don't tile texture vertically (must be transparent)
+
 		#endregion
 
 		#region ================== Constructor / Disposer
@@ -64,9 +96,9 @@ namespace CodeImp.DoomBuilder.IO
 		public override bool HasThingAction { get { return true; } }
 		public override bool HasCustomFields { get { return false; } }
 		public override bool HasThingHeight { get { return true; } }
-		public override bool HasActionArgs { get { return true; } }
+		public override bool HasActionArgs { get { return false; } }
 		public override bool HasMixedActivations { get { return false; } }
-		public override bool HasPresetActivations { get { return true; } }
+		public override bool HasPresetActivations { get { return false; } }
 		public override bool HasBuiltInActivations { get { return false; } }
 		public override bool HasNumericLinedefFlags { get { return true; } }
 		public override bool HasNumericThingFlags { get { return true; } }
@@ -226,14 +258,12 @@ namespace CodeImp.DoomBuilder.IO
 		private void ReadLinedefs(MapSet map, int firstindex,
 			Dictionary<int, Vertex> vertexlink,Dictionary<int, Sector> sectorlink)
 		{
-			int[] args = new int[Linedef.NUM_ARGS];
-
-			// Get the linedefs lump from wad file
+			// Get the linedefs lump from roo file
 			Lump linedefslump = wad.FindLump("LINEDEFS", firstindex);
 			if(linedefslump == null)
 				throw new Exception("Could not find required lump LINEDEFS!");
 
-			// Get the sidedefs lump from wad file
+			// Get the sidedefs lump from roo file
 			Lump sidedefslump = wad.FindLump("SIDEDEFS", firstindex);
 			if(sidedefslump == null)
 				throw new Exception("Could not find required lump SIDEDEFS!");
@@ -282,30 +312,23 @@ namespace CodeImp.DoomBuilder.IO
 				int y1 = readline.ReadInt32();
 				int v2 = RooAddVertex(map, vertexlink, x1, y1);
 
-				// Make string flags
-				Dictionary<string, bool> stringflags = new Dictionary<string, bool>(StringComparer.Ordinal);
-				foreach (string f in manager.Config.SortedLinedefFlags)
-				{
-					int fnum;
-					if (int.TryParse(f, out fnum)) stringflags[f] = ((0 & fnum) == fnum);
-				}
-
 				// Check if not zero-length
 				if (Vector2D.ManhattanDistance(vertexlink[v1].Position, vertexlink[v2].Position) > 0.0001f)
 				{
 					Linedef l = map.CreateLinedef(vertexlink[v1], vertexlink[v2]);
-					l.Update(stringflags, (0 & manager.Config.LinedefActivationsFilter), new List<int> { 0 }, 0, args);
 					l.FileSidedef1 = s1 - 1;
 					l.FileSidedef2 = s2 - 1;
 					Sidedef side1, side2;
-					FileSidedef fsd;
+					FileSidedef fsd1, fsd2;
+					fsd1.flags = 0;
+					fsd2.flags = 0;
 					if (s1Sector >= 0)
 					{
 						side1 = map.CreateSidedef(l, true, sectorlink[s1Sector]);
 						if (l.FileSidedef1 >= 0)
 						{
-							fsd = FileSD[l.FileSidedef1];
-							side1.Update(s1XOffset, s1YOffset, "", "", "", fsd.animateSpeed, fsd.id);
+							fsd1 = FileSD[l.FileSidedef1];
+							side1.Update(s1XOffset, s1YOffset, "", "", "", fsd1.animateSpeed, fsd1.id);
 						}
 						else
 						{
@@ -317,14 +340,26 @@ namespace CodeImp.DoomBuilder.IO
 						side2 = map.CreateSidedef(l, false, sectorlink[s2Sector]);
 						if (l.FileSidedef2 >= 0)
 						{
-							fsd = FileSD[l.FileSidedef2];
-							side2.Update(s2XOffset, s2YOffset, "", "", "", fsd.animateSpeed, fsd.id);
+							fsd2 = FileSD[l.FileSidedef2];
+							side2.Update(s2XOffset, s2YOffset, "", "", "", fsd2.animateSpeed, fsd2.id);
 						}
 						else
 						{
 							side2.Update(s2XOffset, s2YOffset, "", "", "", 0, 0);
 						}
 					}
+
+					// Make string flags
+					int linedefFlags = ParseLDFlags(fsd1.flags, fsd2.flags);
+					l.FrontScrollFlags = new SDScrollFlags(WallScrollSpeed(fsd1.flags),WallScrollDirection(fsd1.flags));
+					l.BackScrollFlags = new SDScrollFlags(WallScrollSpeed(fsd2.flags),WallScrollDirection(fsd2.flags));
+					Dictionary<string, bool> stringflags = new Dictionary<string, bool>(StringComparer.Ordinal);
+					foreach (string f in manager.Config.SortedLinedefFlags)
+					{
+						int fnum;
+						if (int.TryParse(f, out fnum)) stringflags[f] = ((linedefFlags & fnum) == fnum);
+					}
+					l.Update(stringflags, 0, new List<int> { 0 }, 0, new int[Linedef.NUM_ARGS]);
 					l.UpdateCache();
 				}
 			}
@@ -334,6 +369,62 @@ namespace CodeImp.DoomBuilder.IO
 			sidedefsmem.Dispose();
 		}
 		
+		private int ParseLDFlags(int pos_flags, int neg_flags)
+		{
+			uint flags = 0;
+			if ((pos_flags & WF_BACKWARDS) == WF_BACKWARDS)
+				flags |= BF_POS_BACKWARDS;
+			if ((pos_flags & WF_TRANSPARENT) == WF_TRANSPARENT)
+				flags |= BF_POS_TRANSPARENT;
+			if ((pos_flags & WF_PASSABLE) == WF_PASSABLE)
+				flags |= BF_POS_PASSABLE;
+			if ((pos_flags & WF_NOLOOKTHROUGH) == WF_NOLOOKTHROUGH)
+				flags |= BF_POS_NOLOOKTHROUGH;
+			if ((pos_flags & WF_ABOVE_BOTTOMUP) == WF_ABOVE_BOTTOMUP)
+				flags |= BF_POS_ABOVE_BUP;
+			if ((pos_flags & WF_BELOW_TOPDOWN) == WF_BELOW_TOPDOWN)
+				flags |= BF_POS_BELOW_TDOWN;
+			if ((pos_flags & WF_NORMAL_TOPDOWN) == WF_NORMAL_TOPDOWN)
+				flags |= BF_POS_NORMAL_TDOWN;
+			if ((pos_flags & WF_NO_VTILE) == WF_NO_VTILE)
+				flags |= BF_POS_NO_VTILE;
+
+			if ((neg_flags & WF_BACKWARDS) == WF_BACKWARDS)
+				flags |= BF_NEG_BACKWARDS;
+			if ((neg_flags & WF_TRANSPARENT) == WF_TRANSPARENT)
+				flags |= BF_NEG_TRANSPARENT;
+			if ((neg_flags & WF_PASSABLE) == WF_PASSABLE)
+				flags |= BF_NEG_PASSABLE;
+			if ((neg_flags & WF_NOLOOKTHROUGH) == WF_NOLOOKTHROUGH)
+				flags |= BF_NEG_NOLOOKTHROUGH;
+			if ((neg_flags & WF_ABOVE_BOTTOMUP) == WF_ABOVE_BOTTOMUP)
+				flags |= BF_NEG_ABOVE_BUP;
+			if ((neg_flags & WF_BELOW_TOPDOWN) == WF_BELOW_TOPDOWN)
+				flags |= BF_NEG_BELOW_TDOWN;
+			if ((neg_flags & WF_NORMAL_TOPDOWN) == WF_NORMAL_TOPDOWN)
+				flags |= BF_NEG_NORMAL_TDOWN;
+			if ((neg_flags & WF_NO_VTILE) == WF_NO_VTILE)
+				flags |= BF_NEG_NO_VTILE;
+
+			if (((pos_flags & WF_MAP_NEVER) == WF_MAP_NEVER)
+				|| ((neg_flags & WF_MAP_NEVER) == WF_MAP_NEVER))
+				flags |= BF_MAP_NEVER;
+			if (((pos_flags & WF_MAP_ALWAYS) == WF_MAP_ALWAYS)
+				|| ((neg_flags & WF_MAP_ALWAYS) == WF_MAP_ALWAYS))
+				flags |= BF_MAP_ALWAYS;
+
+			return (int)flags;
+		}
+
+		private int WallScrollSpeed(int flags)
+		{
+			return ((flags & 0x00000C00) >> 10);
+		}
+		private int WallScrollDirection(int flags)
+		{
+			return ((flags & 0x00007000) >> 12);
+		}
+
 		#endregion
 
 		#region ================== Writing

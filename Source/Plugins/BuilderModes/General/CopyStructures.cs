@@ -513,31 +513,37 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		[FieldDescription(Description = "Action")]
 		public bool Action = true;
 		
-		[FieldDescription(Description = "Action Arguments", DOOM = false)]
+		[FieldDescription(Description = "Action Arguments", DOOM = false, MERIDIAN = false)]
 		public bool Arguments = true;
 		
-		[FieldDescription(Description = "Activation", DOOM = false, UDMF = false)]
+		[FieldDescription(Description = "Activation", DOOM = false, UDMF = false, MERIDIAN = false)]
 		public bool Activation = true;
 		
-		[FieldDescription(Description = "Tags", HEXEN = false)]
+		[FieldDescription(Description = "Tags", HEXEN = false, MERIDIAN = false)]
 		public bool Tag = true;
 		
 		[FieldDescription(Description = "Flags")]
 		public bool Flags = true;
 
-		[FieldDescription(Description = "Alpha", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Front Scroll Flags", DOOM = false, UDMF = false, HEXEN = false)]
+		public bool FrontScrollFlags = true;
+
+		[FieldDescription(Description = "Back Scroll Flags", DOOM = false, UDMF = false, HEXEN = false)]
+		public bool BackScrollFlags = true;
+
+		[FieldDescription(Description = "Alpha", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool Alpha = true;
 
-		[FieldDescription(Description = "Render Style", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Render Style", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool RenderStyle = true;
 
-		[FieldDescription(Description = "Lock Number", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Lock Number", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool LockNumber = true;
 		
-		[FieldDescription(Description = "Custom Fields", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Custom Fields", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool Fields = true;
 
-		[FieldDescription(Description = "Comment", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Comment", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool Comment = true;
 	}
 
@@ -555,6 +561,8 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		private readonly int activate;
 		private readonly List<int> tags;
 		private readonly int[] args;
+		private readonly SDScrollFlags frontScrollFlags;
+		private readonly SDScrollFlags backScrollFlags;
 
 		public LinedefProperties(Linedef l) : base(l.Fields, MapElementType.LINEDEF)
 		{
@@ -566,6 +574,8 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			activate = l.Activate;
 			tags = new List<int>(l.Tags); //mxd
 			args = (int[])(l.Args.Clone());
+			frontScrollFlags = l.FrontScrollFlags;
+			backScrollFlags = l.BackScrollFlags;
 		}
 
 		//mxd. Applies coped properties with all settings enabled
@@ -600,6 +610,8 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				for(int i = 0; i < l.Args.Length; i++)
 					l.Args[i] = args[i];
 			}
+			if (settings.FrontScrollFlags) l.FrontScrollFlags = frontScrollFlags;
+			if (settings.BackScrollFlags) l.BackScrollFlags = backScrollFlags;
 
 			// Should we bother?
 			if(!General.Map.UDMF) return;
