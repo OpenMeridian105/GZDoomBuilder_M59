@@ -3936,6 +3936,18 @@ namespace CodeImp.DoomBuilder.Windows
 				editformopen = false; //mxd
 				f.Dispose();
 			}
+			else if (General.Map.MERIDIAN)
+			{
+				SectorEditFormMeridian f = new SectorEditFormMeridian();
+				DisableProcessing(); //mxd
+				f.Setup(sectors);
+				EnableProcessing(); //mxd
+				f.OnValuesChanged += EditForm_OnValuesChanged;
+				editformopen = true; //mxd
+				result = f.ShowDialog(this);
+				editformopen = false; //mxd
+				f.Dispose();
+			}
 			else
 			{
 				SectorEditForm f = new SectorEditForm();
