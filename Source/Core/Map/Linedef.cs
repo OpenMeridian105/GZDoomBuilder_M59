@@ -115,28 +115,20 @@ namespace CodeImp.DoomBuilder.Map
 		public int FileSidedef2 { get { return fileSidedef2; } set { fileSidedef2 = value; } }
 		public SDScrollFlags FrontScrollFlags
 		{
-			get
-			{
-				return frontScrollFlags;
-			}
+			get { return frontScrollFlags; }
 			set
 			{
 				frontScrollFlags.Speed = value.Speed;
 				frontScrollFlags.Direction = value.Direction;
-
 			}
 		}
 		public SDScrollFlags BackScrollFlags
 		{
-			get
-			{
-				return backScrollFlags;
-			}
+			get { return backScrollFlags; }
 			set
 			{
 				backScrollFlags.Speed = value.Speed;
 				backScrollFlags.Direction = value.Direction;
-
 			}
 		}
 
@@ -266,13 +258,13 @@ namespace CodeImp.DoomBuilder.Map
 					flags.Add(t, b);
 				}
 				int temp = 0;
-				s.rwInt(ref temp);
+				s.rInt(out temp);
 				frontScrollFlags.Speed = temp;
-				s.rwInt(ref temp);
+				s.rInt(out temp);
 				frontScrollFlags.Direction = temp;
-				s.rwInt(ref temp);
+				s.rInt(out temp);
 				backScrollFlags.Speed = temp;
-				s.rwInt(ref temp);
+				s.rInt(out temp);
 				backScrollFlags.Direction = temp;
 			}
 

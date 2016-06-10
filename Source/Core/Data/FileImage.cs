@@ -17,6 +17,7 @@
 #region ================== Namespaces
 
 using System;
+using System.Drawing;
 using System.IO;
 using CodeImp.DoomBuilder.IO;
 using CodeImp.DoomBuilder.Controls;
@@ -177,6 +178,9 @@ namespace CodeImp.DoomBuilder.Data
 				} 
 				else 
 				{
+					// Rotate Meridian 59 textures 90 degrees.
+					if (General.Map.MERIDIAN && filepathname.Contains("grd"))
+						bitmap.RotateFlip(RotateFlipType.Rotate90FlipNone);
 					// Get width and height
 					width = bitmap.Size.Width;
 					height = bitmap.Size.Height;
