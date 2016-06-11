@@ -34,6 +34,7 @@ namespace CodeImp.DoomBuilder.IO
 		//internal const int IL_DOOM = 0x0422;  //!< DooM walls - no specific extension
 		//internal const int IL_DOOM_FLAT = 0x0423;  //!< DooM flats - no specific extension
 
+		internal const int IL_BMP = 0x0420;  //!< Microsoft Windows Bitmap - .bmp extension
 		internal const int IL_JPG = 0x0425;  //!< JPEG - .jpg, .jpe and .jpeg extensions
 		internal const int IL_PCX = 0x0428;  //!< ZSoft PCX - .pcx extension
 		internal const int IL_PNG = 0x042A;  //!< Portable Network Graphics - .png extension

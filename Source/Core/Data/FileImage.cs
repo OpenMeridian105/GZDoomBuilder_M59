@@ -45,13 +45,19 @@ namespace CodeImp.DoomBuilder.Data
 
 			if(asflat)
 			{
-				probableformat = ImageDataFormat.DOOMFLAT;
+				if (filepathname.EndsWith("bgf"))
+					probableformat = ImageDataFormat.BGFFILE;
+				else
+					probableformat = ImageDataFormat.DOOMFLAT;
 				this.scale.x = General.Map.Config.DefaultFlatScale;
 				this.scale.y = General.Map.Config.DefaultFlatScale;
 			}
 			else
 			{
-				probableformat = ImageDataFormat.DOOMPICTURE;
+				if (filepathname.EndsWith("bgf"))
+					probableformat = ImageDataFormat.BGFFILE;
+				else
+					probableformat = ImageDataFormat.DOOMPICTURE;
 				this.scale.x = General.Map.Config.DefaultTextureScale;
 				this.scale.y = General.Map.Config.DefaultTextureScale;
 			}
@@ -68,8 +74,10 @@ namespace CodeImp.DoomBuilder.Data
 			this.scale.y = scaley;
 			this.isFlat = asflat; //mxd
 			SetName(name, filepathname);
-
-			probableformat = (asflat ? ImageDataFormat.DOOMFLAT : ImageDataFormat.DOOMPICTURE);
+			if (filepathname.EndsWith("bgf"))
+				probableformat = ImageDataFormat.BGFFILE;
+			else
+				probableformat = (asflat ? ImageDataFormat.DOOMFLAT : ImageDataFormat.DOOMPICTURE);
 
 			// We have no destructor
 			GC.SuppressFinalize(this);
@@ -178,12 +186,20 @@ namespace CodeImp.DoomBuilder.Data
 				} 
 				else 
 				{
-					// Rotate Meridian 59 textures 90 degrees.
-					if (General.Map.MERIDIAN && filepathname.Contains("grd"))
-						bitmap.RotateFlip(RotateFlipType.Rotate90FlipNone);
 					// Get width and height
 					width = bitmap.Size.Width;
 					height = bitmap.Size.Height;
+
+					if (probableformat == ImageDataFormat.BGFFILE)
+					{
+						// Probably need a better way to handle this.
+						BGFReader bgfreader = reader as BGFReader;
+						if (bgfreader != null)
+						{
+							this.scale.x = 1.0f / bgfreader.ShrinkFactor;
+							this.scale.y = 1.0f / bgfreader.ShrinkFactor;
+						}
+					}
 				}
 
 				// Pass on to base
