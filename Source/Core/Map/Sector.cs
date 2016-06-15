@@ -72,6 +72,15 @@ namespace CodeImp.DoomBuilder.Map
 		//mxd. UDMF properties
 		private Dictionary<string, bool> flags;
 
+		// Meridian 59 roo properties.
+		private int sectortag;
+		private int animationspeed;
+		private int depth;
+		private SDScrollFlags scrollflags;
+		private bool scrollfloor;
+		private bool scrollceiling;
+		private bool flicker;
+
 		// Cloning
 		private Sector clone;
 		private int serializedindex;
@@ -135,6 +144,23 @@ namespace CodeImp.DoomBuilder.Map
 		public Vector3D CeilSlope { get { return ceilslope; } set { BeforePropsChange(); ceilslope = value; updateneeded = true; } }
 		public float CeilSlopeOffset { get { return ceiloffset; } set { BeforePropsChange(); ceiloffset = value; updateneeded = true; } }
 
+		// Meridian 59 properties
+		public int SectorTag { get { return sectortag; } set { BeforePropsChange(); sectortag = value; updateneeded = true; } }
+		public int AnimationSpeed { get { return animationspeed; } set { BeforePropsChange(); animationspeed = value; updateneeded = true; } }
+		public int Depth { get { return depth; } set { BeforePropsChange(); depth = value; updateneeded = true; } }
+		public bool ScrollFloor { get { return scrollfloor; } set { BeforePropsChange(); scrollfloor = value; updateneeded = true; } }
+		public bool ScrollCeiling { get { return scrollceiling; } set { BeforePropsChange(); scrollceiling = value; updateneeded = true; } }
+		public bool Flicker { get { return flicker; } set { BeforePropsChange(); flicker = value; updateneeded = true; } }
+		public SDScrollFlags ScrollFlags
+		{
+			get { return scrollflags; }
+			set
+			{
+				scrollflags.Speed = value.Speed;
+				scrollflags.Direction = value.Direction;
+			}
+		}
+
 		#endregion
 
 		#region ================== Constructor / Disposer
@@ -161,6 +187,14 @@ namespace CodeImp.DoomBuilder.Map
 
 			if(map == General.Map.Map)
 				General.Map.UndoRedo.RecAddSector(this);
+
+			this.sectortag = 0;
+			this.depth = 0;
+			this.animationspeed = 0;
+			this.flicker = false;
+			this.scrollceiling = false;
+			this.scrollfloor = false;
+			this.scrollflags = new SDScrollFlags();
 
 			// We have no destructor
 			GC.SuppressFinalize(this);
@@ -262,6 +296,29 @@ namespace CodeImp.DoomBuilder.Map
 			s.rwInt(ref effect);
 			s.rwInt(ref brightness);
 
+			if (General.Map.MERIDIAN)
+			{
+				s.rwInt(ref sectortag);
+				s.rwInt(ref depth);
+				s.rwInt(ref animationspeed);
+				s.rwBool(ref flicker);
+				s.rwBool(ref scrollceiling);
+				s.rwBool(ref scrollfloor);
+
+				if (s.IsWriting)
+				{
+					s.wInt(scrollflags.Speed);
+					s.wInt(scrollflags.Direction);
+				}
+				else
+				{
+					int temp = 0;
+					s.rInt(out temp);
+					scrollflags.Speed = temp;
+					s.rInt(out temp);
+					scrollflags.Direction = temp;
+				}
+			}
 			//mxd. (Re)store tags
 			if(s.IsWriting) 
 			{
@@ -316,6 +373,18 @@ namespace CodeImp.DoomBuilder.Map
 			s.floorslope = floorslope; //mxd
 			s.ceiloffset = ceiloffset; //mxd
 			s.ceilslope = ceilslope; //mxd
+
+			if (General.Map.MERIDIAN)
+			{
+				s.sectortag = sectortag;
+				s.depth = depth;
+				s.animationspeed = animationspeed;
+				s.flicker = flicker;
+				s.scrollceiling = scrollceiling;
+				s.scrollfloor = scrollfloor;
+				s.scrollflags = new SDScrollFlags(scrollflags.Speed, scrollflags.Direction);
+			}
+
 			s.updateneeded = true;
 			base.CopyPropertiesTo(s);
 		}
@@ -638,7 +707,7 @@ namespace CodeImp.DoomBuilder.Map
 		//mxd
 		public static Geometry.Plane GetFloorPlane(Sector s)
 		{
-			if(General.Map.UDMF)
+			if (General.Map.UDMF || General.Map.MERIDIAN)
 			{
 				// UDMF Sector slope?
 				if(s.FloorSlope.GetLengthSq() > 0 && !float.IsNaN(s.FloorSlopeOffset / s.FloorSlope.z)) 
@@ -718,7 +787,7 @@ namespace CodeImp.DoomBuilder.Map
 		//mxd
 		public static Geometry.Plane GetCeilingPlane(Sector s)
 		{
-			if(General.Map.UDMF) 
+			if (General.Map.UDMF || General.Map.MERIDIAN)
 			{
 				// UDMF Sector slope?
 				if(s.CeilSlope.GetLengthSq() > 0 && !float.IsNaN(s.CeilSlopeOffset / s.CeilSlope.z))
@@ -808,6 +877,22 @@ namespace CodeImp.DoomBuilder.Map
 		#endregion
 
 		#region ================== Changes
+
+		// Meridian specific version.
+		public void Update(int hfloor, int hceil, string tfloor, string tceil,
+			float floorOffset, float ceilOffset, Vector3D floorslope, Vector3D ceilSlope,
+			int tag, int brightness, int depth, int animationspeed, bool flicker,
+			bool scrollfloor, bool scrollceiling)
+		{
+			this.sectortag = tag;
+			this.depth = depth;
+			this.animationspeed = animationspeed;
+			this.flicker = flicker;
+			this.scrollfloor = scrollfloor;
+			this.scrollceiling = scrollceiling;
+			Update(hfloor, hceil, tfloor, tceil, 0, new Dictionary<string, bool>(StringComparer.Ordinal),
+				new List<int> { 0 }, brightness, floorOffset, floorslope, ceilOffset, ceilSlope);
+		}
 
 		//mxd. This updates all properties (Doom/Hexen version)
 		public void Update(int hfloor, int hceil, string tfloor, string tceil, int effect, int tag, int brightness) 

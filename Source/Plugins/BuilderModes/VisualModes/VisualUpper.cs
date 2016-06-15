@@ -57,9 +57,139 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			GC.SuppressFinalize(this);
 		}
 
+		private bool SetupMeridian()
+		{
+			Vector2D vl, vr;
+			float h0, h1, h2, h3;
+			bool drawTopDown;
+
+			//mxd. Apply sky hack?
+			UpdateSkyRenderFlag();
+
+			//mxd. lightfog flag support
+			int lightvalue;
+			bool lightabsolute;
+			GetLightValue(out lightvalue, out lightabsolute);
+
+			// Load sector data
+			SectorData sd = Sector.GetSectorData();
+			SectorData osd = mode.GetSectorData(Sidedef.Other.Sector);
+			if (!osd.Updated)
+				osd.Update();
+
+			CalculateWallSideHeights();
+
+			// Left and right vertices for this sidedef
+			if (Sidedef.IsFront)
+			{
+				vl = new Vector2D(Sidedef.Line.Start.Position.x, Sidedef.Line.Start.Position.y);
+				vr = new Vector2D(Sidedef.Line.End.Position.x, Sidedef.Line.End.Position.y);
+				h0 = z3;
+				h1 = z2;
+				h2 = zz2;
+				h3 = zz3;
+				drawTopDown = !(Sidedef.Line.IsFlagSet("4096"));
+			}
+			else
+			{
+				vl = new Vector2D(Sidedef.Line.End.Position.x, Sidedef.Line.End.Position.y);
+				vr = new Vector2D(Sidedef.Line.Start.Position.x, Sidedef.Line.Start.Position.y);
+				h0 = zz3;
+				h1 = zz2;
+				h2 = z2;
+				h3 = z3;
+				drawTopDown = !(Sidedef.Line.IsFlagSet("8192"));
+			}
+
+			// Texture given?
+			if ((Sidedef.LongHighTexture != MapSet.EmptyLongName))
+			{
+				// Load texture
+				base.Texture = General.Map.Data.GetTextureImage(Sidedef.LongHighTexture);
+				if (base.Texture == null || base.Texture is UnknownImage)
+				{
+					base.Texture = General.Map.Data.UnknownTexture3D;
+					setuponloadedtexture = Sidedef.LongHighTexture;
+				}
+				else
+				{
+					if (!base.Texture.IsImageLoaded)
+						setuponloadedtexture = Sidedef.LongHighTexture;
+				}
+			}
+			else
+			{
+				// Use missing texture
+				base.Texture = General.Map.Data.MissingTexture3D;
+				setuponloadedtexture = 0;
+			}
+
+			// Determine texture coordinates plane as they would be in normal circumstances.
+			// We can then use this plane to find any texture coordinate we need.
+			// The logic here is the same as in the original VisualMiddleSingle (except that
+			// the values are stored in a TexturePlane)
+			// NOTE: I use a small bias for the floor height, because if the difference in
+			// height is 0 then the TexturePlane doesn't work!
+			TexturePlane tp = CalculateTexturePlane(h0, h1, h2, h3, drawTopDown);
+			float ceilbias = (Sidedef.Other.Sector.CeilHeight == Sidedef.Sector.CeilHeight) ? 1.0f : 0.0f;
+
+			// Left top and right bottom of the geometry that
+			tp.vlt = new Vector3D(vl.x, vl.y, sd.Ceiling.plane.GetZ(vl.x, vl.y));
+			tp.vrb = new Vector3D(vr.x, vr.y, osd.Ceiling.plane.GetZ(vr.x, vr.y) + ceilbias);
+			tp.vlb = new Vector3D(vl.x, vl.y, osd.Ceiling.plane.GetZ(vr.x, vr.y) + ceilbias);
+			// Make the right-top coordinates
+			//tp.trt = new Vector2D(tp.trb.x, tp.tlt.y);
+			tp.vrt = new Vector3D(tp.vrb.x, tp.vrb.y, tp.vlt.z);
+
+			// Create initial polygon, which is just a quad between floor and ceiling
+			WallPolygon poly = new WallPolygon();
+			poly.Add(new Vector3D(vl.x, vl.y, sd.Floor.plane.GetZ(vl))); // P0 = vl, P0.z = floor height
+			poly.Add(new Vector3D(vl.x, vl.y, sd.Ceiling.plane.GetZ(vl))); // P1 = vl, P1.z = ceil height
+			poly.Add(new Vector3D(vr.x, vr.y, sd.Ceiling.plane.GetZ(vr))); // P2 = vr, P2.z = ceil height
+			poly.Add(new Vector3D(vr.x, vr.y, sd.Floor.plane.GetZ(vr)));  // P3 = vr, P3.z = floor height
+
+			// Determine initial color
+			int lightlevel = lightabsolute ? lightvalue : sd.Ceiling.brightnessbelow + lightvalue;
+
+			//mxd. This calculates light with doom-style wall shading
+			PixelColor wallbrightness = PixelColor.FromInt(mode.CalculateBrightness(lightlevel, Sidedef));
+			PixelColor wallcolor = PixelColor.Modulate(sd.Ceiling.colorbelow, wallbrightness);
+			fogfactor = CalculateFogFactor(lightlevel);
+			poly.color = wallcolor.WithAlpha(255).ToInt();
+
+			// Cut off the part below the other ceiling
+			CropPoly(ref poly, osd.Ceiling.plane, false);
+
+			// Cut out pieces that overlap 3D floors in this sector
+			List<WallPolygon> polygons = new List<WallPolygon> { poly };
+			ClipExtraFloors(polygons, sd.ExtraFloors, false); //mxd
+
+			if (polygons.Count > 0)
+			{
+				// Keep top and bottom planes for intersection testing
+				Vector2D linecenter = Sidedef.Line.GetCenterPoint(); //mxd. Our sector's floor can be higher than the other sector's ceiling!
+				top = sd.Ceiling.plane;
+				bottom = (osd.Ceiling.plane.GetZ(linecenter) > sd.Floor.plane.GetZ(linecenter) ? osd.Ceiling.plane : sd.Floor.plane);
+
+				// Process the polygon and create vertices
+				List<WorldVertex> verts = CreatePolygonVertices(polygons, tp, sd, lightvalue, lightabsolute);
+				if (verts.Count > 2)
+				{
+					base.SetVertices(verts);
+					return true;
+				}
+			}
+
+			base.SetVertices(null); //mxd
+			return false;
+		}
+
 		// This builds the geometry. Returns false when no geometry created.
 		public override bool Setup()
 		{
+			if (General.Map.MERIDIAN)
+				return SetupMeridian();
+
 			Vector2D vl, vr;
 
 			//mxd. Apply sky hack?

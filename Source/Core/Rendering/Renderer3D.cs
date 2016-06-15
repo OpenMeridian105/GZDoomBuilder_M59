@@ -394,7 +394,7 @@ namespace CodeImp.DoomBuilder.Rendering
 			
 			// Initial renderstates
 			graphics.Device.SetRenderState(RenderState.CullMode, Cull.Counterclockwise);
-			graphics.Device.SetRenderState(RenderState.ZEnable, true);
+			graphics.Device.SetRenderState(RenderState.ZEnable, false);
 			graphics.Device.SetRenderState(RenderState.ZWriteEnable, true);
 			graphics.Device.SetRenderState(RenderState.AlphaBlendEnable, false);
 			graphics.Device.SetRenderState(RenderState.AlphaTestEnable, false);
@@ -408,7 +408,7 @@ namespace CodeImp.DoomBuilder.Rendering
 				ApplyMatrices3D();
 				RenderSky(skygeo);
 			}
-
+			graphics.Device.SetRenderState(RenderState.ZEnable, true);
 			// SOLID PASS
 			world = Matrix.Identity;
 			ApplyMatrices3D();

@@ -327,7 +327,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			mode.CreateUndo("Change floor height", UndoGroup.FloorHeightChange, level.sector.FixedIndex);
 			level.sector.FloorHeight += amount;
 			
-			if(General.Map.UDMF) 
+			if(General.Map.UDMF || General.Map.MERIDIAN) 
 			{
 				//mxd. Modify vertex offsets?
 				if(level.sector.Sidedefs.Count == 3)
@@ -566,7 +566,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		//mxd
 		public void AlignTexture(bool alignx, bool aligny) 
 		{
-			if(!General.Map.UDMF) return;
+			if(!(General.Map.UDMF || General.Map.MERIDIAN)) return;
 
 			//is is a surface with line slope?
 			float slopeAngle = level.plane.Normal.GetAngleZ() - Angle2D.PIHALF;

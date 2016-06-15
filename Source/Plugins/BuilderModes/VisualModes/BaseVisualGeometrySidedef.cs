@@ -67,13 +67,50 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		// Undo/redo
 		protected int undoticket;
 		
+		// Meridian 59 roo format variables.
+		/* 
+		 * There is an overall of 8 z-coordinates possible for a wall given by
+		 * its adjacents sectorheights/ceilings, so except for the
+		 * (X1,Y1), (X2,Y2) these values are not part of the ROO data
+		 *
+		 *  S1     S2
+		 * ------        (z3 / zz3)
+		 *      |
+		 *      -----    (z2 / zz2)
+		 *
+		 *      -----    (z1 / zz1)
+		 *      |
+		 * ------        (z0 / zz0)
+		 *
+		 */
+		// Z-coordinates at (X1,Y1) 
+		protected long z0;      /* height of bottom of lower wall */
+		protected long z1;      /* height of top of lower wall / bottom of normal wall */
+		protected long z2;      /* height of top of normal wall / bottom of upper wall */
+		protected long z3;      /* height of top of upper wall */
+		// Z-coordinates at (X2,Y2)
+		protected long zz0;    /* height of bottom of lower wall */
+		protected long zz1;    /* height of top of lower wall / bottom of normal wall */
+		protected long zz2;     /* height of top of normal wall / bottom of upper wall */
+		protected long zz3;     /* height of top of upper wall */
+
+		protected long z0Neg;       /* height of bottom of lower wall */
+		protected long z1Neg;       /* height of top of lower wall / bottom of normal wall */
+		protected long zz0Neg;      /* height of bottom of lower wall */
+		protected long zz1Neg;      /* height of top of lower wall / bottom of normal wall */
+
 		#endregion
 		
 		#region ================== Properties
 		
 		public bool IsDraggingUV { get { return uvdragging; } }
 		new public BaseVisualSector Sector { get { return (BaseVisualSector)base.Sector; } }
-		
+
+		/// <summary>
+		/// Flags describing special intersection cases.
+		/// </summary>
+		public BowtieFlags BowtieFlags { get; set; }
+
 		#endregion
 		
 		#region ================== Constructor / Destructor
@@ -86,6 +123,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			this.deltaxy = (sd.Line.End.Position - sd.Line.Start.Position) * sd.Line.LengthInv;
 			if(!sd.IsFront) this.deltaxy = -this.deltaxy;
 			this.performautoselection = (mode.UseSelectionFromClassicMode && sd.Line.Selected); //mxd
+			this.BowtieFlags = new BowtieFlags();
 		}
 		
 		#endregion
@@ -1340,7 +1378,15 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			float offsety = dragdeltaz.GetLength();
 			if((Math.Sign(dragdeltaxy.x) < 0) || (Math.Sign(dragdeltaxy.y) < 0) || (Math.Sign(dragdeltaxy.z) < 0)) offsetx = -offsetx;
 			if((Math.Sign(dragdeltaz.x) < 0) || (Math.Sign(dragdeltaz.y) < 0) || (Math.Sign(dragdeltaz.z) < 0)) offsety = -offsety;
-			
+
+			// m59 has reversed y offset
+			if (General.Map.MERIDIAN)
+			{
+				offsety = -offsety;
+				if (Sidedef.IsFlipped())
+					offsetx = -offsetx;
+			}
+
 			// Apply offsets
 			if(General.Interface.CtrlState && General.Interface.ShiftState) 
 			{ 
@@ -1545,6 +1591,303 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			if(sd != null) sd.Reset(true);
 
 			mode.SetActionResult("Wall scale changed to " + scaleX.ToString("F03", CultureInfo.InvariantCulture) + ", " + scaleY.ToString("F03", CultureInfo.InvariantCulture) + " (" + (int)Math.Round(Texture.Width / scaleX) + " x " + (int)Math.Round(Texture.Height / scaleY) + ").");
+		}
+
+		/// <summary>
+		/// Fills in the Z coordinates for the wall.
+		/// From Meridian 59 .NET core lib, RooWall.c.
+		/// </summary>
+		public void CalculateWallSideHeights()
+		{
+			Sector RightSector = Sidedef.Line.Front != null ? Sidedef.Line.Front.Sector : null;
+			Sector LeftSector = Sidedef.Line.Back != null ? Sidedef.Line.Back.Sector : null;
+
+			Vector2D P1 = Sidedef.Line.Start.Position;
+			Vector2D P2 = Sidedef.Line.End.Position;
+
+			// no sectors? we're screwed, use defaults and return
+			if (RightSector == null && LeftSector == null)
+			{
+				z0 = z1 = 0;
+				z2 = z3 = 1024;
+				zz0 = zz1 = 0;
+				zz2 = zz3 = 0;
+				return;
+			}
+
+			SectorData RSD;
+			SectorData LSD;
+
+			// only left sector? use heights from there and return
+			if (RightSector == null)
+			{
+				LSD = mode.GetSectorData(LeftSector);
+				z0 = z1 = (long)LSD.Floor.plane.GetZ(P1.x, P1.y);
+				z2 = z3 = (long)LSD.Ceiling.plane.GetZ(P1.x, P1.y);
+				zz0 = zz1 = (long)LSD.Floor.plane.GetZ(P2.x, P2.y);
+				zz2 = zz3 = (long)LSD.Ceiling.plane.GetZ(P2.x, P2.y);
+				return;
+			}
+
+			// only right sector? use heights from there and return
+			if (LeftSector == null)
+			{
+				RSD = mode.GetSectorData(RightSector);
+				z0 = z1 = (long)RSD.Floor.plane.GetZ(P1.x, P1.y);
+				z2 = z3 = (long)RSD.Ceiling.plane.GetZ(P1.x, P1.y);
+				zz0 = zz1 = (long)RSD.Floor.plane.GetZ(P2.x, P2.y);
+				zz2 = zz3 = (long)RSD.Ceiling.plane.GetZ(P2.x, P2.y);
+				return;
+			}
+
+			RSD = mode.GetSectorData(RightSector);
+			LSD = mode.GetSectorData(LeftSector);
+
+			// --  finally, if there are both sectors available ---
+
+			// start with the floor handling
+			long S1_height0 = (long)Math.Round(RSD.Floor.plane.GetZ(P1.x, P1.y));
+			long S2_height0 = (long)Math.Round(LSD.Floor.plane.GetZ(P1.x, P1.y));
+			long S1_height1 = (long)Math.Round(RSD.Floor.plane.GetZ(P2.x, P2.y));
+			long S2_height1 = (long)Math.Round(LSD.Floor.plane.GetZ(P2.x, P2.y));
+
+			// S1 is above S2 at first endpoint
+			if (S1_height0 > S2_height0)
+			{
+				if (S1_height1 >= S2_height1)
+				{
+					// normal wall - S1 higher at both ends
+					BowtieFlags.Value = 0;
+
+					z1 = (long)S1_height0;
+					zz1 = (long)S1_height1;
+					z0 = (long)S2_height0;
+					zz0 = (long)S2_height1;
+				}
+				else
+				{
+					// bowtie handling
+					BowtieFlags.IsBelowPos = true;
+
+					// this is the variant for gD3DEnabled in the old code
+					z1 = (long)S1_height0;
+					zz1 = (long)S1_height1;
+					z0 = (long)S2_height0;
+					zz0 = (long)S1_height1;
+
+					z1Neg = (long)S2_height0;
+					zz1Neg = (long)S2_height1;
+					z0Neg = (long)S2_height0;
+					zz0Neg = (long)S1_height1;
+				}
+			}
+
+			// S2 above S1 at first endpoint
+			else
+			{
+				if (S2_height1 >= S1_height1)
+				{
+					// normal wall - S2 higher at both ends
+					BowtieFlags.Value = 0;
+
+					z1 = (long)S2_height0;
+					zz1 = (long)S2_height1;
+					z0 = (long)S1_height0;
+					zz0 = (long)S1_height1;
+				}
+				else
+				{
+					// bowtie handling
+					BowtieFlags.IsBelowNeg = true;
+
+					// this is the variant for gD3DEnabled in the old code
+					z1 = (long)S1_height0;
+					zz1 = (long)S1_height1;
+					z0 = (long)S1_height0;
+					zz0 = (long)S2_height1;
+
+					z1Neg = (long)S2_height0;
+					zz1Neg = (long)S2_height1;
+					z0Neg = (long)S1_height0;
+					zz0Neg = (long)S2_height1;
+				}
+			}
+
+			// start with ceiling handling
+			S1_height0 = (long)RSD.Ceiling.plane.GetZ(P1.x, P1.y);
+			S2_height0 = (long)LSD.Ceiling.plane.GetZ(P1.x, P1.y);
+			S1_height1 = (long)RSD.Ceiling.plane.GetZ(P2.x, P2.y);
+			S2_height1 = (long)LSD.Ceiling.plane.GetZ(P2.x, P2.y);
+
+			if (S1_height0 > S2_height0 )
+			{
+				if (S1_height1 >= S2_height1)
+				{
+					// normal wall - S1 higher at both ends
+					//wall->bowtie_bits &= (BYTE)~BT_ABOVE_BOWTIE; // Clear above bowtie bits
+					BowtieFlags.IsAboveBowtie = false;
+
+					z3 = (long)S1_height0;
+					zz3 = (long)S1_height1;
+					z2 = (long)S2_height0;
+					zz2 = (long)S2_height1;
+				}
+				else
+				{
+					// bowtie - see notes on bowties above
+					//wall->bowtie_bits |= (BYTE)BT_ABOVE_POS; // positive sector is on top at endpoint 0
+					BowtieFlags.IsAbovePos = true;
+
+					z3 = (long)S1_height0;
+					zz3 = (long)S2_height1;
+					z2 = (long)S2_height0;
+					zz2 = (long)S1_height1;
+				}
+			}
+			else
+			{
+				if (S2_height1 >= S1_height1)
+				{
+					// normal wall - S2 higher at both ends
+					//wall->bowtie_bits &= (BYTE)~BT_ABOVE_BOWTIE;
+					BowtieFlags.IsAboveBowtie = false;
+
+					z3 = (long)S2_height0;
+					zz3 = (long)S2_height1;
+					z2 = (long)S1_height0;
+					zz2 = (long)S1_height1;
+				}
+				else
+				{
+					// bowtie - see notes on bowties above
+					//wall->bowtie_bits |= (BYTE)BT_ABOVE_NEG; // negative sector is on top at endpoint 0
+					BowtieFlags.IsAboveNeg = true;
+
+					z3 = (long)S2_height0;
+					zz3 = (long)S1_height1;
+					z2 = (long)S1_height0;
+					zz2 = (long)S2_height1;
+				}
+			}
+		}
+
+		public TexturePlane CalculateTexturePlane(float h0, float h1, float h2, float h3, bool drawTopDown)
+		{
+			TexturePlane tp = new TexturePlane();
+
+			// Get texture scaled size
+			Vector2D tsz = new Vector2D(base.Texture.Width, base.Texture.Height);
+
+			// Get texture offsets
+			Vector2D tof = new Vector2D(Sidedef.OffsetX, Sidedef.OffsetY);
+			if (General.Map.Config.ScaledTextureOffsets && !base.Texture.WorldPanning)
+				tof = tof * base.Texture.Scale;
+
+			float invWidth = 1.0f / tsz.x;
+			float invHeight = 1.0f / tsz.y;
+			float invWidthFudge = 1.0f / ((int)tsz.x << 4);
+			float invHeightFudge = 1.0f / ((int)tsz.y << 4);
+
+			int texShrink = (int)(1.0f / base.Texture.Scale.x);
+			float u1 = tof.x * texShrink * invWidth;
+			float u2 = u1 + (Sidedef.Line.Length * texShrink * invWidth);
+			tp.trb.x = u2;
+			tp.tlb.x = u1;
+			tp.trt.x = u2;
+			tp.tlt.x = u1;
+
+			int top1, bottom1;
+
+			if (!drawTopDown)
+			{
+				if (Math.Round(h0) == Math.Round(h3))
+					top1 = (int)h0;
+				else
+				{
+					top1 = (int)Math.Max(h0, h3);
+					if (top1 < 128)
+						top1 = (top1 + 63) & ~63;
+					else
+						top1 = (top1 + 127) & ~127;
+				}
+
+				if (Math.Round(h1) == Math.Round(h2))
+					bottom1 = (int)h1;
+				else
+				{
+					bottom1 = (int)Math.Min(h1, h2);
+					if (top1 < 128)
+						bottom1 = bottom1 & ~63;
+					else
+						bottom1 = bottom1 & ~63;
+				}
+
+				if (Math.Round(h1) == Math.Round(h2))
+				{
+					tp.trb.y = tp.tlb.y = 1.0f - (tof.y * texShrink * invHeight);
+				}
+				else
+				{
+					tp.tlb.y = tp.trb.y = 1.0f - (tof.y * texShrink * invHeight);
+					tp.tlb.y -= (h1 - bottom1) * texShrink * invHeight;
+					tp.trb.y -= (h2 - bottom1) * texShrink * invHeight;
+				}
+				tp.tlt.y = tp.tlb.y - ((h0 - h1) * texShrink * invHeight);
+				tp.trt.y = tp.trb.y - ((h3 - h2) * texShrink * invHeight);
+			}
+			else
+			{
+				if (Math.Round(h0) == Math.Round(h3))
+					top1 = (int)h0;
+				else
+				{
+					top1 = (int)Math.Max(h0, h3);
+					if (top1 < 128)
+						top1 = (top1 + 63) & ~63;
+					else
+						top1 = (top1 + 127) & ~127;
+				}
+
+				if (Math.Round(h1) == Math.Round(h2))
+					bottom1 = (int)(h1);
+				else
+				{
+					bottom1 = (int)Math.Min(h1, h2);
+					if (top1 < 128)
+						bottom1 = bottom1 & ~63;
+					else
+						bottom1 = bottom1 & ~63;
+				}
+
+				if (Math.Round(h0) == Math.Round(h3))
+				{
+					tp.tlt.y = 0f;
+					tp.trt.y = 0f;
+				}
+				else
+				{
+					tp.tlt.y = (top1 - h0) * texShrink * invHeight;
+					tp.trt.y = (top1 - h3) * texShrink * invHeight;
+				}
+
+				tp.tlt.y -= (tof.y * texShrink * invHeight);
+				tp.trt.y -= (tof.y * texShrink * invHeight);
+
+				tp.tlb.y = tp.tlt.y + ((h0 - h1) * texShrink * invHeight);
+				tp.trb.y = tp.trt.y + ((h3 - h2) * texShrink * invHeight);
+			}
+
+			if (Sidedef.IsFlipped())
+			{
+				float temp = tp.trt.x;
+				tp.trt.x = tp.tlt.x;
+				tp.tlt.x = temp;
+				temp = tp.trb.x;
+				tp.trb.x = tp.tlb.x;
+				tp.tlb.x = temp;
+			}
+
+			return tp;
 		}
 
 		#endregion

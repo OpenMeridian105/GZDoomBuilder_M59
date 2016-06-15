@@ -370,8 +370,19 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				{
 					// Create middle part
 					VisualMiddleSingle vm = parts.middlesingle ?? new VisualMiddleSingle(mode, this, sd);
-					if(vm.Setup()) base.AddGeometry(vm);
-					
+					if (vm.Setup())
+					{
+						base.AddGeometry(vm);
+						if (vm.skyhack)
+						{
+							VisualMiddleSingle vms = new VisualMiddleSingle(mode, this, sd);
+							if (vms.SkySideSetup())
+							{
+								base.AddGeometry(vms);
+								//sides.Add(sd, new VisualSidedefParts(vms));
+							}
+						}
+					}
 					// Store
 					sides.Add(sd, new VisualSidedefParts(vm));
 				}

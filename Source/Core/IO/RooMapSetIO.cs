@@ -33,6 +33,9 @@ namespace CodeImp.DoomBuilder.IO
 		public int id;
 		public int flags;
 		public int animateSpeed;
+		public int texHigh;
+		public int texMid;
+		public int texLow;
 	}
 
 	internal class RooMapSetIO : MapSetIO
@@ -166,8 +169,11 @@ namespace CodeImp.DoomBuilder.IO
 			MemoryStream mem = new MemoryStream(lump.Stream.ReadAllBytes());
 			BinaryReader reader = new BinaryReader(mem);
 
-			// Skip count
-			reader.ReadInt16();
+			// Number of things. Only load rooms with 2 things.
+			short count = reader.ReadInt16();
+			if (count != 2)
+				throw new Exception(String.Format("Can only load .roo with 2 things, found {0}!", count));
+
 			// Read items from the lump
 			map.SetCapacity(0, 0, 0, 0, 2);
 			for(int i = 0; i < 2; i++)
@@ -207,8 +213,8 @@ namespace CodeImp.DoomBuilder.IO
 			{
 				// Read properties from stream
 				ushort tag = reader.ReadUInt16();
-				ushort floorBitmap = reader.ReadUInt16();
-				ushort ceilingBitmap = reader.ReadUInt16(); //string tceil = Lump.MakeNormalName(reader.ReadBytes(8), WAD.ENCODING);
+				int texFloor = reader.ReadUInt16();
+				int texCeil = reader.ReadUInt16(); //string tceil = Lump.MakeNormalName(reader.ReadBytes(8), WAD.ENCODING);
 				ushort xoffset = reader.ReadUInt16();
 				ushort yoffset = reader.ReadUInt16();
 				ushort hfloor = reader.ReadUInt16();
@@ -220,13 +226,24 @@ namespace CodeImp.DoomBuilder.IO
 				
 				// Create new item
 				Sector s = map.CreateSector(i);
-				s.Update(hfloor, hceil, "", "", 0, tag, bright);
 
-				// Should read slope data here?
+				// Read slope data.
+				Vector3D vfloor = new Vector3D(0, 0, 0);
+				Vector3D vceil = new Vector3D(0, 0, 0);
+				float offsetf = 0, offsetc = 0;
+
 				if ((flags & 0x400) == 0x400)
-					reader.ReadBytes(46);
+				{
+					CalculateSlope(reader, out vfloor, out offsetf, true);
+				}
 				if ((flags & 0x800) == 0x800)
-					reader.ReadBytes(46);
+				{
+					CalculateSlope(reader, out vceil, out offsetc, false);
+				}
+
+				s.Update(hfloor, hceil, MakeGRDName(texFloor), MakeGRDName(texCeil),
+					offsetf, offsetc, vfloor.GetNormal(), vceil,
+					tag, bright, flags & 0xC, speed, false, false, false);
 
 				// Add it to the lookup table
 				link.Add(i, s);
@@ -235,7 +252,7 @@ namespace CodeImp.DoomBuilder.IO
 			// Done
 			mem.Dispose();
 		}
-		
+
 		private int RooAddVertex(MapSet map, Dictionary<int, Vertex> link, int x, int y)
 		{
 			// Return existing vertex num if it exists already.
@@ -282,9 +299,9 @@ namespace CodeImp.DoomBuilder.IO
 			{
 				FileSidedef fsd = new FileSidedef();
 				fsd.id = readside.ReadUInt16();
-				int textureNormal = readside.ReadUInt16();
-				int textureAbove = readside.ReadUInt16();
-				int textureBelow = readside.ReadUInt16();
+				fsd.texMid = readside.ReadUInt16();
+				fsd.texHigh = readside.ReadUInt16();
+				fsd.texLow = readside.ReadUInt16();
 				fsd.flags = readside.ReadInt32();
 				fsd.animateSpeed = readside.ReadByte();
 				FileSD.Add(i, fsd);
@@ -328,11 +345,13 @@ namespace CodeImp.DoomBuilder.IO
 						if (l.FileSidedef1 >= 0)
 						{
 							fsd1 = FileSD[l.FileSidedef1];
-							side1.Update(s1XOffset, s1YOffset, "", "", "", fsd1.animateSpeed, fsd1.id);
+							side1.Update(s1XOffset, s1YOffset, MakeGRDName(fsd1.texHigh),
+								MakeGRDName(fsd1.texMid), MakeGRDName(fsd1.texLow),
+								fsd1.animateSpeed, fsd1.id);
 						}
 						else
 						{
-							side1.Update(s1XOffset, s1YOffset, "", "", "", 0, 0);
+							side1.Update(s1XOffset, s1YOffset, "-", "-", "-", 0, 0);
 						}
 					}
 					if (s2Sector >= 0)
@@ -341,16 +360,18 @@ namespace CodeImp.DoomBuilder.IO
 						if (l.FileSidedef2 >= 0)
 						{
 							fsd2 = FileSD[l.FileSidedef2];
-							side2.Update(s2XOffset, s2YOffset, "", "", "", fsd2.animateSpeed, fsd2.id);
+							side2.Update(s2XOffset, s2YOffset, MakeGRDName(fsd2.texHigh),
+								MakeGRDName(fsd2.texMid), MakeGRDName(fsd2.texLow),
+								fsd2.animateSpeed, fsd2.id);
 						}
 						else
 						{
-							side2.Update(s2XOffset, s2YOffset, "", "", "", 0, 0);
+							side2.Update(s2XOffset, s2YOffset, "-", "-", "-", 0, 0);
 						}
 					}
 
 					// Make string flags
-					int linedefFlags = ParseLDFlags(fsd1.flags, fsd2.flags);
+					int linedefFlags = ParseLinedefFlags(fsd1.flags, fsd2.flags);
 					l.FrontScrollFlags = new SDScrollFlags(WallScrollSpeed(fsd1.flags),WallScrollDirection(fsd1.flags));
 					l.BackScrollFlags = new SDScrollFlags(WallScrollSpeed(fsd2.flags),WallScrollDirection(fsd2.flags));
 					Dictionary<string, bool> stringflags = new Dictionary<string, bool>(StringComparer.Ordinal);
@@ -361,68 +382,13 @@ namespace CodeImp.DoomBuilder.IO
 					}
 					l.Update(stringflags, 0, new List<int> { 0 }, 0, new int[Linedef.NUM_ARGS]);
 					l.UpdateCache();
+					l.ApplySidedFlags();
 				}
 			}
 
 			// Done
 			linedefsmem.Dispose();
 			sidedefsmem.Dispose();
-		}
-		
-		private int ParseLDFlags(int pos_flags, int neg_flags)
-		{
-			uint flags = 0;
-			if ((pos_flags & WF_BACKWARDS) == WF_BACKWARDS)
-				flags |= BF_POS_BACKWARDS;
-			if ((pos_flags & WF_TRANSPARENT) == WF_TRANSPARENT)
-				flags |= BF_POS_TRANSPARENT;
-			if ((pos_flags & WF_PASSABLE) == WF_PASSABLE)
-				flags |= BF_POS_PASSABLE;
-			if ((pos_flags & WF_NOLOOKTHROUGH) == WF_NOLOOKTHROUGH)
-				flags |= BF_POS_NOLOOKTHROUGH;
-			if ((pos_flags & WF_ABOVE_BOTTOMUP) == WF_ABOVE_BOTTOMUP)
-				flags |= BF_POS_ABOVE_BUP;
-			if ((pos_flags & WF_BELOW_TOPDOWN) == WF_BELOW_TOPDOWN)
-				flags |= BF_POS_BELOW_TDOWN;
-			if ((pos_flags & WF_NORMAL_TOPDOWN) == WF_NORMAL_TOPDOWN)
-				flags |= BF_POS_NORMAL_TDOWN;
-			if ((pos_flags & WF_NO_VTILE) == WF_NO_VTILE)
-				flags |= BF_POS_NO_VTILE;
-
-			if ((neg_flags & WF_BACKWARDS) == WF_BACKWARDS)
-				flags |= BF_NEG_BACKWARDS;
-			if ((neg_flags & WF_TRANSPARENT) == WF_TRANSPARENT)
-				flags |= BF_NEG_TRANSPARENT;
-			if ((neg_flags & WF_PASSABLE) == WF_PASSABLE)
-				flags |= BF_NEG_PASSABLE;
-			if ((neg_flags & WF_NOLOOKTHROUGH) == WF_NOLOOKTHROUGH)
-				flags |= BF_NEG_NOLOOKTHROUGH;
-			if ((neg_flags & WF_ABOVE_BOTTOMUP) == WF_ABOVE_BOTTOMUP)
-				flags |= BF_NEG_ABOVE_BUP;
-			if ((neg_flags & WF_BELOW_TOPDOWN) == WF_BELOW_TOPDOWN)
-				flags |= BF_NEG_BELOW_TDOWN;
-			if ((neg_flags & WF_NORMAL_TOPDOWN) == WF_NORMAL_TOPDOWN)
-				flags |= BF_NEG_NORMAL_TDOWN;
-			if ((neg_flags & WF_NO_VTILE) == WF_NO_VTILE)
-				flags |= BF_NEG_NO_VTILE;
-
-			if (((pos_flags & WF_MAP_NEVER) == WF_MAP_NEVER)
-				|| ((neg_flags & WF_MAP_NEVER) == WF_MAP_NEVER))
-				flags |= BF_MAP_NEVER;
-			if (((pos_flags & WF_MAP_ALWAYS) == WF_MAP_ALWAYS)
-				|| ((neg_flags & WF_MAP_ALWAYS) == WF_MAP_ALWAYS))
-				flags |= BF_MAP_ALWAYS;
-
-			return (int)flags;
-		}
-
-		private int WallScrollSpeed(int flags)
-		{
-			return ((flags & 0x00000C00) >> 10);
-		}
-		private int WallScrollDirection(int flags)
-		{
-			return ((flags & 0x00007000) >> 12);
 		}
 
 		#endregion
@@ -456,39 +422,22 @@ namespace CodeImp.DoomBuilder.IO
 			// Create memory to write to
 			MemoryStream mem = new MemoryStream();
 			BinaryWriter writer = new BinaryWriter(mem, WAD.ENCODING);
-			
+
+			writer.Write((Int16)map.Things.Count);
+
 			// Go for all things
 			foreach(Thing t in map.Things)
 			{
-				// Convert flags
-				int flags = 0;
-				foreach(KeyValuePair<string, bool> f in t.Flags)
-				{
-					int fnum;
-					if(f.Value && int.TryParse(f.Key, out fnum)) flags |= fnum;
-				}
-
-				// Write properties to stream
-				// Write properties to stream
-				writer.Write((UInt16)t.Tag);
-				writer.Write((Int16)t.Position.x);
-				writer.Write((Int16)t.Position.y);
-				writer.Write((Int16)t.Position.z);
-				writer.Write((Int16)t.AngleDoom);
-				writer.Write((UInt16)t.Type);
-				writer.Write((UInt16)flags);
-				writer.Write((Byte)t.Action);
-				writer.Write((Byte)t.Args[0]);
-				writer.Write((Byte)t.Args[1]);
-				writer.Write((Byte)t.Args[2]);
-				writer.Write((Byte)t.Args[3]);
-				writer.Write((Byte)t.Args[4]);
+				writer.Write((Int32)t.Position.x);
+				writer.Write((Int32)t.Position.y);
 			}
 			
 			// Find insert position and remove old lump
 			int insertpos = MapManager.RemoveSpecificLump(wad, "THINGS", position, MapManager.TEMP_MAP_HEADER, maplumps);
-			if(insertpos == -1) insertpos = position + 1;
-			if(insertpos > wad.Lumps.Count) insertpos = wad.Lumps.Count;
+			if (insertpos == -1)
+				insertpos = position + 1;
+			if (insertpos > wad.Lumps.Count)
+				insertpos = wad.Lumps.Count;
 			
 			// Create the lump from memory
 			Lump lump = wad.Insert("THINGS", insertpos, (int)mem.Length);
@@ -635,6 +584,197 @@ namespace CodeImp.DoomBuilder.IO
 			mem.WriteTo(lump.Stream);
 		}
 		
+		#endregion
+
+		#region Utility
+
+		/// <summary>
+		/// Read in and calculate a slope.
+		/// </summary>
+		/// <param name="Reader"></param>
+		/// <param name="VSlope"></param>
+		/// <param name="Offset"></param>
+		/// <param name="IsFloor"></param>
+		private void CalculateSlope(BinaryReader Reader, out Vector3D VSlope, out float Offset, bool IsFloor)
+		{
+			double[] u = new double[3];
+			double[] v = new double[3];
+			double[] uv = new double[3];
+			Vector3D[] p = new Vector3D[3];
+			double ucrossv;
+
+			// Discard existing slope calcs (used in client).
+			Reader.ReadBytes(16);
+
+			// Slope texture offsets and rotation.
+			int texX = Reader.ReadInt32();
+			int texY = Reader.ReadInt32();
+			int texAngle = Reader.ReadInt32(); // in deg
+
+			short temp;
+	
+			for (int i = 0; i < 3; ++i)
+			{
+				temp = Reader.ReadInt16();
+				p[i].x = (float)temp;
+				temp = Reader.ReadInt16();
+				p[i].y = (float)temp;
+				temp = Reader.ReadInt16();
+				p[i].z = (float)temp;
+			}
+
+			u[0] = p[1].x - p[0].x;
+			u[1] = p[1].y - p[0].y;
+			u[2] = p[1].z - p[0].z;
+			v[0] = p[2].x - p[0].x;
+			v[1] = p[2].y - p[0].y;
+			v[2] = p[2].z - p[0].z;
+			uv[0] = u[2] * v[1] - u[1] * v[2];
+			uv[1] = u[0] * v[2] - u[2] * v[0];
+			uv[2] = u[1] * v[0] - u[0] * v[1];
+			ucrossv = Math.Sqrt(uv[0] * uv[0] + uv[1] * uv[1] + uv[2] * uv[2]);
+			VSlope.x = (float)(uv[0] / ucrossv);
+			VSlope.y = (float)(uv[1] / ucrossv);
+			VSlope.z = (float)(uv[2] / ucrossv);
+			Offset = -(VSlope.x * p[0].x + VSlope.y * p[0].y + VSlope.z * p[0].z);
+
+			if (IsFloor)
+			{
+				if (VSlope.z < 0)
+				{
+					// normals of floors must point up
+					VSlope.x = -VSlope.x;
+					VSlope.y = -VSlope.y;
+					VSlope.z = -VSlope.z;
+					Offset = -Offset;
+				}
+			}
+			else
+			{
+				if (VSlope.z > 0)
+				{
+					// normals of ceilings must point down
+					VSlope.x = -VSlope.x;
+					VSlope.y = -VSlope.y;
+					VSlope.z = -VSlope.z;
+					Offset = -Offset;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Parses the blakserv linedef flags from the saved sidedef flags.
+		/// </summary>
+		/// <param name="PosFlags"></param>
+		/// <param name="NegFlags"></param>
+		/// <returns></returns>
+		private int ParseLinedefFlags(int PosFlags, int NegFlags)
+		{
+			uint flags = 0;
+
+			if ((PosFlags & WF_BACKWARDS) == WF_BACKWARDS)
+				flags |= BF_POS_BACKWARDS;
+			if ((PosFlags & WF_TRANSPARENT) == WF_TRANSPARENT)
+				flags |= BF_POS_TRANSPARENT;
+			if ((PosFlags & WF_PASSABLE) == WF_PASSABLE)
+				flags |= BF_POS_PASSABLE;
+			if ((PosFlags & WF_NOLOOKTHROUGH) == WF_NOLOOKTHROUGH)
+				flags |= BF_POS_NOLOOKTHROUGH;
+			if ((PosFlags & WF_ABOVE_BOTTOMUP) == WF_ABOVE_BOTTOMUP)
+				flags |= BF_POS_ABOVE_BUP;
+			if ((PosFlags & WF_BELOW_TOPDOWN) == WF_BELOW_TOPDOWN)
+				flags |= BF_POS_BELOW_TDOWN;
+			if ((PosFlags & WF_NORMAL_TOPDOWN) == WF_NORMAL_TOPDOWN)
+				flags |= BF_POS_NORMAL_TDOWN;
+			if ((PosFlags & WF_NO_VTILE) == WF_NO_VTILE)
+				flags |= BF_POS_NO_VTILE;
+
+			if ((NegFlags & WF_BACKWARDS) == WF_BACKWARDS)
+				flags |= BF_NEG_BACKWARDS;
+			if ((NegFlags & WF_TRANSPARENT) == WF_TRANSPARENT)
+				flags |= BF_NEG_TRANSPARENT;
+			if ((NegFlags & WF_PASSABLE) == WF_PASSABLE)
+				flags |= BF_NEG_PASSABLE;
+			if ((NegFlags & WF_NOLOOKTHROUGH) == WF_NOLOOKTHROUGH)
+				flags |= BF_NEG_NOLOOKTHROUGH;
+			if ((NegFlags & WF_ABOVE_BOTTOMUP) == WF_ABOVE_BOTTOMUP)
+				flags |= BF_NEG_ABOVE_BUP;
+			if ((NegFlags & WF_BELOW_TOPDOWN) == WF_BELOW_TOPDOWN)
+				flags |= BF_NEG_BELOW_TDOWN;
+			if ((NegFlags & WF_NORMAL_TOPDOWN) == WF_NORMAL_TOPDOWN)
+				flags |= BF_NEG_NORMAL_TDOWN;
+			if ((NegFlags & WF_NO_VTILE) == WF_NO_VTILE)
+				flags |= BF_NEG_NO_VTILE;
+
+			if (((PosFlags & WF_MAP_NEVER) == WF_MAP_NEVER)
+				|| ((NegFlags & WF_MAP_NEVER) == WF_MAP_NEVER))
+				flags |= BF_MAP_NEVER;
+			if (((PosFlags & WF_MAP_ALWAYS) == WF_MAP_ALWAYS)
+				|| ((NegFlags & WF_MAP_ALWAYS) == WF_MAP_ALWAYS))
+				flags |= BF_MAP_ALWAYS;
+
+			return (int)flags;
+		}
+
+		/// <summary>
+		/// Gets the wall scroll speed from the saved blakserv sidedef flags.
+		/// </summary>
+		/// <param name="flags"></param>
+		/// <returns></returns>
+		private int WallScrollSpeed(int flags)
+		{
+			return ((flags & 0x00000C00) >> 10);
+		}
+
+		/// <summary>
+		/// Gets the wall scroll direction from the saved blakserv sidedef flags.
+		/// </summary>
+		/// <param name="flags"></param>
+		/// <returns></returns>
+		private int WallScrollDirection(int flags)
+		{
+			return ((flags & 0x00007000) >> 12);
+		}
+
+		/// <summary>
+		/// Takes a number and returns a Meridian grd format
+		/// filename with no extension.
+		/// </summary>
+		/// <param name="Num"></param>
+		/// <returns></returns>
+		private string MakeGRDName(int Num)
+		{
+			// We have a 0-5 digit number.
+			if (Num == 0)
+				return "-";
+			if (Num == 1)
+				return "grd0001" + Num;
+			if (Num < 10)
+				return "grd0000" + Num;
+			if (Num < 100)
+				return "grd000" + Num;
+			if (Num < 1000)
+				return "grd00" + Num;
+			if (Num < 10000)
+				return "grd0" + Num;
+			return "grd" + Num;
+		}
+
+		/// <summary>
+		/// Takes a string filename and if it is in the Meridian
+		/// grd format, returns the number.
+		/// </summary>
+		/// <param name="Name"></param>
+		/// <returns></returns>
+		private int MakeGRDNumber(string Name)
+		{
+			if (Name == "-" || Name == "")
+				return 0;
+			if (!Name.StartsWith("grd"))
+				return 0;
+			return Int32.Parse(Name.Substring(3, 5));
+		}
+
 		#endregion
 	}
 }

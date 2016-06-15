@@ -51,6 +51,8 @@ namespace CodeImp.DoomBuilder.Map
 		private long longtexnamehigh;
 		private long longtexnamemid;
 		private long longtexnamelow;
+
+		// Meridian 59 properties.
 		private int animatespeed;
 		private int tag;
 
@@ -346,7 +348,22 @@ namespace CodeImp.DoomBuilder.Map
 			BeforePropsChange();
 			flags.Clear();
 		}
-		
+
+		public bool IsFlipped()
+		{
+			return ((IsFront && Line.IsFlagSet("1")) || (!IsFront && Line.IsFlagSet("2")));
+		}
+
+		public bool NormalTopDown()
+		{
+			return ((IsFront && Line.IsFlagSet("65536")) || (!IsFront && Line.IsFlagSet("131072")));
+		}
+
+		public bool IsNoVTile()
+		{
+			return ((IsFront && Line.IsFlagSet("262144")) || (!IsFront && Line.IsFlagSet("524288")));
+		}
+
 		// This removes textures that are not required
 		public void RemoveUnneededTextures(bool removemiddle) { RemoveUnneededTextures(removemiddle, false, false); }
 		public void RemoveUnneededTextures(bool removemiddle, bool force, bool shiftmiddle)

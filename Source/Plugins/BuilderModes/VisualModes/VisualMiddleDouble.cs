@@ -63,13 +63,179 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			// We have no destructor
 			GC.SuppressFinalize(this);
 		}
-		
+
+		private bool SetupMeridian()
+		{
+			Vector2D vl, vr;
+			float h0, h1, h2, h3;
+			bool drawTopDown;
+			//mxd. lightfog flag support
+			int lightvalue;
+			bool lightabsolute;
+			GetLightValue(out lightvalue, out lightabsolute);
+
+			// Load sector data
+			SectorData sd = mode.GetSectorData(Sidedef.Sector);
+			SectorData osd = mode.GetSectorData(Sidedef.Other.Sector);
+			if (!osd.Updated)
+				osd.Update();
+
+			CalculateWallSideHeights();
+
+			// Left and right vertices for this sidedef
+			if (Sidedef.IsFront)
+			{
+				vl = new Vector2D(Sidedef.Line.Start.Position.x, Sidedef.Line.Start.Position.y);
+				vr = new Vector2D(Sidedef.Line.End.Position.x, Sidedef.Line.End.Position.y);
+				h0 = z2;
+				h1 = z1;
+				h2 = zz1;
+				h3 = zz2;
+				drawTopDown = (Sidedef.Line.IsFlagSet("65536"));
+			}
+			else
+			{
+				vl = new Vector2D(Sidedef.Line.End.Position.x, Sidedef.Line.End.Position.y);
+				vr = new Vector2D(Sidedef.Line.Start.Position.x, Sidedef.Line.Start.Position.y);
+				h0 = zz2;
+				h1 = zz1;
+				h2 = z1;
+				h3 = z2;
+				drawTopDown = (Sidedef.Line.IsFlagSet("131072"));
+			}
+
+			// Load texture
+			if (Sidedef.LongMiddleTexture != MapSet.EmptyLongName)
+			{
+				base.Texture = General.Map.Data.GetTextureImage(Sidedef.LongMiddleTexture);
+				if (base.Texture == null || base.Texture is UnknownImage)
+				{
+					base.Texture = General.Map.Data.UnknownTexture3D;
+					setuponloadedtexture = Sidedef.LongMiddleTexture;
+				}
+				else if (!base.Texture.IsImageLoaded)
+				{
+					setuponloadedtexture = Sidedef.LongMiddleTexture;
+				}
+			}
+			else
+			{
+				// Use missing texture
+				base.Texture = General.Map.Data.MissingTexture3D;
+				setuponloadedtexture = 0;
+			}
+
+			// Get texture scaled size
+			Vector2D tsz = new Vector2D(base.Texture.ScaledWidth, base.Texture.ScaledHeight);
+
+			// Get texture offsets
+			Vector2D tof = new Vector2D(Sidedef.OffsetX, Sidedef.OffsetY);
+
+			if (General.Map.Config.ScaledTextureOffsets && !base.Texture.WorldPanning)
+				tof = tof * base.Texture.Scale;
+
+			// Determine texture coordinates plane as they would be in normal circumstances.
+			// We can then use this plane to find any texture coordinate we need.
+			// The logic here is the same as in the original VisualMiddleSingle (except that
+			// the values are stored in a TexturePlane)
+			// NOTE: I use a small bias for the floor height, because if the difference in
+			// height is 0 then the TexturePlane doesn't work!
+			TexturePlane tp = CalculateTexturePlane(h0, h1, h2, h3, drawTopDown);
+
+			float geotop = Math.Min(Sidedef.Sector.CeilHeight, Sidedef.Other.Sector.CeilHeight);
+			float geobottom = Math.Max(Sidedef.Sector.FloorHeight, Sidedef.Other.Sector.FloorHeight);
+
+			// Left top and right bottom of the geometry that
+			tp.vlt = new Vector3D(vl.x, vl.y, h0);
+			tp.vrb = new Vector3D(vr.x, vr.y, h2);
+			tp.vlb = new Vector3D(vl.x, vl.y, h1);
+			//tp.vrt = new Vector3D(tp.vrb.x, tp.vrb.y, h3);
+			tp.vrt = new Vector3D(vr.x, vr.y, h3);
+
+			// Keep top and bottom planes for intersection testing
+			top = sd.Ceiling.plane;
+			bottom = sd.Floor.plane;
+
+			// Create initial polygon, which is just a quad between floor and ceiling
+			WallPolygon poly = new WallPolygon();
+			poly.Add(new Vector3D(vl.x, vl.y, sd.Floor.plane.GetZ(vl)));
+			poly.Add(new Vector3D(vl.x, vl.y, sd.Ceiling.plane.GetZ(vl)));
+			poly.Add(new Vector3D(vr.x, vr.y, sd.Ceiling.plane.GetZ(vr)));
+			poly.Add(new Vector3D(vr.x, vr.y, sd.Floor.plane.GetZ(vr)));
+
+			// Determine initial color
+			int lightlevel = lightabsolute ? lightvalue : sd.Ceiling.brightnessbelow + lightvalue;
+
+			//mxd. This calculates light with doom-style wall shading
+			PixelColor wallbrightness = PixelColor.FromInt(mode.CalculateBrightness(lightlevel, Sidedef));
+			PixelColor wallcolor = PixelColor.Modulate(sd.Ceiling.colorbelow, wallbrightness);
+			fogfactor = CalculateFogFactor(lightlevel);
+			poly.color = wallcolor.WithAlpha(255).ToInt();
+
+			// Cut off the part below the other floor and above the other ceiling
+			CropPoly(ref poly, osd.Ceiling.plane, true);
+			CropPoly(ref poly, osd.Floor.plane, true);
+
+			// Determine if we should repeat the middle texture
+			repeatmidtex = !Sidedef.IsNoVTile();
+
+			if (!repeatmidtex)
+			{
+				// First determine the visible portion of the texture
+				float textop = geobottom + tof.y + Math.Abs(tsz.y);;
+				// Calculate bottom portion height
+				float texbottom = textop - Math.Abs(tsz.y);
+
+				// Create crop planes (we also need these for intersection testing)
+				topclipplane = new Plane(new Vector3D(0, 0, -1), textop);
+				bottomclipplane = new Plane(new Vector3D(0, 0, 1), -texbottom);
+
+				// Crop polygon by these heights
+				CropPoly(ref poly, topclipplane, true);
+				CropPoly(ref poly, bottomclipplane, true);
+			}
+
+			//mxd. In(G)ZDoom, middle sidedef parts are not clipped by extrafloors of any type...
+			List<WallPolygon> polygons = new List<WallPolygon> { poly };
+			//ClipExtraFloors(polygons, sd.ExtraFloors, true); //mxd
+			//ClipExtraFloors(polygons, osd.ExtraFloors, true); //mxd
+
+			top = osd.Ceiling.plane;
+			bottom = osd.Floor.plane;
+
+			// Process the polygon and create vertices
+			List<WorldVertex> verts = CreatePolygonVertices(polygons, tp, sd, lightvalue, lightabsolute);
+			if (verts.Count > 2)
+			{
+				// Apply alpha to vertices
+				byte alpha = SetLinedefRenderstyle(true);
+				if (alpha < 255)
+				{
+					for (int i = 0; i < verts.Count; i++)
+					{
+						WorldVertex v = verts[i];
+						v.c = PixelColor.FromInt(v.c).WithAlpha(alpha).ToInt();
+						verts[i] = v;
+					}
+				}
+
+				base.SetVertices(verts);
+				return true;
+			}
+
+			base.SetVertices(null); //mxd
+			return false;
+		}
+
 		// This builds the geometry. Returns false when no geometry created.
 		public override bool Setup()
 		{
 			//mxd
 			if(Sidedef.LongMiddleTexture == MapSet.EmptyLongName) return false;
-			
+		
+			if (General.Map.MERIDIAN)
+				return SetupMeridian();
+
 			Vector2D vl, vr;
 
 			//mxd. lightfog flag support
@@ -162,7 +328,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			// Left top and right bottom of the geometry that
 			tp.vlt = new Vector3D(vl.x, vl.y, Sidedef.Sector.CeilHeight);
 			tp.vrb = new Vector3D(vr.x, vr.y, Sidedef.Sector.FloorHeight + floorbias);
-
+			tp.vlb = new Vector3D(vl.x, vl.y, Sidedef.Sector.FloorHeight + floorbias);
 			// Make the right-top coordinates
 			tp.trt = new Vector2D(tp.trb.x, tp.tlt.y);
 			tp.vrt = new Vector3D(tp.vrb.x, tp.vrb.y, tp.vlt.z);
@@ -294,7 +460,9 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			int oy;
 			if(repeatmidtex)
 			{
-				bool pegbottom = Sidedef.Line.IsFlagSet(General.Map.Config.LowerUnpeggedFlag);
+				bool pegbottom =
+					((General.Map.MERIDIAN && (Sidedef.NormalTopDown() || Sidedef.IsNoVTile()))
+					|| (Sidedef.Line.IsFlagSet(General.Map.Config.LowerUnpeggedFlag)));
 				float zoffset = (pegbottom ? Sidedef.Sector.FloorHeight : Sidedef.Sector.CeilHeight);
 				oy = (int)Math.Floor(((pickintersect.z - zoffset) * UniFields.GetFloat(Sidedef.Fields, "scaley_mid", 1.0f) / texscale.y
 					- ((Sidedef.OffsetY - UniFields.GetFloat(Sidedef.Fields, "offsety_mid")) / imgscale.y)) 

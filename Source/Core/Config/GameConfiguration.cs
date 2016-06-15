@@ -357,7 +357,7 @@ namespace CodeImp.DoomBuilder.Config
 			makedooractivate = cfg.ReadSetting("makedooractivate", 0);
 			linetagindicatesectors = cfg.ReadSetting("linetagindicatesectors", false);
 			decorategames = cfg.ReadSetting("decorategames", "");
-			skyflatname = cfg.ReadSetting("skyflatname", "F_SKY1");
+			skyflatname = cfg.ReadSetting("skyflatname", "-");
 			leftboundary = cfg.ReadSetting("leftboundary", -32768);
 			rightboundary = cfg.ReadSetting("rightboundary", 32767);
 			topboundary = cfg.ReadSetting("topboundary", 32767);
