@@ -149,7 +149,6 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			tp.vlt = new Vector3D(vl.x, vl.y, h0);
 			tp.vrb = new Vector3D(vr.x, vr.y, h2);
 			tp.vlb = new Vector3D(vl.x, vl.y, h1);
-			//tp.vrt = new Vector3D(tp.vrb.x, tp.vrb.y, h3);
 			tp.vrt = new Vector3D(vr.x, vr.y, h3);
 
 			// Keep top and bottom planes for intersection testing
@@ -181,8 +180,42 @@ namespace CodeImp.DoomBuilder.BuilderModes
 
 			if (!repeatmidtex)
 			{
+				if (tp.tlt.y < 0.0f)
+				{
+					float tex, wall, ratio, temp;
+
+					tex = tp.tlb.y - tp.tlt.y;
+					if (tex == 0)
+						tex = 1.0f;
+					temp = -tp.tlt.y;
+					ratio = temp / tex;
+
+					wall = tp.vlt.z - tp.vlb.z;
+					temp = wall * ratio;
+					tp.vlt.z -= temp;
+					tp.tlt.y = 0.0f;
+				}
+
+				if (tp.trt.y < 0.0f)
+				{
+					float tex, wall, ratio, temp;
+
+					tex = tp.trb.y - tp.trt.y;
+					if (tex == 0)
+						tex = 1.0f;
+					temp = -tp.trt.y;
+					ratio = temp / tex;
+
+					wall = tp.vrt.z - tp.vrb.z;
+					temp = wall * ratio;
+					tp.vrt.z -= temp;
+					tp.trt.y = 0.0f;
+				}
+				tp.vlb.z -= 1.0f;
+				tp.vrb.z -= 1.0f;
+
 				// First determine the visible portion of the texture
-				float textop = geobottom + tof.y + Math.Abs(tsz.y);;
+				float textop = geobottom - tof.y + Math.Abs(tsz.y);;
 				// Calculate bottom portion height
 				float texbottom = textop - Math.Abs(tsz.y);
 
