@@ -35,6 +35,9 @@ namespace CodeImp.DoomBuilder.Data
 	{
 		#region ================== Constants
 
+		//mxd. TEXTUREx flags
+		private const int TX_WORLDPANNING = 0x8000;
+
 		#endregion
 
 		#region ================== Structures
@@ -84,7 +87,7 @@ namespace CodeImp.DoomBuilder.Data
 				throw new FileNotFoundException("Could not find the file \"" + location.location + "\"", location.location);
 
 			// Initialize
-			file = new WAD(location.location, asreadonly);
+			file = new WAD(location.location, true);
 			strictpatches = dl.option1;
 			Initialize(); //mxd
 
@@ -92,7 +95,7 @@ namespace CodeImp.DoomBuilder.Data
 			GC.SuppressFinalize(this);
 		}
 
-		//mxd. Constructor
+		//mxd. Constructor for temporary WAD files
 		internal WADReader(DataLocation dl, bool asreadonly, bool create) : base(dl, asreadonly)
 		{
 			if(!create)
@@ -531,6 +534,7 @@ namespace CodeImp.DoomBuilder.Data
 				// Read texture properties
 				byte[] namebytes = reader.ReadBytes(8);
 				int flags = reader.ReadUInt16();
+				bool worldpanning = (flags & TX_WORLDPANNING) != 0; //mxd
 				byte scalebytex = reader.ReadByte();
 				byte scalebytey = reader.ReadByte();
 				int width = reader.ReadInt16();
@@ -565,7 +569,7 @@ namespace CodeImp.DoomBuilder.Data
 					{
 						// Make the image object
 						image = new TextureImage(sourcename, Lump.MakeNormalName(namebytes, WAD.ENCODING),
-												 width, height, scalex, scaley);
+												 width, height, scalex, scaley, worldpanning);
 					}
 					else
 					{

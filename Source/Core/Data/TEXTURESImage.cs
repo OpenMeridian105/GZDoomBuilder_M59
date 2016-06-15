@@ -34,13 +34,16 @@ namespace CodeImp.DoomBuilder.Data
 		#region ================== Variables
 
 		private readonly List<TexturePatch> patches; //mxd
+		private readonly bool optional; //mxd
+		private readonly bool nulltexture; //mxd
 		
 		#endregion
 
 		#region ================== Constructor / Disposer
 
 		// Constructor
-		public TEXTURESImage(string name, string virtualpath, int width, int height, float scalex, float scaley, bool worldpanning, bool isflat)
+		public TEXTURESImage(string name, string virtualpath, int width, int height, float scalex, float scaley, 
+			bool worldpanning, bool isflat, bool optional, bool nulltexture)
 		{
 			// Initialize
 			this.width = width;
@@ -48,6 +51,8 @@ namespace CodeImp.DoomBuilder.Data
 			this.scale.x = scalex;
 			this.scale.y = scaley;
 			this.worldpanning = worldpanning;
+			this.optional = optional; //mxd
+			this.nulltexture = nulltexture; //mxd
 			this.patches = new List<TexturePatch>(1);
 
 			//mxd
@@ -130,9 +135,15 @@ namespace CodeImp.DoomBuilder.Data
 				}
 
 				int missingpatches = 0; //mxd
-
 				if(patches.Count == 0) //mxd
 				{
+					//mxd. Empty image will suffice here, I suppose...
+					if(nulltexture)
+					{
+						base.LocalLoadImage();
+						return;
+					}
+					
 					// No patches!
 					General.ErrorLogger.Add(ErrorType.Warning, "No patches are defined for texture \"" + this.Name + "\"");
 					loadfailed = true;
@@ -170,7 +181,7 @@ namespace CodeImp.DoomBuilder.Data
 								if(reader is UnknownImageReader) 
 								{
 									// Data is in an unknown format!
-									General.ErrorLogger.Add(ErrorType.Error, "Patch lump \"" + Path.Combine(patchlocation, p.LumpName) + "\" data format could not be read, while loading texture \"" + this.Name + "\"");
+									if(!nulltexture) General.ErrorLogger.Add((optional ? ErrorType.Warning : ErrorType.Error), "Patch lump \"" + Path.Combine(patchlocation, p.LumpName) + "\" data format could not be read, while loading texture \"" + this.Name + "\"");
 									missingpatches++; //mxd
 								}
 							}
@@ -184,7 +195,7 @@ namespace CodeImp.DoomBuilder.Data
 								catch(InvalidDataException)
 								{
 									// Data cannot be read!
-									General.ErrorLogger.Add(ErrorType.Error, "Patch lump \"" + p.LumpName + "\" data format could not be read, while loading texture \"" + this.Name + "\"");
+									if(!nulltexture) General.ErrorLogger.Add((optional ? ErrorType.Warning : ErrorType.Error), "Patch lump \"" + p.LumpName + "\" data format could not be read, while loading texture \"" + this.Name + "\"");
 									missingpatches++; //mxd
 								}
 
@@ -226,14 +237,14 @@ namespace CodeImp.DoomBuilder.Data
 							}
 							
 							// Missing a patch lump!
-							General.ErrorLogger.Add(ErrorType.Error, "Missing patch lump \"" + p.LumpName + "\" while loading texture \"" + this.Name + "\"");
+							if(!nulltexture) General.ErrorLogger.Add((optional ? ErrorType.Warning : ErrorType.Error), "Missing patch lump \"" + p.LumpName + "\" while loading texture \"" + this.Name + "\"");
 							missingpatches++; //mxd
 						}
 					}
 				}
 				
 				// Dispose bitmap if load failed
-				if((bitmap != null) && (loadfailed || missingpatches >= patches.Count)) //mxd. We can still display texture if at least one of the patches was loaded
+				if(!nulltexture && (bitmap != null) && (loadfailed || missingpatches >= patches.Count)) //mxd. We can still display texture if at least one of the patches was loaded
 				{
 					bitmap.Dispose();
 					bitmap = null;
