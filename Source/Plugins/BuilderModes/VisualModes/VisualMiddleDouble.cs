@@ -211,8 +211,6 @@ namespace CodeImp.DoomBuilder.BuilderModes
 					tp.vrt.z -= temp;
 					tp.trt.y = 0.0f;
 				}
-				tp.vlb.z -= 1.0f;
-				tp.vrb.z -= 1.0f;
 
 				// First determine the visible portion of the texture
 				float textop = geobottom - tof.y + Math.Abs(tsz.y);;
@@ -220,7 +218,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				float texbottom = textop - Math.Abs(tsz.y);
 
 				// Create crop planes (we also need these for intersection testing)
-				topclipplane = new Plane(new Vector3D(0, 0, -1), textop);
+				topclipplane = new Plane(new Vector3D(0, 0, -1), textop -1f);
 				bottomclipplane = new Plane(new Vector3D(0, 0, 1), -texbottom);
 
 				// Crop polygon by these heights

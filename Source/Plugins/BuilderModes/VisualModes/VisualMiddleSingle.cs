@@ -218,16 +218,14 @@ namespace CodeImp.DoomBuilder.BuilderModes
 						tp.vrt.z -= temp;
 						tp.trt.y = 0.0f;
 					}
-					tp.vlb.z -= 1.0f;
-					tp.vrb.z -= 1.0f;
 
 					// First determine the visible portion of the texture
-					float textop = geobottom - tof.y + Math.Abs(tsz.y); ;
+					float textop = geobottom - tof.y + Math.Abs(tsz.y);
 					// Calculate bottom portion height
 					float texbottom = textop - Math.Abs(tsz.y);
 
 					// Create crop planes (we also need these for intersection testing)
-					topclipplane = new Plane(new Vector3D(0, 0, -1), textop);
+					topclipplane = new Plane(new Vector3D(0, 0, -1), textop - 1f);
 					bottomclipplane = new Plane(new Vector3D(0, 0, 1), -texbottom);
 
 					// Crop polygon by these heights
@@ -339,10 +337,10 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			float geobottom = Sidedef.Sector.FloorHeight;
 
 			// Left top and right bottom of the geometry that
-			tp.vlt = new Vector3D(vl.x, vl.y, h0);
-			tp.vrb = new Vector3D(vr.x, vr.y, h2);
-			tp.vlb = new Vector3D(vl.x, vl.y, h1);
-			tp.vrt = new Vector3D(vr.x, vr.y, h3);
+			tp.vlt = new Vector3D(vl.x, vl.y, geotop);
+			tp.vrb = new Vector3D(vr.x, vr.y, geobottom);
+			tp.vlb = new Vector3D(vl.x, vl.y, geobottom);
+			tp.vrt = new Vector3D(vr.x, vr.y, geotop);
 
 			// Get ceiling and floor heights
 			float fl = sd.Floor.plane.GetZ(vl);
