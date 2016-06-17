@@ -196,6 +196,10 @@ namespace CodeImp.DoomBuilder.Data
 						BGFReader bgfreader = reader as BGFReader;
 						if (bgfreader != null)
 						{
+							// Rotate Meridian 59 textures 90 degrees.
+							// Don't rotate flats.
+							if (!isFlat)
+								bitmap.RotateFlip(RotateFlipType.Rotate90FlipX);
 							this.scale.x = 1.0f / bgfreader.ShrinkFactor;
 							this.scale.y = 1.0f / bgfreader.ShrinkFactor;
 						}

@@ -168,8 +168,6 @@ namespace CodeImp.DoomBuilder.IO
 					// Done
 					bmp.UnlockBits(bitmapdata);
 
-					// Rotate Meridian 59 textures 90 degrees.
-					bmp.RotateFlip(RotateFlipType.Rotate90FlipX);
 					// Set cyan as the transparent color.
 					bmp.MakeTransparent(System.Drawing.Color.Cyan);
 					// Add shrink factor from the bgf.
