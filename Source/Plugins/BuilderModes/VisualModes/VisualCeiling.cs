@@ -79,7 +79,11 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			
 			// Fetch ZDoom fields
 			float rotate = Angle2D.DegToRad(s.Fields.GetValue("rotationceiling", 0.0f));
-			Vector2D offset = new Vector2D(s.Fields.GetValue("xpanningceiling", 0.0f),
+			Vector2D offset;
+			if (General.Map.MERIDIAN)
+				offset = new Vector2D(level.sector.OffsetX, level.sector.OffsetY);
+			else
+				offset = new Vector2D(s.Fields.GetValue("xpanningceiling", 0.0f),
 										   s.Fields.GetValue("ypanningceiling", 0.0f));
 			Vector2D scale = new Vector2D(s.Fields.GetValue("xscaleceiling", 1.0f),
 										  s.Fields.GetValue("yscaleceiling", 1.0f));
@@ -171,7 +175,10 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				Vector2D pos = triverts[i];
 				pos = pos.GetRotated(rotate);
 				pos.y = -pos.y;
-				pos = (pos + offset) * scale * texscale;
+				if (General.Map.MERIDIAN)
+					pos = (pos - offset) * scale * texscale;
+				else
+					pos = (pos + offset) * scale * texscale;
 				verts[i].u = pos.x;
 				verts[i].v = pos.y;
 			}
@@ -243,8 +250,20 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		// Return texture coordinates
 		protected override Point GetTextureOffset()
 		{
-			return new Point { X = (int)Sector.Sector.Fields.GetValue("xpanningceiling", 0.0f), 
-							   Y = (int)Sector.Sector.Fields.GetValue("ypanningceiling", 0.0f) };
+			Point p;
+
+			if (General.Map.MERIDIAN)
+			{
+				p = new Point { X = (int)Sector.Sector.OffsetX,
+								Y = (int)Sector.Sector.OffsetY };
+			}
+			else
+			{
+				p = new Point { X = (int)Sector.Sector.Fields.GetValue("xpanningceiling", 0.0f),
+								Y = (int)Sector.Sector.Fields.GetValue("ypanningceiling", 0.0f) };
+			}
+
+			return p;
 		}
 
 		// Move texture coordinates
@@ -253,10 +272,23 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			//mxd
 			Sector s = GetControlSector();
 			s.Fields.BeforeFieldsChange();
-			float nx = (s.Fields.GetValue("xpanningceiling", 0.0f) + xy.X) % (Texture.ScaledWidth / s.Fields.GetValue("xscaleceiling", 1.0f));
-			float ny = (s.Fields.GetValue("ypanningceiling", 0.0f) + xy.Y) % (Texture.ScaledHeight / s.Fields.GetValue("yscaleceiling", 1.0f));
-			s.Fields["xpanningceiling"] = new UniValue(UniversalType.Float, nx);
-			s.Fields["ypanningceiling"] = new UniValue(UniversalType.Float, ny);
+
+			float nx, ny;
+			if (General.Map.MERIDIAN)
+			{
+				nx = s.OffsetX + xy.X % Texture.ScaledWidth;
+				ny = s.OffsetY + xy.Y % Texture.ScaledHeight;
+				s.OffsetX = (int)nx;
+				s.OffsetY = (int)ny;
+			}
+			else
+			{
+				nx = (s.Fields.GetValue("xpanningceiling", 0.0f) + xy.X) % (Texture.ScaledWidth / s.Fields.GetValue("xscaleceiling", 1.0f));
+				ny = (s.Fields.GetValue("ypanningceiling", 0.0f) + xy.Y) % (Texture.ScaledHeight / s.Fields.GetValue("yscaleceiling", 1.0f));
+				s.Fields["xpanningceiling"] = new UniValue(UniversalType.Float, nx);
+				s.Fields["ypanningceiling"] = new UniValue(UniversalType.Float, ny);
+			}
+
 			s.UpdateNeeded = true;
 
 			mode.SetActionResult("Changed ceiling texture offsets to " + nx + ", " + ny + ".");
@@ -356,7 +388,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			mode.CreateUndo("Change ceiling height", UndoGroup.CeilingHeightChange, level.sector.FixedIndex);
 			level.sector.CeilHeight += amount;
 
-			if(General.Map.UDMF)
+			if(General.Map.UDMF || General.Map.MERIDIAN)
 			{
 				//mxd. Modify vertex offsets?
 				if(level.sector.Sidedefs.Count == 3)
@@ -500,7 +532,11 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				
 				// Fetch ZDoom fields
 				float rotate = Angle2D.DegToRad(level.sector.Fields.GetValue("rotationceiling", 0.0f));
-				Vector2D offset = new Vector2D(level.sector.Fields.GetValue("xpanningceiling", 0.0f), level.sector.Fields.GetValue("ypanningceiling", 0.0f));
+				Vector2D offset;
+				if (General.Map.MERIDIAN)
+					offset = new Vector2D(level.sector.OffsetX, level.sector.OffsetY);
+				else
+					offset = new Vector2D(level.sector.Fields.GetValue("xpanningceiling", 0.0f), level.sector.Fields.GetValue("ypanningceiling", 0.0f));
 				Vector2D scale = new Vector2D(level.sector.Fields.GetValue("xscaleceiling", 1.0f), level.sector.Fields.GetValue("yscaleceiling", 1.0f));
 				Vector2D texscale = new Vector2D(1.0f / Texture.ScaledWidth, 1.0f / Texture.ScaledHeight);
 
@@ -623,7 +659,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		//mxd
 		public void AlignTexture(bool alignx, bool aligny) 
 		{
-			if(!General.Map.UDMF) return;
+			if(!(General.Map.UDMF || General.Map.MERIDIAN)) return;
 
 			//is is a surface with line slope?
 			float slopeAngle = level.plane.Normal.GetAngleZ() - Angle2D.PIHALF;

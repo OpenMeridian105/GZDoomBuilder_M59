@@ -35,14 +35,17 @@ namespace CodeImp.DoomBuilder.Rendering
 		// The sector must set these!
 		public long floortexture;
 		public long ceiltexture;
-		
+		public int offsetx;
+		public int offsety;
+
 		// Constructor
 		internal SurfaceUpdate(int numvertices, bool updatefloor, bool updateceiling)
 		{
 			this.numvertices = numvertices;
 			this.floortexture = 0;
 			this.ceiltexture = 0;
-			
+			this.offsetx = 0;
+			this.offsety = 0;
 			this.floorvertices = (updatefloor ? new FlatVertex[numvertices] : null);
 			this.ceilvertices = (updateceiling ? new FlatVertex[numvertices] : null);
 		}

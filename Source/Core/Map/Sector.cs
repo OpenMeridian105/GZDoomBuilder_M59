@@ -61,6 +61,8 @@ namespace CodeImp.DoomBuilder.Map
 		private int fixedindex;
 		private int floorheight;
 		private int ceilheight;
+		private int offsetx;
+		private int offsety;
 		private string floortexname;
 		private string ceiltexname;
 		private long longfloortexname;
@@ -117,6 +119,8 @@ namespace CodeImp.DoomBuilder.Map
 		public int FixedIndex { get { return fixedindex; } }
 		public int FloorHeight { get { return floorheight; } set { BeforePropsChange(); floorheight = value; } }
 		public int CeilHeight { get { return ceilheight; } set { BeforePropsChange(); ceilheight = value; } }
+		public int OffsetX { get { return offsetx; } set { BeforePropsChange(); offsetx = value; } }
+		public int OffsetY { get { return offsety; } set { BeforePropsChange(); offsety = value; } }
 		public string FloorTexture { get { return floortexname; } }
 		public string CeilTexture { get { return ceiltexname; } }
 		public long LongFloorTexture { get { return longfloortexname; } }
@@ -298,6 +302,8 @@ namespace CodeImp.DoomBuilder.Map
 
 			if (General.Map.MERIDIAN)
 			{
+				s.rwInt(ref offsetx);
+				s.rwInt(ref offsety);
 				s.rwInt(ref sectortag);
 				s.rwInt(ref depth);
 				s.rwInt(ref animationspeed);
@@ -376,6 +382,8 @@ namespace CodeImp.DoomBuilder.Map
 
 			if (General.Map.MERIDIAN)
 			{
+				s.offsetx = offsetx;
+				s.offsety = offsety;
 				s.sectortag = sectortag;
 				s.depth = depth;
 				s.animationspeed = animationspeed;
@@ -471,6 +479,8 @@ namespace CodeImp.DoomBuilder.Map
 				General.Plugins.OnSectorCeilingSurfaceUpdate(this, ref updateinfo.ceilvertices);
 				updateinfo.floortexture = longfloortexname;
 				updateinfo.ceiltexture = longceiltexname;
+				updateinfo.offsetx = offsetx;
+				updateinfo.offsety = offsety;
 
 				// Update surfaces
 				General.Map.CRenderer2D.Surfaces.UpdateSurfaces(surfaceentries, updateinfo);
@@ -490,7 +500,8 @@ namespace CodeImp.DoomBuilder.Map
 			flatvertices.CopyTo(updateinfo.floorvertices, 0);
 			General.Plugins.OnSectorFloorSurfaceUpdate(this, ref updateinfo.floorvertices);
 			updateinfo.floortexture = longfloortexname;
-			
+			updateinfo.offsetx = offsetx;
+			updateinfo.offsety = offsety;
 			// Update entry
 			General.Map.CRenderer2D.Surfaces.UpdateSurfaces(surfaceentries, updateinfo);
 			General.Map.CRenderer2D.Surfaces.UnlockBuffers();
@@ -506,7 +517,8 @@ namespace CodeImp.DoomBuilder.Map
 			flatvertices.CopyTo(updateinfo.ceilvertices, 0);
 			General.Plugins.OnSectorCeilingSurfaceUpdate(this, ref updateinfo.ceilvertices);
 			updateinfo.ceiltexture = longceiltexname;
-			
+			updateinfo.offsetx = offsetx;
+			updateinfo.offsety = offsety;
 			// Update entry
 			General.Map.CRenderer2D.Surfaces.UpdateSurfaces(surfaceentries, updateinfo);
 			General.Map.CRenderer2D.Surfaces.UnlockBuffers();
@@ -879,7 +891,7 @@ namespace CodeImp.DoomBuilder.Map
 		#region ================== Changes
 
 		// Meridian specific version.
-		public void Update(int hfloor, int hceil, string tfloor, string tceil,
+		public void Update(int hfloor, int hceil, int offsetx, int offsety, string tfloor, string tceil,
 			float floorOffset, float ceilOffset, Vector3D floorslope, Vector3D ceilSlope,
 			int tag, int brightness, int depth, int animationspeed, bool flicker,
 			bool scrollfloor, bool scrollceiling)
@@ -890,6 +902,8 @@ namespace CodeImp.DoomBuilder.Map
 			this.flicker = flicker;
 			this.scrollfloor = scrollfloor;
 			this.scrollceiling = scrollceiling;
+			this.offsetx = offsetx;
+			this.offsety = offsety;
 			Update(hfloor, hceil, tfloor, tceil, 0, new Dictionary<string, bool>(StringComparer.Ordinal),
 				new List<int> { 0 }, brightness, floorOffset, floorslope, ceilOffset, ceilSlope);
 		}
