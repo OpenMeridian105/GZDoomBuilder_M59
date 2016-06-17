@@ -126,21 +126,8 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				setuponloadedtexture = 0;
 			}
 
-			// Get texture scaled size
-			Vector2D tsz = new Vector2D(base.Texture.ScaledWidth, base.Texture.ScaledHeight);
-
-			// Get texture offsets
-			Vector2D tof = new Vector2D(Sidedef.OffsetX, Sidedef.OffsetY);
-
-			if (General.Map.Config.ScaledTextureOffsets && !base.Texture.WorldPanning)
-				tof = tof * base.Texture.Scale;
-
 			// Determine texture coordinates plane as they would be in normal circumstances.
 			// We can then use this plane to find any texture coordinate we need.
-			// The logic here is the same as in the original VisualMiddleSingle (except that
-			// the values are stored in a TexturePlane)
-			// NOTE: I use a small bias for the floor height, because if the difference in
-			// height is 0 then the TexturePlane doesn't work!
 			TexturePlane tp = CalculateTexturePlane(h0, h1, h2, h3, drawTopDown);
 
 			float geotop = Sidedef.Sector.CeilHeight;
@@ -219,14 +206,9 @@ namespace CodeImp.DoomBuilder.BuilderModes
 						tp.trt.y = 0.0f;
 					}
 
-					// First determine the visible portion of the texture
-					float textop = geobottom - tof.y + Math.Abs(tsz.y);
-					// Calculate bottom portion height
-					float texbottom = textop - Math.Abs(tsz.y);
-
 					// Create crop planes (we also need these for intersection testing)
-					topclipplane = new Plane(new Vector3D(0, 0, -1), textop - 1f);
-					bottomclipplane = new Plane(new Vector3D(0, 0, 1), -texbottom);
+					topclipplane = new Plane(new Vector3D(0, 0, -1), Math.Max(tp.vlt.z, tp.vrt.z) - 1f);
+					bottomclipplane = new Plane(new Vector3D(0, 0, 1), -Math.Min(tp.vlb.z, tp.vrb.z));
 
 					// Crop polygon by these heights
 					CropPoly(ref poly, topclipplane, true);
@@ -316,21 +298,8 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				setuponloadedtexture = 0;
 			}
 
-			// Get texture scaled size
-			Vector2D tsz = new Vector2D(base.Texture.ScaledWidth, base.Texture.ScaledHeight);
-
-			// Get texture offsets
-			Vector2D tof = new Vector2D(Sidedef.OffsetX, Sidedef.OffsetY);
-
-			if (General.Map.Config.ScaledTextureOffsets && !base.Texture.WorldPanning)
-				tof = tof * base.Texture.Scale;
-
 			// Determine texture coordinates plane as they would be in normal circumstances.
 			// We can then use this plane to find any texture coordinate we need.
-			// The logic here is the same as in the original VisualMiddleSingle (except that
-			// the values are stored in a TexturePlane)
-			// NOTE: I use a small bias for the floor height, because if the difference in
-			// height is 0 then the TexturePlane doesn't work!
 			TexturePlane tp = CalculateTexturePlane(h0, h1, h2, h3, drawTopDown);
 
 			float geotop = Sidedef.Sector.CeilHeight;
