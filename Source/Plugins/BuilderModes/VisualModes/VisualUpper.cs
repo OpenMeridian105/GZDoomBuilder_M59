@@ -126,27 +126,21 @@ namespace CodeImp.DoomBuilder.BuilderModes
 
 			// Determine texture coordinates plane as they would be in normal circumstances.
 			// We can then use this plane to find any texture coordinate we need.
-			// The logic here is the same as in the original VisualMiddleSingle (except that
-			// the values are stored in a TexturePlane)
-			// NOTE: I use a small bias for the floor height, because if the difference in
-			// height is 0 then the TexturePlane doesn't work!
 			TexturePlane tp = CalculateTexturePlane(h0, h1, h2, h3, drawTopDown);
 			float ceilbias = (Sidedef.Other.Sector.CeilHeight == Sidedef.Sector.CeilHeight) ? 1.0f : 0.0f;
 
 			// Left top and right bottom of the geometry that
-			tp.vlt = new Vector3D(vl.x, vl.y, sd.Ceiling.plane.GetZ(vl.x, vl.y));
-			tp.vrb = new Vector3D(vr.x, vr.y, osd.Ceiling.plane.GetZ(vr.x, vr.y) + ceilbias);
-			tp.vlb = new Vector3D(vl.x, vl.y, osd.Ceiling.plane.GetZ(vr.x, vr.y) + ceilbias);
-			// Make the right-top coordinates
-			//tp.trt = new Vector2D(tp.trb.x, tp.tlt.y);
-			tp.vrt = new Vector3D(tp.vrb.x, tp.vrb.y, tp.vlt.z);
+			tp.vlt = new Vector3D(vl.x, vl.y, h0);
+			tp.vrb = new Vector3D(vr.x, vr.y, h2);
+			tp.vlb = new Vector3D(vl.x, vl.y, h1);
+			tp.vrt = new Vector3D(vr.x, vr.y, h3);
 
 			// Create initial polygon, which is just a quad between floor and ceiling
 			WallPolygon poly = new WallPolygon();
-			poly.Add(new Vector3D(vl.x, vl.y, sd.Floor.plane.GetZ(vl))); // P0 = vl, P0.z = floor height
-			poly.Add(new Vector3D(vl.x, vl.y, sd.Ceiling.plane.GetZ(vl))); // P1 = vl, P1.z = ceil height
-			poly.Add(new Vector3D(vr.x, vr.y, sd.Ceiling.plane.GetZ(vr))); // P2 = vr, P2.z = ceil height
-			poly.Add(new Vector3D(vr.x, vr.y, sd.Floor.plane.GetZ(vr)));  // P3 = vr, P3.z = floor height
+			poly.Add(new Vector3D(vl.x, vl.y, sd.Floor.plane.GetZ(vl)));
+			poly.Add(new Vector3D(vl.x, vl.y, sd.Ceiling.plane.GetZ(vl)));
+			poly.Add(new Vector3D(vr.x, vr.y, sd.Ceiling.plane.GetZ(vr)));
+			poly.Add(new Vector3D(vr.x, vr.y, sd.Floor.plane.GetZ(vr)));
 
 			// Determine initial color
 			int lightlevel = lightabsolute ? lightvalue : sd.Ceiling.brightnessbelow + lightvalue;

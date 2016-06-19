@@ -172,10 +172,28 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			//mxd. Modify offsets based on surface and camera angles
 			float angle;
 
-			if(GeometryType == VisualGeometryType.CEILING)
-				angle = Angle2D.DegToRad(level.sector.Fields.GetValue("rotationceiling", 0f));
+			if (GeometryType == VisualGeometryType.CEILING)
+			{
+				if (General.Map.MERIDIAN)
+				{
+					angle = Angle2D.DegToRad(level.sector.CeilTexRot);
+				}
+				else
+				{
+					angle = Angle2D.DegToRad(level.sector.Fields.GetValue("rotationceiling", 0f));
+				}
+			}
 			else
-				angle = Angle2D.DegToRad(level.sector.Fields.GetValue("rotationfloor", 0f));
+			{
+				if (General.Map.MERIDIAN)
+				{
+					angle = Angle2D.DegToRad(level.sector.FloorTexRot);
+				}
+				else
+				{
+					angle = Angle2D.DegToRad(level.sector.Fields.GetValue("rotationfloor", 0f));
+				}
+			}
 
 			Vector2D v = new Vector2D(offsetx, offsety).GetRotated(angle);
 
@@ -287,12 +305,21 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			if(!isFront) sourceAngle = General.ClampAngle(sourceAngle + 180);
 
 			//update angle
-			UniFields.SetFloat(Sector.Sector.Fields, (isFloor ? "rotationfloor" : "rotationceiling"), sourceAngle, 0f);
+			if (General.Map.MERIDIAN)
+			{
+				if (isFloor)
+					Sector.Sector.FloorTexRot = (int)sourceAngle;
+				else
+					Sector.Sector.CeilTexRot = (int)sourceAngle;
+			}
+			else
+			{
+				UniFields.SetFloat(Sector.Sector.Fields, (isFloor ? "rotationfloor" : "rotationceiling"), sourceAngle, 0f);
 
-			//set scale
-			UniFields.SetFloat(Sector.Sector.Fields, (isFloor ? "xscalefloor" : "xscaleceiling"), scaleX, 1.0f);
-			UniFields.SetFloat(Sector.Sector.Fields, (isFloor ? "yscalefloor" : "yscaleceiling"), scaleY, 1.0f);
-
+				//set scale
+				UniFields.SetFloat(Sector.Sector.Fields, (isFloor ? "xscalefloor" : "xscaleceiling"), scaleX, 1.0f);
+				UniFields.SetFloat(Sector.Sector.Fields, (isFloor ? "yscalefloor" : "yscaleceiling"), scaleY, 1.0f);
+			}
 			//update offset
 			float distToStart = Vector2D.Distance(hitpos, targetLine.Start.Position);
 			float distToEnd = Vector2D.Distance(hitpos, targetLine.End.Position);
@@ -301,13 +328,19 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			if(alignx) 
 			{
 				if(Texture != null)	offset.x %= Texture.Width / scaleX;
-				UniFields.SetFloat(Sector.Sector.Fields, (isFloor ? "xpanningfloor" : "xpanningceiling"), (float)Math.Round(-offset.x), 0f);
+				if (General.Map.MERIDIAN)
+					Sector.Sector.OffsetX = (int)Math.Round(-offset.x);
+				else
+					UniFields.SetFloat(Sector.Sector.Fields, (isFloor ? "xpanningfloor" : "xpanningceiling"), (float)Math.Round(-offset.x), 0f);
 			}
 
 			if(aligny) 
 			{
 				if(Texture != null)	offset.y %= Texture.Height / scaleY;
-				UniFields.SetFloat(Sector.Sector.Fields, (isFloor ? "ypanningfloor" : "ypanningceiling"), (float)Math.Round(offset.y), 0f);
+				if (General.Map.MERIDIAN)
+					Sector.Sector.OffsetY = (int)Math.Round(-offset.y);
+				else
+					UniFields.SetFloat(Sector.Sector.Fields, (isFloor ? "ypanningfloor" : "ypanningceiling"), (float)Math.Round(offset.y), 0f);
 			}
 
 			//update geometry
@@ -507,7 +540,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		// Moving the mouse
 		public virtual void OnMouseMove(MouseEventArgs e)
 		{
-			if(!General.Map.UDMF) return; //mxd. Cannot change texture offsets in other map formats...
+			if(!(General.Map.UDMF || General.Map.MERIDIAN)) return; //mxd. Cannot change texture offsets in other map formats...
 			
 			// Dragging UV?
 			if(uvdragging)
@@ -833,7 +866,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			if(horizontal == 0 && vertical == 0) return; //mxd
 			
 			//mxd
-			if(!General.Map.UDMF) 
+			if(!(General.Map.UDMF || General.Map.MERIDIAN)) 
 			{
 				General.Interface.DisplayStatus(StatusType.Warning, "Floor/ceiling texture offsets cannot be changed in this map format!");
 				return;
@@ -899,7 +932,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		//mxd
 		public virtual void OnChangeTextureRotation(float angle) 
 		{
-			if(!General.Map.UDMF) return;
+			if(!(General.Map.UDMF || General.Map.MERIDIAN)) return;
 
 			if((General.Map.UndoRedo.NextUndo == null) || (General.Map.UndoRedo.NextUndo.TicketID != undoticket))
 				undoticket = mode.CreateUndo("Change texture rotation");

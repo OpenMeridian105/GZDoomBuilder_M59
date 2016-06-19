@@ -133,18 +133,14 @@ namespace CodeImp.DoomBuilder.BuilderModes
 
 			// Determine texture coordinates plane as they would be in normal circumstances.
 			// We can then use this plane to find any texture coordinate we need.
-			// The logic here is the same as in the original VisualMiddleSingle (except that
-			// the values are stored in a TexturePlane)
-			// NOTE: I use a small bias for the floor height, because if the difference in
-			// height is 0 then the TexturePlane doesn't work!
 			float floorbias = (osd.Floor.plane.GetZ(vr.x, vr.y) <= sd.Floor.plane.GetZ(vr.x, vr.y)) ? 1.0f : 0.0f;
 	
 			TexturePlane tp = CalculateTexturePlane(h0, h1, h2, h3, drawTopDown);
 
-			tp.vlt = new Vector3D(vl.x, vl.y, h0);//osd.Floor.plane.GetZ(vl.x, vl.y)); //h0
-			tp.vrt = new Vector3D(vr.x, vr.y, h3);//osd.Floor.plane.GetZ(vr.x, vr.y)); //h3
-			tp.vrb = new Vector3D(vr.x, vr.y, h2);//sd.Floor.plane.GetZ(vr.x, vr.y)); // h2
-			tp.vlb = new Vector3D(vl.x, vl.y, h1);//sd.Floor.plane.GetZ(vl.x, vl.y)); //h1
+			tp.vlt = new Vector3D(vl.x, vl.y, h0);
+			tp.vrt = new Vector3D(vr.x, vr.y, h3);
+			tp.vrb = new Vector3D(vr.x, vr.y, h2);
+			tp.vlb = new Vector3D(vl.x, vl.y, h1);
 
 			// Create initial polygon, which is just a quad between floor and ceiling
 			WallPolygon poly = new WallPolygon();
