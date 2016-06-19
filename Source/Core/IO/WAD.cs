@@ -310,14 +310,22 @@ namespace CodeImp.DoomBuilder.IO
 				throw new IOException(String.Format("Roo version {0} too low - require at least version {1}.",
 					rooversion, ROO_VERSION));
 			}
-			numlumps = 6;
+			numlumps = 9;
 
 			// Dispose old lumps and create new list
 			if (lumps != null)
 				foreach (Lump l in lumps)
 					l.Dispose();
 			lumps = new List<Lump>(numlumps);
+			
+			
+			// These two lumps take the place of the roo version and magic bytes.
+			// Map header lump.
+			lumps.Add(new Lump(file, this, ENCODING.GetBytes("~MAP"), 0, 4));
+			// Add a map name.
+			lumps.Add(new Lump(file, this, ENCODING.GetBytes("Room"), 4, 4));
 
+			lumps.Add(new Lump(file, this, ENCODING.GetBytes("SECURITY"), (int)file.Position, 4));
 			// Skip room security.
 			reader.ReadInt32();
 
@@ -325,63 +333,33 @@ namespace CodeImp.DoomBuilder.IO
 			int offset = reader.ReadInt32();
 			file.Seek(offset, SeekOrigin.Begin);
 
+			lumps.Add(new Lump(file, this, ENCODING.GetBytes("MAPBOUND"), (int)file.Position, 8));
+
 			// Skip width/height.
 			reader.ReadBytes(8);
-			// Use nodeOffset and clientWallOffset space to store headers.
-			int pos = reader.ReadInt32();
-			lumps.Add(new Lump(file, this, ENCODING.GetBytes("~MAP"), pos, 4));
-			// Add a map name.
-			pos = reader.ReadInt32();
-			lumps.Add(new Lump(file, this, ENCODING.GetBytes("Room"), pos, 4));
 
+			int nodesOffset = reader.ReadInt32();
+			int clientWallOffset = reader.ReadInt32();
 			// Get map data offsets
 			int editWallOffset = reader.ReadInt32();
 			int sideDefOffset = reader.ReadInt32();
 			int sectorOffset = reader.ReadInt32();
 			int thingOffset = reader.ReadInt32();
 
+			// Nodes lump
+			lumps.Add(new Lump(file, this, ENCODING.GetBytes("NODES"), nodesOffset, clientWallOffset - nodesOffset));
+			// Client walls lump
+			lumps.Add(new Lump(file, this, ENCODING.GetBytes("CLIWALLS"), clientWallOffset, editWallOffset - clientWallOffset));
 			// Linedefs lump
-			file.Seek(editWallOffset, SeekOrigin.Begin);
-			int numObject = reader.ReadInt16();
-			lumps.Add(new Lump(file, this, ENCODING.GetBytes("LINEDEFS"), editWallOffset, numObject * 32 + 2));
-
+			lumps.Add(new Lump(file, this, ENCODING.GetBytes("LINEDEFS"), editWallOffset, sideDefOffset - editWallOffset));
 			// Sidedefs lump
-			file.Seek(sideDefOffset, SeekOrigin.Begin);
-			numObject = reader.ReadInt16();
-			lumps.Add(new Lump(file, this, ENCODING.GetBytes("SIDEDEFS"), sideDefOffset, numObject * 13 + 2));
-
+			lumps.Add(new Lump(file, this, ENCODING.GetBytes("SIDEDEFS"), sideDefOffset, sectorOffset - sideDefOffset));
 			// Sectors lump
-			file.Seek(sectorOffset, SeekOrigin.Begin);
-			numObject = reader.ReadInt16();
-			
-			// Could be variable length, should really adjust roo
-			// to make this easier but breaks compatibility.
-			int blakFlags;
-			int length = 20 * numObject + 2;
-			for (int i = 0; i < numObject; ++i)
-			{
-				// Skip ahead 15 bytes, only need the flags.
-				reader.ReadBytes(15);
-				blakFlags = reader.ReadInt32();
-				// Skip one more byte.
-				reader.ReadByte();
-				if ((blakFlags & 0x400) == 0x400)
-				{
-					length += 46;
-					reader.ReadBytes(46);
-				}
-				if ((blakFlags & 0x800) == 0x800)
-				{
-					length += 46;
-					reader.ReadBytes(46);
-				}
-			}
-
-			lumps.Add(new Lump(file, this, ENCODING.GetBytes("SECTORS"), sectorOffset, length));
+			lumps.Add(new Lump(file, this, ENCODING.GetBytes("SECTORS"), sectorOffset, thingOffset - sectorOffset));
 
 			// Things lump
 			file.Seek(thingOffset, SeekOrigin.Begin);
-			numObject = reader.ReadInt16();
+			int numObject = reader.ReadInt16();
 			if (numObject != 2)
 				throw new IOException(String.Format("Can only use 2 things, got {0}", numObject));
 
@@ -394,9 +372,9 @@ namespace CodeImp.DoomBuilder.IO
 			// Seek to beginning
 			file.Seek(0, SeekOrigin.Begin);
 
-			if (isroo)
+			if (isroo || General.Map.MERIDIAN)
 			{
-				WriteRooFile();
+				WriteRooHeader();
 				return;
 			}
 
@@ -422,38 +400,14 @@ namespace CodeImp.DoomBuilder.IO
 			}
 		}
 
-		///
-		/// Roo files don't contain lumps, need to write out the data in a way
-		/// that Meridian/Blakserv/Roomedit can still read it.
-		///
-		private void WriteRooFile()
+		// Roo files don't contain lumps, need to write out the data in a way
+		// that Meridian/Blakserv/Roomedit can still read it.
+		private void WriteRooHeader()
 		{
 			// Write roo header
 			writer.Write(TYPE_ROO);
 			// Write roo version
 			writer.Write(ROO_VERSION);
-			// Save offset for security, write 0.
-			long securityOffset = RooFileWriteTemp(); // Query a lump for security?
-			long mainOffset = RooFileWriteTemp();
-			long serverOffset = RooFileWriteTemp();
-
-			// Patch in main offset
-			RooFileBackPatch(mainOffset, file.Position);
-
-			// writer.Write(); Write 4 bytes width (max X - min X) * BLAK_FACTOR (16)
-			// writer.Write(); Write 4 bytes height (max Y - min Y) * BLAK_FACTOR (16)
-			long nodesOffset = RooFileWriteTemp();
-			long clientWallOfset = RooFileWriteTemp();
-			long editorWallOffset = RooFileWriteTemp();
-			long sideDefOffset = RooFileWriteTemp();
-			long sectorOffset = RooFileWriteTemp();
-			long thingOffset = RooFileWriteTemp();
-
-			// Write out the previous sections in order.
-
-			// Nothing gets saved after server offset.
-			// Used to be movement grids.
-			RooFileBackPatch(serverOffset, file.Position);
 		}
 
 		private void RooFileBackPatch(long OldOffset, long CurrentOffset)
@@ -468,6 +422,78 @@ namespace CodeImp.DoomBuilder.IO
 			long offset = file.Position;
 			writer.Write(0);
 			return offset;
+		}
+
+		public void RooFileWriteAll(WAD source)
+		{
+			file.Seek(0, SeekOrigin.Begin);
+
+			writer.Write(TYPE_ROO);
+			// Write roo version
+			writer.Write(ROO_VERSION);
+
+			// Security
+			Lump lmp = source.FindLump("SECURITY");
+			if (lmp != null)
+				writer.Write(lmp.Stream.ReadAllBytes());
+			else
+			{
+				General.ErrorLogger.Add(ErrorType.Warning, "Did not find security lump! Writing 0.");
+				writer.Write((Int32)0);
+			}
+
+			long mainOffset = RooFileWriteTemp();
+			long serverOffset = RooFileWriteTemp();
+
+			RooFileBackPatch(mainOffset, file.Position);
+
+			// Width/Height
+			lmp = source.FindLump("MAPBOUND");
+			if (lmp != null)
+				writer.Write(lmp.Stream.ReadAllBytes());
+			else
+			{
+				General.ErrorLogger.Add(ErrorType.Warning, "Did not find map bounds lump! Writing 0.");
+				writer.Write((Int32)0);
+				writer.Write((Int32)0);
+			}
+
+			long nodesPos = RooFileWriteTemp();
+			long cliWallPos = RooFileWriteTemp();
+			long linedefPos = RooFileWriteTemp();
+			long sidedefPos = RooFileWriteTemp();
+			long sectorPos = RooFileWriteTemp();
+			long thingPos = RooFileWriteTemp();
+
+			RooFileBackPatch(nodesPos, file.Position);
+			lmp = source.FindLump("NODES");
+			if (lmp != null)
+				writer.Write(lmp.Stream.ReadAllBytes());
+			RooFileBackPatch(cliWallPos, file.Position);
+			lmp = source.FindLump("CLIWALLS");
+			if (lmp != null)
+				writer.Write(lmp.Stream.ReadAllBytes());
+			RooFileBackPatch(linedefPos, file.Position);
+			lmp = source.FindLump("LINEDEFS");
+			if (lmp != null)
+				writer.Write(lmp.Stream.ReadAllBytes());
+			RooFileBackPatch(sidedefPos, file.Position);
+			lmp = source.FindLump("SIDEDEFS");
+			if (lmp != null)
+				writer.Write(lmp.Stream.ReadAllBytes());
+			RooFileBackPatch(sectorPos, file.Position);
+			lmp = source.FindLump("SECTORS");
+			if (lmp != null)
+				writer.Write(lmp.Stream.ReadAllBytes());
+			RooFileBackPatch(thingPos, file.Position);
+			lmp = source.FindLump("THINGS");
+			if (lmp != null)
+				writer.Write(lmp.Stream.ReadAllBytes());
+
+			// Room ID, not used.
+			writer.Write((Int32)0);
+
+			RooFileBackPatch(serverOffset, file.Position);
 		}
 
 		//mxd
