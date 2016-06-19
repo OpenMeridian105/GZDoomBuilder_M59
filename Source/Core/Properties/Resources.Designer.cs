@@ -1350,9 +1350,13 @@ namespace CodeImp.DoomBuilder.Properties {
             }
         }
         
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
+        internal static System.Drawing.Bitmap SplitSectors {
+            get {
+                object obj = ResourceManager.GetObject("SplitSectors", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
         internal static System.Drawing.Bitmap Status0 {
             get {
                 object obj = ResourceManager.GetObject("Status0", resourceCulture);

@@ -802,7 +802,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			if(flags.CeilingTexture && source.CeilTexture != target.CeilTexture) return false;
 			if(flags.Brightness && source.Brightness != target.Brightness) return false;
 			if(flags.Tag && !TagsMatch(source.Tags, target.Tags)) return false;
-			if(flags.Flags && !FlagsMatch(source.GetFlags(), target.GetFlags())) return false;
+			if(flags.Flags && !FlagsMatch(source.GetEnabledFlags(), target.GetEnabledFlags())) return false;
 
 			// Generalized effects require more tender loving care...
 			if(flags.Special && source.Effect != target.Effect)
@@ -810,11 +810,13 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				if(!General.Map.Config.GeneralizedEffects || source.Effect == 0 || target.Effect == 0) return false;
 
 				// Get effect bits...
-				HashSet<int> sourcebits = GameConfiguration.GetGeneralizedSectorEffectBits(source.Effect);
-				HashSet<int> targetbits = GameConfiguration.GetGeneralizedSectorEffectBits(target.Effect);
+				SectorEffectData sourcedata = General.Map.Config.GetSectorEffectData(source.Effect);
+				SectorEffectData targetdata = General.Map.Config.GetSectorEffectData(target.Effect);
 				
 				// No bits match when at least one effect is not generalized, or when bits don't overlap 
-				if(sourcebits.Count == 0 || targetbits.Count == 0 || !sourcebits.Overlaps(targetbits)) return false;
+				if(sourcedata.Effect != targetdata.Effect 
+					|| sourcedata.GeneralizedBits.Count != targetdata.GeneralizedBits.Count 
+					|| !sourcedata.GeneralizedBits.Overlaps(targetdata.GeneralizedBits)) return false;
 			}
 
 			if(!General.Map.UDMF) return true;
@@ -869,7 +871,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 					if(!UniFields.ValuesMatch("arg4str", source, target)) return false;
 				}
 			}
-			if(linedefflags.Flags && !FlagsMatch(source.GetFlags(), target.GetFlags())) return false;
+			if(linedefflags.Flags && !FlagsMatch(source.GetEnabledFlags(), target.GetEnabledFlags())) return false;
 
 			if(General.Map.UDMF)
 			{
@@ -905,7 +907,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			if(!General.Map.UDMF) return true;
 
 			// UDMF-specific properties
-			if(flags.Flags && !FlagsMatch(source.GetFlags(), target.GetFlags())) return false;
+			if(flags.Flags && !FlagsMatch(source.GetEnabledFlags(), target.GetEnabledFlags())) return false;
 
 			// UI fields
 			if(flags.UpperTextureScale && !UniFields.ValuesMatch("scalex_top", "scaley_top", source, target)) return false;
@@ -947,7 +949,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				}
 			}
 			if(flags.Tag && source.Tag != target.Tag) return false;
-			if(flags.Flags && !FlagsMatch(source.GetFlags(), target.GetFlags())) return false;
+			if(flags.Flags && !FlagsMatch(source.GetEnabledFlags(), target.GetEnabledFlags())) return false;
 			if(!General.Map.UDMF) return true;
 
 			// UDMF-specific properties
@@ -971,11 +973,14 @@ namespace CodeImp.DoomBuilder.BuilderModes
 
 		#endregion
 
-		private static bool FlagsMatch(Dictionary<string, bool> flags1, Dictionary<string, bool> flags2) 
+		private static bool FlagsMatch(HashSet<string> flags1, HashSet<string> flags2)
 		{
 			if(flags1.Count != flags2.Count) return false;
-			foreach(KeyValuePair<string, bool> group in flags1)
-				if(!flags2.ContainsKey(group.Key) || flags2[group.Key] != flags1[group.Key]) return false;
+			foreach(string flag in flags1)
+			{
+				if(!flags2.Contains(flag)) return false;
+			}
+
 			return true;
 		}
 

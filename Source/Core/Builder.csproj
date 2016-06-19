@@ -724,6 +724,7 @@
     <Compile Include="Config\ModelAndLightRenderModes.cs" />
     <Compile Include="Config\PasteOptions.cs" />
     <Compile Include="Config\ScriptDocumentSettings.cs" />
+    <Compile Include="Config\SectorEffectData.cs" />
     <Compile Include="Config\ThingsFlagsCompare.cs" />
     <Compile Include="Controls\ActionSpecialHelpButton.cs">
       <SubType>UserControl</SubType>
@@ -1195,6 +1196,7 @@
     <None Include="Resources\ModelDisabled.png" />
     <None Include="Resources\ModelFiltered.png" />
     <Content Include="Resources\Model_selected.png" />
+    <None Include="Resources\SplitSectors.png" />
     <None Include="Resources\ScriptProperty.png" />
     <None Include="Resources\TextWhitespace.png" />
     <None Include="Resources\TextIndent.png" />

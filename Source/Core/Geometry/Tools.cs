@@ -962,7 +962,7 @@ namespace CodeImp.DoomBuilder.Geometry
 						// Check if any other lines intersect this line
 						List<float> intersections = new List<float>();
 						Line2D measureline = ld.Line;
-						Dictionary<Linedef, bool> processed = new Dictionary<Linedef, bool>(); //mxd
+						HashSet<Linedef> processed = new HashSet<Linedef>(); //mxd
 
 						//mxd
 						foreach(Sector s in map.Sectors) 
@@ -972,7 +972,7 @@ namespace CodeImp.DoomBuilder.Geometry
 							{
 								foreach(Sidedef side in s.Sidedefs) 
 								{
-									if(processed.ContainsKey(side.Line)) continue;
+									if(processed.Contains(side.Line)) continue;
 									if(side.Line == ld) continue;
 
 									float u;
@@ -982,7 +982,7 @@ namespace CodeImp.DoomBuilder.Geometry
 										intersections.Add(u);
 									}
 
-									processed.Add(side.Line, false);
+									processed.Add(side.Line);
 								}
 							}
 						}

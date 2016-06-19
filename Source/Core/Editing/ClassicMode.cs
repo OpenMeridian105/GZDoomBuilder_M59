@@ -665,6 +665,9 @@ namespace CodeImp.DoomBuilder.Editing
 				renderer.Finish();
 			}
 			
+			//mxd. We want map center drawn by default
+			renderer.DrawMapCenter = true;
+
 			base.OnEngage();
 		}
 
@@ -719,7 +722,7 @@ namespace CodeImp.DoomBuilder.Editing
 
 				if(s == null)
 				{
-					General.MainWindow.DisplayStatus(StatusType.Warning, "Can't test from current position: cursor is not inside sector!");
+					General.MainWindow.DisplayStatus(StatusType.Warning, "Can't test from current position: mouse cursor must be inside a sector!");
 					return false;
 				}
 

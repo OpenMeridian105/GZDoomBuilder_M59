@@ -2702,7 +2702,9 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		public void TextureCopy()
 		{
 			PreActionNoChange();
-			GetTargetEventReceiver(true).OnCopyTexture(); //mxd
+			IVisualEventReceiver i = GetTargetEventReceiver(true);
+			i.OnCopyTexture(); //mxd
+			if(!(i is VisualThing)) copybuffer.Clear(); //mxd. Not copying things any more...
 			PostAction();
 		}
 
@@ -3119,7 +3121,9 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				VisualThing vt = (VisualThing)i;
 				if(vt != null) copybuffer.Add(new ThingCopyData(vt.Thing));
 			}
-			General.Interface.DisplayStatus(StatusType.Info, "Copied " + copybuffer.Count + " Things");
+
+			string rest = copybuffer.Count + (copybuffer.Count > 1 ? " things." : " thing.");
+			General.Interface.DisplayStatus(StatusType.Info, "Copied " + rest);
 		}
 
 		//mxd
@@ -3129,7 +3133,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			CopySelection();
 
 			//Create undo
-			string rest = copybuffer.Count + " thing" + (copybuffer.Count > 1 ? "s." : ".");
+			string rest = copybuffer.Count + (copybuffer.Count > 1 ? " things." : " thing.");
 			CreateUndo("Cut " + rest);
 			General.Interface.DisplayStatus(StatusType.Info, "Cut " + rest);
 
@@ -3155,7 +3159,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		{
 			if(copybuffer.Count == 0)
 			{
-				General.Interface.DisplayStatus(StatusType.Warning, "Nothing to paste, cut or copy some Things first!");
+				TexturePaste(); // I guess we may paste a texture or two instead
 				return;
 			}
 			
@@ -3167,7 +3171,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				return;
 			}
 
-			string rest = copybuffer.Count + " thing" + (copybuffer.Count > 1 ? "s" : "");
+			string rest = copybuffer.Count + (copybuffer.Count > 1 ? " things." : " thing.");
 			General.Map.UndoRedo.CreateUndo("Paste " + rest);
 			General.Interface.DisplayStatus(StatusType.Info, "Pasted " + rest);
 			
@@ -3204,18 +3208,18 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		[BeginAction("rotateclockwise")]
 		public void RotateCW() 
 		{
-			RotateThingsAndTextures(5);
+			RotateThingsAndTextures(General.Map.Config.DoomThingRotationAngles ? 45 : 5, 5);
 		}
 
 		//mxd. Rotate counterclockwise
 		[BeginAction("rotatecounterclockwise")]
 		public void RotateCCW() 
 		{
-			RotateThingsAndTextures(-5);
+			RotateThingsAndTextures(General.Map.Config.DoomThingRotationAngles ? -45 : -5, - 5);
 		}
 
 		//mxd
-		private void RotateThingsAndTextures(int increment) 
+		private void RotateThingsAndTextures(int thingangleincrement, int textureangleincrement) 
 		{
 			PreAction(UndoGroup.ThingAngleChange);
 
@@ -3227,7 +3231,10 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				if(obj is BaseVisualThing) 
 				{
 					BaseVisualThing t = (BaseVisualThing)obj;
-					t.SetAngle(General.ClampAngle(t.Thing.AngleDoom + increment));
+
+					int newangle = t.Thing.AngleDoom + thingangleincrement;
+					if(General.Map.Config.DoomThingRotationAngles) newangle = newangle / 45 * 45;
+					t.SetAngle(General.ClampAngle(newangle));
 
 					// Visual sectors may be affected by this thing...
 					if(thingdata.ContainsKey(t.Thing))
@@ -3247,12 +3254,12 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				else if(obj is VisualFloor) 
 				{
 					VisualFloor vf = (VisualFloor)obj;
-					vf.OnChangeTextureRotation(General.ClampAngle(vf.GetControlSector().Fields.GetValue("rotationfloor", 0.0f) + increment));
+					vf.OnChangeTextureRotation(General.ClampAngle(vf.GetControlSector().Fields.GetValue("rotationfloor", 0.0f) + textureangleincrement));
 				} 
 				else if(obj is VisualCeiling) 
 				{
 					VisualCeiling vc = (VisualCeiling)obj;
-					vc.OnChangeTextureRotation(General.ClampAngle(vc.GetControlSector().Fields.GetValue("rotationceiling", 0.0f) + increment));
+					vc.OnChangeTextureRotation(General.ClampAngle(vc.GetControlSector().Fields.GetValue("rotationceiling", 0.0f) + textureangleincrement));
 				}
 			}
 

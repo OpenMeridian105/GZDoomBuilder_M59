@@ -662,6 +662,7 @@ namespace CodeImp.DoomBuilder
 			if(map.Sidedefs.Count > io.MaxSidedefs)
 			{
 				// Compress sidedefs
+				int initialsidescount = outputset.Sidedefs.Count; //mxd
 				General.MainWindow.DisplayStatus(StatusType.Busy, "Compressing sidedefs...");
 				outputset.CompressSidedefs();
 
@@ -669,7 +670,10 @@ namespace CodeImp.DoomBuilder
 				if(outputset.Sidedefs.Count > io.MaxSidedefs)
 				{
 					// Problem! Can't save the map like this!
-					General.ShowErrorMessage("Unable to save the map: There are too many unique sidedefs!", MessageBoxButtons.OK);
+					General.ShowErrorMessage("Unable to save the map: there are too many unique sidedefs!" + Environment.NewLine + Environment.NewLine
+						+ "Sidedefs before compresion: " + initialsidescount + Environment.NewLine
+						+ "Sidedefs after compresion: " + outputset.Sidedefs.Count
+						+ " (" + (outputset.Sidedefs.Count - io.MaxSidedefs) + " sidedefs above the limit)", MessageBoxButtons.OK);
 					General.MainWindow.DisplayStatus(oldstatus);
 					return false;
 				}
@@ -2258,7 +2262,13 @@ namespace CodeImp.DoomBuilder
 			General.Plugins.ReloadResources();
 
 			// Inform editing mode that the resources are reloaded
-			if(General.Editing.Mode != null) General.Editing.Mode.OnReloadResources();
+			if(General.Editing.Mode != null)
+			{
+				General.Editing.Mode.OnReloadResources();
+
+				//mxd. Also Check appropriate button on interface
+				General.MainWindow.CheckEditModeButton(General.Editing.Mode.EditModeButtonName); 
+			}
 
 			// Reset status
 			General.MainWindow.DisplayStatus(oldstatus);
