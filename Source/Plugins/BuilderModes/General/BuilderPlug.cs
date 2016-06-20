@@ -322,14 +322,24 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			if((img != null) && img.IsImageLoaded)
 			{
 				//mxd. Merged from GZDoomEditing plugin
-				if(General.Map.UDMF) 
+				if(General.Map.UDMF || General.Map.MERIDIAN) 
 				{
 					// Fetch ZDoom fields
-					Vector2D offset = new Vector2D(s.Fields.GetValue("xpanningfloor", 0.0f),
-												   s.Fields.GetValue("ypanningfloor", 0.0f));
+					Vector2D offset;
+					float rotate;
+					if (General.Map.MERIDIAN)
+					{
+						offset = new Vector2D(s.OffsetX, s.OffsetY);
+						rotate = s.FloorTexRot;
+					}
+					else
+					{
+						offset = new Vector2D(s.Fields.GetValue("xpanningfloor", 0.0f),
+											  s.Fields.GetValue("ypanningfloor", 0.0f));
+						rotate = s.Fields.GetValue("rotationfloor", 0.0f);
+					}
 					Vector2D scale = new Vector2D(s.Fields.GetValue("xscalefloor", 1.0f),
 												  s.Fields.GetValue("yscalefloor", 1.0f));
-					float rotate = s.Fields.GetValue("rotationfloor", 0.0f);
 					int color, light;
 					bool absolute;
 
@@ -349,7 +359,10 @@ namespace CodeImp.DoomBuilder.BuilderModes
 					}
 
 					// Setup the vertices with the given settings
-					SetupSurfaceVertices(vertices, s, img, offset, scale, rotate, color, light, absolute);
+					if (General.Map.MERIDIAN)
+						SetupSurfaceVerticesFloorMeridian(vertices, s, img, offset, scale, rotate, color, light, absolute);
+					else
+						SetupSurfaceVertices(vertices, s, img, offset, scale, rotate, color, light, absolute);
 				} 
 				else 
 				{
@@ -374,14 +387,24 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			if((img != null) && img.IsImageLoaded)
 			{
 				//mxd. Merged from GZDoomEditing plugin
-				if(General.Map.UDMF) 
+				if(General.Map.UDMF || General.Map.MERIDIAN) 
 				{
 					// Fetch ZDoom fields
-					Vector2D offset = new Vector2D(s.Fields.GetValue("xpanningceiling", 0.0f),
-												   s.Fields.GetValue("ypanningceiling", 0.0f));
+					Vector2D offset;
+					float rotate;
+					if (General.Map.MERIDIAN)
+					{
+						offset = new Vector2D(s.OffsetX, s.OffsetY);
+						rotate = s.CeilTexRot;
+					}
+					else
+					{
+						offset = new Vector2D(s.Fields.GetValue("xpanningceiling", 0.0f),
+											  s.Fields.GetValue("ypanningceiling", 0.0f));
+						rotate = s.Fields.GetValue("rotationceiling", 0.0f);
+					}
 					Vector2D scale = new Vector2D(s.Fields.GetValue("xscaleceiling", 1.0f),
 												  s.Fields.GetValue("yscaleceiling", 1.0f));
-					float rotate = s.Fields.GetValue("rotationceiling", 0.0f);
 					int color, light;
 					bool absolute;
 
@@ -401,7 +424,10 @@ namespace CodeImp.DoomBuilder.BuilderModes
 					}
 
 					// Setup the vertices with the given settings
-					SetupSurfaceVertices(vertices, s, img, offset, scale, rotate, color, light, absolute);
+					if (General.Map.MERIDIAN)
+						SetupSurfaceVerticesCeilMeridian(vertices, s, img, offset, scale, rotate, color, light, absolute);
+					else
+						SetupSurfaceVertices(vertices, s, img, offset, scale, rotate, color, light, absolute);
 				} 
 				else 
 				{
@@ -544,6 +570,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			// Prepare for math!
 			rotate = Angle2D.DegToRad(rotate);
 			Vector2D texscale = new Vector2D(1.0f / img.ScaledWidth, 1.0f / img.ScaledHeight);
+
 			if(!absolute) light = s.Brightness + light;
 			PixelColor lightcolor = PixelColor.FromInt(color);
 			PixelColor brightness = PixelColor.FromInt(General.Map.Renderer2D.CalculateBrightness(light));
@@ -563,6 +590,262 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			}
 		}
 		
+		private static void SetupSurfaceVerticesFloorMeridian(FlatVertex[] vertices, Sector s, ImageData img, Vector2D offset,
+										  Vector2D scale, float rotate, int color, int light, bool absolute)
+		{
+			// Prepare for math!
+			rotate = Angle2D.DegToRad(rotate);
+			Vector2D texscale = new Vector2D(1.0f / img.ScaledWidth, 1.0f / img.ScaledHeight);
+
+			if (!absolute) light = s.Brightness + light;
+			PixelColor lightcolor = PixelColor.FromInt(color);
+			PixelColor brightness = PixelColor.FromInt(General.Map.Renderer2D.CalculateBrightness(light));
+			PixelColor finalcolor = PixelColor.Modulate(lightcolor, brightness);
+			color = finalcolor.WithAlpha(255).ToInt();
+
+			Vector3D TextureOrientation, planeNormal, P0, P1, P2, v1, v2;
+			float z;
+			// texture angle - this is planar angle between x axis of texture & x axis of world
+			// convert angle to vector
+			TextureOrientation = new Vector3D((float)Math.Sin(rotate), (float)Math.Cos(rotate), 0);
+			planeNormal = new Vector3D(s.FloorSlope.x, s.FloorSlope.y, s.FloorSlope.z);
+			z = (-s.FloorSlope.x * s.Pivot.x - s.FloorSlope.y * s.Pivot.y - s.FloorSlopeOffset) / s.FloorSlope.z;
+			P0 = new Vector3D(s.Pivot.x, s.Pivot.y, z);
+			// cross normal with texture orientation to get vector perpendicular to texture
+			//  orientation and normal = v axis direction
+			v2 = Vector3D.CrossProduct(planeNormal, TextureOrientation);
+			v1 = Vector3D.CrossProduct(v2, planeNormal);
+			P1 = P0 + v1;
+			P2 = P0 + v2;
+			bool isSloped = s.FloorSlope.GetLengthSq() > 0 && !float.IsNaN(s.FloorSlopeOffset / s.FloorSlope.z);
+			if (isSloped)
+			{
+				offset.x = offset.x / img.Width;
+				offset.y = offset.y / img.Height;
+			}
+
+			// Do the math for all vertices
+
+			for (int i = 0; i < vertices.Length; i++)
+			{
+				if (isSloped)
+				{
+					Vector3D iTop;
+					Vector3D iLeft;
+					Vector3D vectorU;
+					Vector3D vectorV;
+					Vector3D vector;
+					float distance;
+					float U, temp;
+
+					U = ((vertices[i].x - P0.x) * (P1.x - P0.x)) +
+						((vertices[i].y - P0.y) * (P1.y - P0.y));
+					temp = ((P1.x - P0.x) * (P1.x - P0.x)) +
+						   ((P1.y - P0.y) * (P1.y - P0.y));
+
+					if (temp == 0.0f) temp = 1.0f;
+					U /= temp;
+
+					iTop.x = P0.x + U * (P1.x - P0.x);
+					iTop.y = P0.y + U * (P1.y - P0.y);
+
+					vertices[i].u = (float)Math.Sqrt(
+						(vertices[i].x - iTop.x) * (vertices[i].x - iTop.x) +
+						(vertices[i].y - iTop.y) * (vertices[i].y - iTop.y));
+
+					// calc distance from left line (vector v)
+					U = ((vertices[i].x - P0.x) * (P2.x - P0.x)) +
+						((vertices[i].y - P0.y) * (P2.y - P0.y));
+					temp = ((P2.x - P0.x) * (P2.x - P0.x)) +
+						   ((P2.y - P0.y) * (P2.y - P0.y));
+
+					if (temp == 0.0f) temp = 1.0f;
+					U /= temp;
+
+					iLeft.x = P0.x + U * (P2.x - P0.x);
+					iLeft.y = P0.y + U * (P2.y - P0.y);
+
+					vertices[i].v = (float)Math.Sqrt(
+						(vertices[i].x - iLeft.x) * (vertices[i].x - iLeft.x)
+						+ (vertices[i].y - iLeft.y) * (vertices[i].y - iLeft.y));
+
+					vectorU.x = P1.x - P0.x;
+					vectorU.y = P1.y - P0.y;
+
+					distance = (float)Math.Sqrt((vectorU.x * vectorU.x) + (vectorU.y * vectorU.y));
+					if (distance == 0.0f) distance = 1.0f;
+
+					vectorU.x /= distance;
+					vectorU.y /= distance;
+
+					vectorV.x = P2.x - P0.x;
+					vectorV.y = P2.y - P0.y;
+
+					distance = (float)Math.Sqrt((vectorV.x * vectorV.x) + (vectorV.y * vectorV.y));
+					if (distance == 0.0f) distance = 1.0f;
+
+					vectorV.x /= distance;
+					vectorV.y /= distance;
+
+					vector.x = vertices[i].x - P0.x;
+					vector.y = vertices[i].y - P0.y;
+
+					distance = (float)Math.Sqrt((vector.x * vector.x) + (vector.y * vector.y));
+					if (distance == 0.0f) distance = 1.0f;
+
+					vector.x /= distance;
+					vector.y /= distance;
+
+					if (((vector.x * vectorU.x) +
+						(vector.y * vectorU.y)) <= 0)
+						vertices[i].v = -vertices[i].v;
+
+					if (((vector.x * vectorV.x) +
+						(vector.y * vectorV.y)) > 0)
+						vertices[i].u = -vertices[i].u;
+
+					vertices[i].u *= 1.0f / (float)(4 << 4);
+					vertices[i].v *= 1.0f / (float)(4 << 4);
+					vertices[i].u += offset.x;
+					vertices[i].v += offset.y;
+				}
+				else
+				{
+					Vector2D pos = new Vector2D(vertices[i].x, vertices[i].y);
+					pos = pos.GetRotated(rotate);
+					pos.y = -pos.y;
+					pos = (pos + offset) * scale * texscale;
+					vertices[i].u = pos.x;
+					vertices[i].v = pos.y;
+					vertices[i].c = color;
+				}
+			}
+		}
+
+		private static void SetupSurfaceVerticesCeilMeridian(FlatVertex[] vertices, Sector s, ImageData img, Vector2D offset,
+										  Vector2D scale, float rotate, int color, int light, bool absolute)
+		{
+						// Prepare for math!
+			rotate = Angle2D.DegToRad(rotate);
+			Vector2D texscale = new Vector2D(1.0f / img.ScaledWidth, 1.0f / img.ScaledHeight);
+
+			if (!absolute) light = s.Brightness + light;
+			PixelColor lightcolor = PixelColor.FromInt(color);
+			PixelColor brightness = PixelColor.FromInt(General.Map.Renderer2D.CalculateBrightness(light));
+			PixelColor finalcolor = PixelColor.Modulate(lightcolor, brightness);
+			color = finalcolor.WithAlpha(255).ToInt();
+
+			Vector3D TextureOrientation, planeNormal, P0, P1, P2, v1, v2;
+			float z;
+			// texture angle - this is planar angle between x axis of texture & x axis of world
+			// convert angle to vector
+			TextureOrientation = new Vector3D((float)Math.Cos(rotate), (float)Math.Sin(rotate), 0);
+			planeNormal = new Vector3D(s.CeilSlope.x, s.CeilSlope.y, s.CeilSlope.z);
+			z = (-s.CeilSlope.x * s.Pivot.x - s.CeilSlope.y * s.Pivot.y - s.CeilSlopeOffset) / s.CeilSlope.z;
+			P0 = new Vector3D(s.Pivot.x, s.Pivot.y, z);
+			// cross normal with texture orientation to get vector perpendicular to texture
+			//  orientation and normal = v axis direction
+			v2 = Vector3D.CrossProduct(planeNormal, TextureOrientation);
+			v1 = Vector3D.CrossProduct(v2, planeNormal);
+			P1 = P0 + v1;
+			P2 = P0 + v2;
+			bool isSloped = s.CeilSlope.GetLengthSq() > 0 && !float.IsNaN(s.CeilSlopeOffset / s.CeilSlope.z);
+			if (isSloped)
+			{
+				offset.x = offset.x / img.Width;
+				offset.y = offset.y / img.Height;
+			}
+
+			// Do the math for all vertices
+
+			for (int i = 0; i < vertices.Length; i++)
+			{
+				if (isSloped)
+				{
+					Vector3D iTop;
+					Vector3D iLeft;
+					Vector3D vectorU;
+					Vector3D vectorV;
+					Vector3D vector;
+					float distance;
+					float U, temp;
+
+					U = ((vertices[i].x - P0.x) * (P1.x - P0.x)) + ((vertices[i].y - P0.y) * (P1.y - P0.y));
+					temp = ((P1.x - P0.x) * (P1.x - P0.x)) + ((P1.y - P0.y) * (P1.y - P0.y));
+
+					if (temp == 0.0f) temp = 1.0f;
+					U /= temp;
+
+					iTop.x = P0.x + U * (P1.x - P0.x);
+					iTop.y = P0.y + U * (P1.y - P0.y);
+
+					vertices[i].u = (float)Math.Sqrt((vertices[i].x - iTop.x) * (vertices[i].x - iTop.x) +
+						(vertices[i].y - iTop.y) * (vertices[i].y - iTop.y));
+
+					// calc distance from left line (vector v)
+					U = ((vertices[i].x - P0.x) * (P2.x - P0.x)) + ((vertices[i].y - P0.y) * (P2.y - P0.y));
+					temp = ((P2.x - P0.x) * (P2.x - P0.x)) + ((P2.y - P0.y) * (P2.y - P0.y));
+
+					if (temp == 0.0f) temp = 1.0f;
+					U /= temp;
+
+					iLeft.x = P0.x + U * (P2.x - P0.x);
+					iLeft.y = P0.y + U * (P2.y - P0.y);
+
+					vertices[i].v = (float)Math.Sqrt((vertices[i].x - iLeft.x) * (vertices[i].x - iLeft.x)
+						+ (vertices[i].y - iLeft.y) * (vertices[i].y - iLeft.y));
+
+					vectorU.x = P1.x - P0.x;
+					vectorU.y = P1.y - P0.y;
+
+					distance = (float)Math.Sqrt((vectorU.x * vectorU.x) + (vectorU.y * vectorU.y));
+					if (distance == 0.0f) distance = 1.0f;
+
+					vectorU.x /= distance;
+					vectorU.y /= distance;
+
+					vectorV.x = P2.x - P0.x;
+					vectorV.y = P2.y - P0.y;
+
+					distance = (float)Math.Sqrt((vectorV.x * vectorV.x) + (vectorV.y * vectorV.y));
+					if (distance == 0.0f) distance = 1.0f;
+
+					vectorV.x /= distance;
+					vectorV.y /= distance;
+
+					vector.x = vertices[i].x - P0.x;
+					vector.y = vertices[i].y - P0.y;
+
+					distance = (float)Math.Sqrt((vector.x * vector.x) + (vector.y * vector.y));
+					if (distance == 0.0f) distance = 1.0f;
+
+					vector.x /= distance;
+					vector.y /= distance;
+
+					if (((vector.x * vectorU.x) + (vector.y * vectorU.y)) <= 0)
+						vertices[i].v = -vertices[i].v;
+
+					if (((vector.x * vectorV.x) + (vector.y * vectorV.y)) > 0)
+						vertices[i].u = -vertices[i].u;
+
+					vertices[i].u *= 1.0f / (float)(4 << 4);
+					vertices[i].v *= 1.0f / (float)(4 << 4);
+					vertices[i].u += offset.x;
+					vertices[i].v += offset.y;
+				}
+				else
+				{
+					Vector2D pos = new Vector2D(vertices[i].x, vertices[i].y);
+					pos = pos.GetRotated(rotate);
+					pos.y = -pos.y;
+					pos = (pos + offset) * scale * texscale;
+					vertices[i].u = pos.x;
+					vertices[i].v = pos.y;
+					vertices[i].c = color;
+				}
+			}
+		}
+
 		// This finds all class types that inherits from the given type
 		public Type[] FindClasses(Type t)
 		{

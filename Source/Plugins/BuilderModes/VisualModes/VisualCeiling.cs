@@ -173,7 +173,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 
 			// texture angle - this is planar angle between x axis of texture & x axis of world
 			// convert angle to vector
-			TextureOrientation = new Vector3D((float)Math.Sin(rotate), (float)Math.Cos(rotate), 0);
+			TextureOrientation = new Vector3D((float)Math.Cos(rotate), (float)Math.Sin(rotate), 0);
 			planeNormal = new Vector3D(s.CeilSlope.x, s.CeilSlope.y, s.CeilSlope.z);
 			z = (-s.CeilSlope.x * s.Pivot.x - s.CeilSlope.y * s.Pivot.y - s.CeilSlopeOffset) / s.CeilSlope.z;
 			P0 = new Vector3D(s.Pivot.x, s.Pivot.y, z);
