@@ -1201,7 +1201,7 @@ namespace CodeImp.DoomBuilder
 				// Copy lumps to buildwad
 				General.WriteLogLine("Copying map lumps to temporary build file...");
 				if (General.Map.MERIDIAN)
-					SaveAsRoo(tempwadreader.WadFile, TEMP_MAP_HEADER, buildwad, BUILD_MAP_HEADER, REPLACE_TARGET_MAP, true, false, false, true);
+					SaveAsRoo(tempwadreader.WadFile, TEMP_MAP_HEADER, buildwad, ROOBUILD_MAP_HEADER, REPLACE_TARGET_MAP, true, false, false, true);
 				else
 					CopyLumpsByType(tempwadreader.WadFile, TEMP_MAP_HEADER, buildwad, BUILD_MAP_HEADER, REPLACE_TARGET_MAP, true, false, false, true);
 				// Close buildwad

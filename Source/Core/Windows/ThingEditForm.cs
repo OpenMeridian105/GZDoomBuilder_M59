@@ -186,17 +186,19 @@ namespace CodeImp.DoomBuilder.Windows
 			posY.ButtonStep = General.Map.Grid.GridSize;
 			posZ.ButtonStep = General.Map.Grid.GridSize;
 
-			// Action/tags
-			action.Value = ft.Action;
-			if(General.Map.FormatInterface.HasThingTag) //mxd
+			if (!General.Map.MERIDIAN)
 			{
-				tagSelector.Setup(UniversalType.ThingTag); 
-				tagSelector.SetTag(ft.Tag);
+				// Action/tags
+				action.Value = ft.Action;
+				if (General.Map.FormatInterface.HasThingTag) //mxd
+				{
+					tagSelector.Setup(UniversalType.ThingTag);
+					tagSelector.SetTag(ft.Tag);
+				}
+
+				//mxd. Args
+				argscontrol.SetValue(ft, true);
 			}
-
-			//mxd. Args
-			argscontrol.SetValue(ft, true);
-
 			////////////////////////////////////////////////////////////////////////
 			// Now go for all lines and change the options when a setting is different
 			////////////////////////////////////////////////////////////////////////
