@@ -206,10 +206,10 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		[FieldDescription(Description = "Ceiling Texture Offset", DOOM = false, HEXEN = false)]
 		public bool CeilingTextureOffset = true;
 
-		[FieldDescription(Description = "Floor Texture Scale", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Floor Texture Scale", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool FloorTextureScale = true;
 
-		[FieldDescription(Description = "Ceiling Texture Scale", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Ceiling Texture Scale", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool CeilingTextureScale = true;
 
 		[FieldDescription(Description = "Floor Texture Rotation", DOOM = false, HEXEN = false)]
@@ -218,25 +218,25 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		[FieldDescription(Description = "Ceiling Texture Rotation", DOOM = false, HEXEN = false)]
 		public bool CeilingTextureRotation = true;
 
-		[FieldDescription(Description = "Floor Alpha", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Floor Alpha", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool FloorAlpha = true;
 
-		[FieldDescription(Description = "Ceiling Alpha", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Ceiling Alpha", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool CeilingAlpha = true;
 
 		[FieldDescription(Description = "Sector Brightness")]
 		public bool Brightness = true;
 
-		[FieldDescription(Description = "Floor Brightness", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Floor Brightness", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool FloorBrightness = true;
 
-		[FieldDescription(Description = "Ceiling Brightness", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Ceiling Brightness", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool CeilingBrightness = true;
 
-		[FieldDescription(Description = "Floor Render Style", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Floor Render Style", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool FloorRenderStyle = true;
 
-		[FieldDescription(Description = "Ceiling Render Style", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Ceiling Render Style", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool CeilingRenderStyle = true;
 		
 		[FieldDescription(Description = "Floor Slope", DOOM = false, HEXEN = false)]
@@ -245,35 +245,56 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		[FieldDescription(Description = "Ceiling Slope", DOOM = false, HEXEN = false)]
 		public bool CeilingSlope = true;
 		
-		[FieldDescription(Description = "Tags")]
+		[FieldDescription(Description = "Tags", MERIDIAN = false)]
 		public bool Tag = true;
-		
-		[FieldDescription(Description = "Effect")]
+
+		[FieldDescription(Description = "Effect", MERIDIAN = false)]
 		public bool Special = true;
-		
-		[FieldDescription(Description = "Flags", DOOM = false, HEXEN = false)]
+
+		[FieldDescription(Description = "Flags", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool Flags = true;
 
-		[FieldDescription(Description = "Light Color", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Light Color", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool LightColor = true;
 
-		[FieldDescription(Description = "Fade Color", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Fade Color", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool FadeColor = true;
 
-		[FieldDescription(Description = "Desaturation", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Desaturation", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool Desaturation = true;
 
-		[FieldDescription(Description = "Sound Sequence", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Sound Sequence", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool SoundSequence = true;
 
-		[FieldDescription(Description = "Gravity", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Gravity", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool Gravity = true;
-		
-		[FieldDescription(Description = "Custom Fields", DOOM = false, HEXEN = false)]
+
+		[FieldDescription(Description = "Custom Fields", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool Fields = true;
 
-		[FieldDescription(Description = "Comment", DOOM = false, HEXEN = false)]
+		[FieldDescription(Description = "Comment", DOOM = false, HEXEN = false, MERIDIAN = false)]
 		public bool Comment = true;
+
+		[FieldDescription(Description = "Sector Tag", DOOM = false, HEXEN = false, UDMF = false)]
+		public bool SectorTag = true;
+
+		[FieldDescription(Description = "Depth", DOOM = false, HEXEN = false, UDMF = false)]
+		public bool Depth = true;
+
+		[FieldDescription(Description = "Animation Speed", DOOM = false, HEXEN = false, UDMF = false)]
+		public bool AnimationSpeed = true;
+
+		[FieldDescription(Description = "Flicker", DOOM = false, HEXEN = false, UDMF = false)]
+		public bool Flicker = true;
+
+		[FieldDescription(Description = "Scroll Floor", DOOM = false, HEXEN = false, UDMF = false)]
+		public bool ScrollFloor = true;
+
+		[FieldDescription(Description = "Scroll Ceiling", DOOM = false, HEXEN = false, UDMF = false)]
+		public bool ScrollCeiling = true;
+
+		[FieldDescription(Description = "Scroll Flags", DOOM = false, HEXEN = false, UDMF = false)]
+		public bool ScrollFlags = true;
 	}
 
 	// Sector
@@ -295,7 +316,16 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		private readonly Vector3D floorslope;
 		private readonly List<int> tags;
 		private readonly Dictionary<string, bool> flags; //mxd
-		
+		private readonly int sectortag;
+		private readonly int depth;
+		private readonly int animationspeed;
+		private readonly bool flicker;
+		private readonly bool scrollfloor;
+		private readonly bool scrollceiling;
+		private readonly int floortexrot;
+		private readonly int ceiltexrot;
+		private readonly SDScrollFlags scrollflags;
+
 		public SectorProperties(Sector s) : base(s.Fields, MapElementType.SECTOR)
 		{
 			floorheight = s.FloorHeight;
@@ -310,6 +340,15 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			floorslope = s.FloorSlope;
 			tags = new List<int>(s.Tags); //mxd
 			flags = s.GetFlags(); //mxd
+			sectortag = s.SectorTag;
+			depth = s.Depth;
+			animationspeed = s.AnimationSpeed;
+			flicker = s.Flicker;
+			scrollceiling = s.ScrollCeiling;
+			scrollfloor = s.ScrollFloor;
+			floortexrot = s.FloorTexRot;
+			ceiltexrot = s.CeilTexRot;
+			scrollflags = new SDScrollFlags(s.ScrollFlags.Speed, s.ScrollFlags.Direction);
 		}
 		
 		//mxd. Applies coped properties
@@ -343,6 +382,20 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				s.ClearFlags(); //mxd
 				foreach(KeyValuePair<string, bool> f in flags) //mxd
 					s.SetFlag(f.Key, f.Value);
+			}
+
+			if (settings.SectorTag) s.SectorTag = sectortag;
+			if (settings.Depth) s.Depth = depth;
+			if (settings.AnimationSpeed) s.AnimationSpeed = animationspeed;
+			if (settings.Flicker) s.Flicker = flicker;
+			if (settings.ScrollCeiling) s.ScrollCeiling = scrollceiling;
+			if (settings.ScrollFloor) s.ScrollFloor = scrollfloor;
+			if (settings.ScrollFlags) s.ScrollFlags = scrollflags;
+
+			if (General.Map.MERIDIAN)
+			{
+				if (settings.FloorTextureRotation) s.FloorTexRot = floortexrot;
+				if (settings.CeilingTextureRotation) s.CeilTexRot = ceiltexrot;
 			}
 
 			// Should we bother?
@@ -574,8 +627,8 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			activate = l.Activate;
 			tags = new List<int>(l.Tags); //mxd
 			args = (int[])(l.Args.Clone());
-			frontScrollFlags = l.FrontScrollFlags;
-			backScrollFlags = l.BackScrollFlags;
+			frontScrollFlags = new SDScrollFlags(l.FrontScrollFlags.Speed, l.FrontScrollFlags.Direction);
+			backScrollFlags =  new SDScrollFlags(l.BackScrollFlags.Speed, l.BackScrollFlags.Direction);
 		}
 
 		//mxd. Applies coped properties with all settings enabled
