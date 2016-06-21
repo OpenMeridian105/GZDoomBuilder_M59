@@ -40,11 +40,17 @@ namespace CodeImp.DoomBuilder
 		
 		#endregion
 
+		#region Properties
+
 		private int speed;
 		private int direction;
 
 		public int Speed {get { return speed; } set { speed = value; } }
 		public int Direction {get { return direction; } set { direction = value; } }
+
+		#endregion
+
+		#region Constructors
 
 		public SDScrollFlags()
 		{
@@ -70,6 +76,14 @@ namespace CodeImp.DoomBuilder
 				this.direction = SCROLL_N;
 		}
 
+		#endregion
+
+		#region Methods
+
+		/// <summary>
+		/// Set the integer speed field from a string speed.
+		/// </summary>
+		/// <param name="SpeedStr"></param>
 		public void SetSpeed(string SpeedStr)
 		{
 			if (SpeedStr == "Slow")
@@ -82,6 +96,10 @@ namespace CodeImp.DoomBuilder
 				speed = SPEED_NONE;
 		}
 
+		/// <summary>
+		///  Set the integer direction field from a string direction.
+		/// </summary>
+		/// <param name="DirectionStr"></param>
 		public void SetDirection(string DirectionStr)
 		{
 			if (DirectionStr == "NE")
@@ -102,7 +120,12 @@ namespace CodeImp.DoomBuilder
 				direction = SCROLL_N;
 		}
 
-		public string ScrollSpeed(int Speed)
+		/// <summary>
+		/// Takes an integer speed, returns the string name of the speed constant.
+		/// </summary>
+		/// <param name="Speed"></param>
+		/// <returns></returns>
+		public static string ScrollSpeed(int Speed)
 		{
 			if (Speed == SPEED_SLOW)
 				return "Slow";
@@ -113,7 +136,12 @@ namespace CodeImp.DoomBuilder
 			return "None";
 		}
 
-		public int ScrollSpeed(string Speed)
+		/// <summary>
+		/// Takes a string speed, returns the corresponding integer constant.
+		/// </summary>
+		/// <param name="Speed"></param>
+		/// <returns></returns>
+		public static int ScrollSpeed(string Speed)
 		{
 			if (Speed == "Slow")
 				return SPEED_SLOW;
@@ -124,7 +152,12 @@ namespace CodeImp.DoomBuilder
 			return SPEED_NONE;
 		}
 
-		public int ScrollDirection(string Direction)
+		/// <summary>
+		/// Takes a string direction, returns the corresponding integer constant.
+		/// </summary>
+		/// <param name="Direction"></param>
+		/// <returns></returns>
+		public static int ScrollDirection(string Direction)
 		{
 			if (Direction == "NE")
 				return SCROLL_NE;
@@ -143,7 +176,12 @@ namespace CodeImp.DoomBuilder
 			return SCROLL_N;
 		}
 
-		public string ScrollDirection(int Direction)
+		/// <summary>
+		/// Takes an integer direction, returns the corresponding string direction.
+		/// </summary>
+		/// <param name="Direction"></param>
+		/// <returns></returns>
+		public static string ScrollDirection(int Direction)
 		{
 			if (Direction == SCROLL_NE)
 				return "NE";
@@ -161,5 +199,7 @@ namespace CodeImp.DoomBuilder
 				return "NW";
 			return "North";
 		}
+
+		#endregion
 	}
 }

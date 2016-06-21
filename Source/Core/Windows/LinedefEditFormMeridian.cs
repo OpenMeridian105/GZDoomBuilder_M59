@@ -158,10 +158,10 @@ namespace CodeImp.DoomBuilder.Windows
 			frontside.Checked = (fl.Front != null);
 			backside.Checked = (fl.Back != null);
 			// Front speed and direction
-			int frontSpeed = SetSpeedButton(frontscrollspeed, fl.FrontScrollFlags);
-			int frontDirection = SetDirectionButton(frontscrolldirection, fl.FrontScrollFlags);
-			int backSpeed = SetSpeedButton(backscrollspeed, fl.BackScrollFlags);
-			int backDirection = SetDirectionButton(backscrolldirection, fl.BackScrollFlags);
+			SetSpeedButton(frontscrollspeed, fl.FrontScrollFlags);
+			SetDirectionButton(frontscrolldirection, fl.FrontScrollFlags);
+			SetSpeedButton(backscrollspeed, fl.BackScrollFlags);
+			SetDirectionButton(backscrolldirection, fl.BackScrollFlags);
 
 			if(fl.Front != null)
 			{
@@ -226,15 +226,6 @@ namespace CodeImp.DoomBuilder.Windows
 					backside.AutoCheck = false;
 				}
 
-				if (frontSpeed != l.FrontScrollFlags.Speed)
-					frontscrollspeed.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Text == "None").Checked = true;
-				if (frontDirection != l.FrontScrollFlags.Direction)
-					frontscrolldirection.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Text == "North").Checked = true;
-				if (backSpeed != l.BackScrollFlags.Speed)
-					backscrollspeed.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Text == "None").Checked = true;
-				if (backDirection != l.BackScrollFlags.Direction)
-					backscrolldirection.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Text == "North").Checked = true;
-
 				// Front settings
 				if(l.Front != null)
 				{
@@ -260,11 +251,25 @@ namespace CodeImp.DoomBuilder.Windows
 					if(frontsector.Text != l.Front.Sector.Index.ToString()) frontsector.Text = string.Empty;
 
 					if (frontspeed.Text != l.Front.AnimateSpeed.ToString())
-						frontspeed.Text = "0";
+						frontspeed.Text = "";
 
 					if (fronttag.Text != l.Front.Tag.ToString())
-						fronttag.Text = "0";
+						fronttag.Text = "";
 
+					if (l.FrontScrollFlags.Speed != fl.FrontScrollFlags.Speed)
+					{
+						foreach (RadioButton r in frontscrollspeed.Controls)
+						{
+							r.Checked = false;
+						}
+					}
+					if (l.FrontScrollFlags.Direction != fl.FrontScrollFlags.Direction)
+					{
+						foreach (RadioButton r in frontscrolldirection.Controls)
+						{
+							r.Checked = false;
+						}
+					}
 					frontTextureOffset.SetValues(l.Front.OffsetX, l.Front.OffsetY, false); //mxd
 				}
 
@@ -293,11 +298,24 @@ namespace CodeImp.DoomBuilder.Windows
 					if(backsector.Text != l.Back.Sector.Index.ToString()) backsector.Text = string.Empty;
 
 					if (backspeed.Text != l.Back.AnimateSpeed.ToString())
-						backspeed.Text = "0";
+						backspeed.Text = "";
 
 					if (backtag.Text != l.Back.Tag.ToString())
-						backtag.Text = "0";
-
+						backtag.Text = "";
+					if (l.BackScrollFlags.Speed != fl.BackScrollFlags.Speed)
+					{
+						foreach (RadioButton r in backscrollspeed.Controls)
+						{
+							r.Checked = false;
+						}
+					}
+					if (l.BackScrollFlags.Direction != fl.BackScrollFlags.Direction)
+					{
+						foreach (RadioButton r in backscrolldirection.Controls)
+						{
+							r.Checked = false;
+						}
+					}
 					backTextureOffset.SetValues(l.Back.OffsetX, l.Back.OffsetY, false); //mxd
 				}
 
@@ -326,30 +344,20 @@ namespace CodeImp.DoomBuilder.Windows
 			}
 		}
 
-		private int SetSpeedButton(GroupBox Box, SDScrollFlags Flags)
+		private void SetSpeedButton(GroupBox Box, SDScrollFlags Flags)
 		{
-			string str = Flags.ScrollSpeed(Flags.Speed);
+			string str = SDScrollFlags.ScrollSpeed(Flags.Speed);
 			RadioButton btn = Box.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Text == str);
 			if (btn != null)
-			{
 				btn.Checked = true;
-				return Flags.Speed;
-			}
-
-			return 0;
 		}
 
-		private int SetDirectionButton(GroupBox Box, SDScrollFlags Flags)
+		private void SetDirectionButton(GroupBox Box, SDScrollFlags Flags)
 		{
-			string str = Flags.ScrollDirection(Flags.Direction);
+			string str = SDScrollFlags.ScrollDirection(Flags.Direction);
 			RadioButton btn = Box.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Text == str);
 			if (btn != null)
-			{
 				btn.Checked = true;
-				return Flags.Direction;
-			}
-
-			return 0;
 		}
 
 		//mxd
@@ -422,6 +430,29 @@ namespace CodeImp.DoomBuilder.Windows
 					{
 						l.Front.Tag = index;
 					}
+
+					// Scrolling
+					int scrollSpeed = -1, scrollDir = -1;
+					foreach (RadioButton r in frontscrollspeed.Controls)
+					{
+						if (r.Checked)
+						{
+							scrollSpeed = SDScrollFlags.ScrollSpeed(r.Text);
+							break;
+						}
+					}
+					foreach (RadioButton r in frontscrolldirection.Controls)
+					{
+						if (r.Checked)
+						{
+							scrollDir = SDScrollFlags.ScrollDirection(r.Text);
+							break;
+						}
+					}
+					if (scrollSpeed >= 0)
+						l.FrontScrollFlags.Speed = scrollSpeed;
+					if (scrollDir >= 0)
+						l.FrontScrollFlags.Direction = scrollDir;
 				}
 
 				// Remove back side?
@@ -461,16 +492,30 @@ namespace CodeImp.DoomBuilder.Windows
 					{
 						l.Back.Tag = index;
 					}
-				}
 
-				string str = frontscrollspeed.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked == true).Text;
-				l.FrontScrollFlags.SetSpeed(str);
-				str = frontscrolldirection.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked == true).Text;
-				l.FrontScrollFlags.SetDirection(str);
-				str = backscrollspeed.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked == true).Text;
-				l.BackScrollFlags.SetSpeed(str);
-				str = backscrolldirection.Controls.OfType<RadioButton>().FirstOrDefault(r => r.Checked == true).Text;
-				l.BackScrollFlags.SetDirection(str);
+					// Scrolling
+					int scrollSpeed = -1, scrollDir = -1;
+					foreach (RadioButton r in backscrollspeed.Controls)
+					{
+						if (r.Checked)
+						{
+							scrollSpeed = SDScrollFlags.ScrollSpeed(r.Text);
+							break;
+						}
+					}
+					foreach (RadioButton r in backscrolldirection.Controls)
+					{
+						if (r.Checked)
+						{
+							scrollDir = SDScrollFlags.ScrollDirection(r.Text);
+							break;
+						}
+					}
+					if (scrollSpeed >= 0)
+						l.BackScrollFlags.Speed = scrollSpeed;
+					if (scrollDir >= 0)
+						l.BackScrollFlags.Direction = scrollDir;
+				}
 			}
 
 			// Update the used textures
