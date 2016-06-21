@@ -63,7 +63,7 @@ namespace CodeImp.DoomBuilder.IO
 		private const uint BF_POS_NO_VTILE     = 0x00040000; // + side no vertical tile
 		private const uint BF_NEG_NO_VTILE     = 0x00080000; // - side no vertical tile
 		
-		private const uint WF_BACKWARDS      = 0x00000001;   // Draw bitmap right/left reversed   
+		private const uint WF_BACKWARDS      = 0x00000001;   // Draw bitmap right/left reversed
 		private const uint WF_TRANSPARENT    = 0x00000002;   // normal wall has some transparency
 		private const uint WF_PASSABLE       = 0x00000004;   // wall can be walked through
 		private const uint WF_MAP_NEVER      = 0x00000008;   // Don't show wall on map
@@ -73,6 +73,17 @@ namespace CodeImp.DoomBuilder.IO
 		private const uint WF_BELOW_TOPDOWN  = 0x00000080;   // Draw lower texture top-down
 		private const uint WF_NORMAL_TOPDOWN = 0x00000100;   // Draw normal texture top-down
 		private const uint WF_NO_VTILE       = 0x00000200;   // Don't tile texture vertically (must be transparent)
+
+		private const uint SF_DEPTH0 = 0x00000000; // No depth (default)
+		private const uint SF_DEPTH1 = 0x00000001; // Shallow depth
+		private const uint SF_DEPTH2 = 0x00000002; // Shallow depth
+		private const uint SF_DEPTH3 = 0x00000003; // Shallow depth
+
+		private const uint SF_SCROLL_FLOOR    = 0x00000080; // Scroll floor texture
+		private const uint SF_SCROLL_CEILING  = 0x00000100; // Scroll ceiling texture
+		private const uint SF_FLICKER         = 0x00000200; // Flicker light in sector
+		private const uint SF_SLOPED_FLOOR    = 0x00000400; // Sloped floor
+		private const uint SF_SLOPED_CEILING  = 0x00000800; // Sloped ceiling
 
 		#endregion
 
@@ -114,8 +125,8 @@ namespace CodeImp.DoomBuilder.IO
 		public override int MinArgument { get { return byte.MinValue; } }
 		public override int MaxEffect { get { return ushort.MaxValue; } }
 		public override int MinEffect { get { return ushort.MinValue; } }
-		public override int MaxBrightness { get { return short.MaxValue; } }
-		public override int MinBrightness { get { return short.MinValue; } }
+		public override int MaxBrightness { get { return 255; } }
+		public override int MinBrightness { get { return 0; } }
 		public override int MaxThingType { get { return short.MaxValue; } } //mxd. Editor numbers must be in [1 .. 32767] range
 		public override int MinThingType { get { return 1; } } //mxd
 		public override float MaxCoordinate { get { return short.MaxValue; } }
@@ -139,16 +150,14 @@ namespace CodeImp.DoomBuilder.IO
 			// Create sectors list
 			Dictionary<int, Sector> sectorlink = new Dictionary<int, Sector>();
 
-			// Read sectors
+			// Read sectors.
 			ReadSectors(map, firstindex, sectorlink);
-
-			// Read linedefs, sidedefs and vertexes
+			// Read linedefs, sidedefs and vertexes.
 			ReadLinedefs(map, firstindex, vertexlink, sectorlink);
-
-			// Read things
+			// Read things.
 			ReadThings(map, firstindex);
-			
-			// Remove unused vertices
+
+			// Remove unused vertices.
 			map.RemoveUnusedVertices();
 			
 			// Return result;
@@ -209,20 +218,20 @@ namespace CodeImp.DoomBuilder.IO
 
 			// Read items from the lump
 			map.SetCapacity(0, 0, 0, numSectors, 0);
-			for (int i = 0; i < numSectors; i++)
+			for (int i = 0; i < numSectors; ++i)
 			{
 				// Read properties from stream
 				ushort tag = reader.ReadUInt16();
 				int texFloor = reader.ReadUInt16();
-				int texCeil = reader.ReadUInt16(); //string tceil = Lump.MakeNormalName(reader.ReadBytes(8), WAD.ENCODING);
-				ushort xoffset = reader.ReadUInt16();
-				ushort yoffset = reader.ReadUInt16();
+				int texCeil = reader.ReadUInt16();
+				int xoffset = reader.ReadUInt16();
+				int yoffset = reader.ReadUInt16();
 				ushort hfloor = reader.ReadUInt16();
 				ushort hceil = reader.ReadUInt16();
 				
 				byte bright = reader.ReadByte();
 				int flags = reader.ReadInt32(); // Blakserv flags.
-				byte speed = reader.ReadByte(); // Need to fix how this gets handled in doombuilder.
+				byte speed = reader.ReadByte();
 				
 				// Create new item
 				Sector s = map.CreateSector(i);
@@ -230,20 +239,30 @@ namespace CodeImp.DoomBuilder.IO
 				// Read slope data.
 				Vector3D vfloor = new Vector3D(0, 0, 0);
 				Vector3D vceil = new Vector3D(0, 0, 0);
-				float offsetf = 0, offsetc = 0;
+				float floorD = 0, ceilD = 0;
+				int texRotFloor = 0, texRotCeil = 0;
 
-				if ((flags & 0x400) == 0x400)
+				if ((flags & SF_SLOPED_FLOOR) == SF_SLOPED_FLOOR)
 				{
-					CalculateSlope(reader, out vfloor, out offsetf, true);
+					List<Vector3D> floorvert;
+					CalculateSlope(reader, out vfloor, out floorD, out texRotFloor, out floorvert, true);
+					s.FloorSlopeVertexes = floorvert;
 				}
-				if ((flags & 0x800) == 0x800)
+				if ((flags & SF_SLOPED_CEILING) == SF_SLOPED_CEILING)
 				{
-					CalculateSlope(reader, out vceil, out offsetc, false);
+					List<Vector3D> ceilvert;// = new List<Vector2D>();
+					CalculateSlope(reader, out vceil, out ceilD, out texRotCeil, out ceilvert, false);
+					s.CeilSlopeVertexes = ceilvert;
 				}
 
-				s.Update(hfloor, hceil, MakeGRDName(texFloor), MakeGRDName(texCeil),
-					offsetf, offsetc, vfloor.GetNormal(), vceil,
-					tag, bright, flags & 0xC, speed, false, false, false);
+				int depth = (int)(flags & SF_DEPTH3);
+				bool flicker = ((flags & SF_FLICKER) == SF_FLICKER);
+				bool scrollFloor = ((flags & SF_SCROLL_FLOOR) == SF_SCROLL_FLOOR);
+				bool scrollCeiling = ((flags & SF_SCROLL_CEILING) == SF_SCROLL_CEILING);
+				s.ScrollFlags = new SDScrollFlags(SectorScrollSpeed(flags), SectorScrollDirection(flags));
+				s.Update(hfloor, hceil, xoffset, yoffset, MakeGRDName(texFloor), MakeGRDName(texCeil),
+					floorD, ceilD, texRotFloor, texRotCeil, vfloor.GetNormal(), vceil.GetNormal(),
+					tag, bright, depth, speed, flicker, scrollFloor, scrollCeiling);
 
 				// Add it to the lookup table
 				link.Add(i, s);
@@ -398,22 +417,169 @@ namespace CodeImp.DoomBuilder.IO
 		// This writes a MapSet to the file
 		public override void Write(MapSet map, string mapname, int position)
 		{
-			Dictionary<Vertex, int> vertexids = new Dictionary<Vertex,int>();
-			Dictionary<Sidedef, int> sidedefids = new Dictionary<Sidedef,int>();
-			Dictionary<Sector, int> sectorids = new Dictionary<Sector,int>();
-			
-			// First index everything
-			foreach(Vertex v in map.Vertices) vertexids.Add(v, vertexids.Count);
-			foreach(Sidedef sd in map.Sidedefs) sidedefids.Add(sd, sidedefids.Count);
-			foreach(Sector s in map.Sectors) sectorids.Add(s, sectorids.Count);
-			
-			// Write lumps to wad (note the backwards order because they
-			// are all inserted at position+1 when not found)
-			WriteSectors(map, position, manager.Config.MapLumps);
-			WriteVertices(map, position, manager.Config.MapLumps);
-			WriteSidedefs(map, position, manager.Config.MapLumps, sectorids);
-			WriteLinedefs(map, position, manager.Config.MapLumps, sidedefids, vertexids);
+			// Create the file sidedef list.
+			Dictionary<int, FileSidedef> fileSideDefs = new Dictionary<int, FileSidedef>();
+			foreach (Linedef l in map.Linedefs)
+			{
+				if ((l.Start.Position.x == l.End.Position.x)
+					&& (l.Start.Position.y == l.End.Position.y))
+				{
+					General.ErrorLogger.Add(ErrorType.Warning, "Linedef " + l.Index + " has zero length!.");
+					continue;
+				}
+				if (l.Front != null)
+					AddFileSidedef(l.Front, fileSideDefs);
+				if (l.Back != null)
+					AddFileSidedef(l.Back, fileSideDefs);
+			}
+
+			Vector2D mapBorder = new Vector2D();
+
+			WriteSecurity(map, position, manager.Config.MapLumps);
+			WriteMapBoundary(map, position, manager.Config.MapLumps, out mapBorder);
+			WriteClientWalls(map, position, manager.Config.MapLumps);
+			WriteNodes(map, position, manager.Config.MapLumps);
+			WriteRoomeditWalls(map, position, manager.Config.MapLumps, fileSideDefs);
+			WriteSidedefs(map, position, manager.Config.MapLumps, fileSideDefs);
+			WriteSectors(map, position, manager.Config.MapLumps, mapBorder);
 			WriteThings(map, position, manager.Config.MapLumps);
+		}
+
+		private void WriteClientWalls(MapSet map, int position, Dictionary<string, MapLumpInfo> maplumps)
+		{
+			// Create memory to write to
+			MemoryStream mem = new MemoryStream();
+			BinaryWriter writer = new BinaryWriter(mem, WAD.ENCODING);
+
+			writer.Write((Int32)0);
+
+			// Find insert position and remove old lump
+			int insertpos = MapManager.RemoveSpecificLump(wad, "CLIWALLS", position, MapManager.TEMP_MAP_HEADER, maplumps);
+			if (insertpos == -1)
+				insertpos = position + 1;
+			if (insertpos > wad.Lumps.Count)
+				insertpos = wad.Lumps.Count;
+
+			// Create the lump from memory
+			Lump lump = wad.Insert("CLIWALLS", insertpos, (int)mem.Length);
+			lump.Stream.Seek(0, SeekOrigin.Begin);
+			mem.WriteTo(lump.Stream);
+		}
+
+		private void WriteNodes(MapSet map, int position, Dictionary<string, MapLumpInfo> maplumps)
+		{
+			// Create memory to write to
+			MemoryStream mem = new MemoryStream();
+			BinaryWriter writer = new BinaryWriter(mem, WAD.ENCODING);
+
+			writer.Write((Int32)0);
+
+			// Find insert position and remove old lump
+			int insertpos = MapManager.RemoveSpecificLump(wad, "NODES", position, MapManager.TEMP_MAP_HEADER, maplumps);
+			if (insertpos == -1)
+				insertpos = position + 1;
+			if (insertpos > wad.Lumps.Count)
+				insertpos = wad.Lumps.Count;
+
+			// Create the lump from memory
+			Lump lump = wad.Insert("NODES", insertpos, (int)mem.Length);
+			lump.Stream.Seek(0, SeekOrigin.Begin);
+			mem.WriteTo(lump.Stream);
+		}
+
+		private void WriteSecurity(MapSet map, int position, Dictionary<string, MapLumpInfo> maplumps)
+		{
+			// Create memory to write to
+			MemoryStream mem = new MemoryStream();
+			BinaryWriter writer = new BinaryWriter(mem, WAD.ENCODING);
+
+			writer.Write((Int32)0);
+
+			// Find insert position and remove old lump
+			int insertpos = MapManager.RemoveSpecificLump(wad, "SECURITY", position, MapManager.TEMP_MAP_HEADER, maplumps);
+			if (insertpos == -1)
+				insertpos = position + 1;
+			if (insertpos > wad.Lumps.Count)
+				insertpos = wad.Lumps.Count;
+
+			// Create the lump from memory
+			Lump lump = wad.Insert("SECURITY", insertpos, (int)mem.Length);
+			lump.Stream.Seek(0, SeekOrigin.Begin);
+			mem.WriteTo(lump.Stream);
+		}
+
+		private void WriteMapBoundary(MapSet map, int position, Dictionary<string, MapLumpInfo> maplumps, out Vector2D mapBorder)
+		{
+			// Create memory to write to
+			MemoryStream mem = new MemoryStream();
+			BinaryWriter writer = new BinaryWriter(mem, WAD.ENCODING);
+
+			float mapMinX = MinCoordinate;
+ 			float mapMinY = MinCoordinate;
+			float mapMaxX = MaxCoordinate;
+			float mapMaxY = MaxCoordinate;
+
+			foreach (Vertex V in map.Vertices)
+			{
+				if (V.Position.x < mapMinX) mapMinX = V.Position.x;
+				if (V.Position.x > mapMaxX) mapMaxX = V.Position.x;
+				if (V.Position.y < mapMinY) mapMinY = V.Position.y;
+				if (V.Position.y > mapMaxY) mapMaxY = V.Position.y;
+			}
+
+			if (map.Things.Count == 2)
+			{
+				float[] x = new float[2];
+				float[] y = new float[2];
+				int i = 0;
+
+				foreach (Thing T in map.Things)
+				{
+					x[i] = T.Position.x;
+					y[i] = T.Position.y;
+					++i;
+				}
+				if (x[0] <= x[1])
+				{
+					mapMinX = x[0];
+					mapMaxX = x[1];
+				}
+				else
+				{
+					mapMinX = x[1];
+					mapMaxX = x[0];
+				}
+				if (y[0] <= y[1])
+				{
+					mapMinY = y[0];
+					mapMaxY = y[1];
+				}
+				else
+				{
+					mapMinY = y[1];
+					mapMaxY = y[0];
+				}
+			}
+			mapBorder.x = mapMinX;
+			mapBorder.y = mapMaxY;
+
+			int width = (int)(mapMaxX - mapMinX) * 16;
+			int height = (int)(mapMaxY - mapMinY) * 16;
+
+			writer.Write((Int32)width);
+			writer.Write((Int32)height);
+
+			// Find insert position and remove old lump
+			int insertpos = MapManager.RemoveSpecificLump(wad, "MAPBOUND", position, MapManager.TEMP_MAP_HEADER, maplumps);
+			if (insertpos == -1)
+				insertpos = position + 1;
+			if (insertpos > wad.Lumps.Count)
+				insertpos = wad.Lumps.Count;
+
+			// Create the lump from memory
+			Lump lump = wad.Insert("MAPBOUND", insertpos, (int)mem.Length);
+			lump.Stream.Seek(0, SeekOrigin.Begin);
+			mem.WriteTo(lump.Stream);
 		}
 
 		// This writes the THINGS to WAD file
@@ -445,71 +611,75 @@ namespace CodeImp.DoomBuilder.IO
 			mem.WriteTo(lump.Stream);
 		}
 
-		// This writes the VERTEXES to WAD file
-		private void WriteVertices(MapSet map, int position, Dictionary<string, MapLumpInfo> maplumps)
-		{
-			// Create memory to write to
-			MemoryStream mem = new MemoryStream();
-			BinaryWriter writer = new BinaryWriter(mem, WAD.ENCODING);
-
-			// Go for all vertices
-			foreach(Vertex v in map.Vertices)
-			{
-				// Write properties to stream
-				writer.Write((Int16)(int)Math.Round(v.Position.x));
-				writer.Write((Int16)(int)Math.Round(v.Position.y));
-			}
-
-			// Find insert position and remove old lump
-			int insertpos = MapManager.RemoveSpecificLump(wad, "VERTEXES", position, MapManager.TEMP_MAP_HEADER, maplumps);
-			if(insertpos == -1) insertpos = position + 1;
-			if(insertpos > wad.Lumps.Count) insertpos = wad.Lumps.Count;
-
-			// Create the lump from memory
-			Lump lump = wad.Insert("VERTEXES", insertpos, (int)mem.Length);
-			lump.Stream.Seek(0, SeekOrigin.Begin);
-			mem.WriteTo(lump.Stream);
-		}
-
 		// This writes the LINEDEFS to WAD file
-		private void WriteLinedefs(MapSet map, int position, Dictionary<string, MapLumpInfo> maplumps, IDictionary<Sidedef, int> sidedefids, IDictionary<Vertex, int> vertexids)
+		private void WriteRoomeditWalls(MapSet map, int position, Dictionary<string, MapLumpInfo> maplumps,
+										Dictionary<int, FileSidedef> fileSidedefs)
 		{
 			// Create memory to write to
 			MemoryStream mem = new MemoryStream();
 			BinaryWriter writer = new BinaryWriter(mem, WAD.ENCODING);
+			
+			writer.Write((Int16)map.Linedefs.Count);
 
 			// Go for all lines
-			foreach(Linedef l in map.Linedefs)
+			FileSidedef FSD1, FSD2;
+			Sidedef SD1 = null, SD2 = null;
+			bool retVal = false;
+
+			foreach (Linedef l in map.Linedefs)
 			{
-				// Convert flags
-				int flags = 0;
-				foreach(KeyValuePair<string, bool> f in l.Flags)
+				if (l.Front != null)
 				{
-					int fnum;
-					if(f.Value && int.TryParse(f.Key, out fnum)) flags |= fnum;
+					SD1 = l.Front;
+					retVal = fileSidedefs.TryGetValue(l.FileSidedef1, out FSD1);
+					if (!retVal)
+						l.FileSidedef1 = 0;
 				}
+				else
+					l.FileSidedef1 = 0;
 
-				// Add activates to flags
-				flags |= (l.Activate & manager.Config.LinedefActivationsFilter);
-				
-				// Write properties to stream
-				writer.Write((UInt16)vertexids[l.Start]);
-				writer.Write((UInt16)vertexids[l.End]);
-				writer.Write((UInt16)flags);
-				writer.Write((Byte)l.Action);
-				writer.Write((Byte)l.Args[0]);
-				writer.Write((Byte)l.Args[1]);
-				writer.Write((Byte)l.Args[2]);
-				writer.Write((Byte)l.Args[3]);
-				writer.Write((Byte)l.Args[4]);
+				if (l.Back != null)
+				{
+					SD2 = l.Back;
+					retVal = fileSidedefs.TryGetValue(l.FileSidedef2, out FSD2);
+					if (!retVal)
+						l.FileSidedef2 = 0;
+				}
+				else
+					l.FileSidedef2 = 0;
 
-				// Front sidedef
-				ushort sid = (l.Front == null ? ushort.MaxValue : (UInt16)sidedefids[l.Front]);
-				writer.Write(sid);
+				// Sidedef numbers
+				writer.Write((UInt16)l.FileSidedef1);
+				writer.Write((UInt16)l.FileSidedef2);
 
-				// Back sidedef
-				sid = (l.Back == null ? ushort.MaxValue : (UInt16)sidedefids[l.Back]);
-				writer.Write(sid);
+				short tmp = 0;
+				if (l.FileSidedef1 > 0)
+					tmp = (short)SD1.OffsetX;
+				writer.Write((Int16)tmp);
+				if (l.FileSidedef2 > 0)
+					tmp = (short)SD2.OffsetX;
+				writer.Write((Int16)tmp);
+				if (l.FileSidedef1 > 0)
+					tmp = (short)SD1.OffsetY;
+				writer.Write((Int16)tmp);
+				if (l.FileSidedef2 > 0)
+					tmp = (short)SD2.OffsetY;
+				writer.Write((Int16)tmp);
+
+				tmp = -1;
+				if (l.FileSidedef1 > 0)
+					tmp = (short)SD1.Sector.Index;
+				writer.Write((Int16)tmp);
+				tmp = -1;
+				if (l.FileSidedef2 > 0)
+					tmp = (short)SD2.Sector.Index;
+				writer.Write((Int16)tmp);
+
+				Vector2D vs = l.Start.Position, ve = l.End.Position;
+				writer.Write((Int32)vs.x);
+				writer.Write((Int32)vs.y);
+				writer.Write((Int32)ve.x);
+				writer.Write((Int32)ve.y);
 			}
 
 			// Find insert position and remove old lump
@@ -524,22 +694,22 @@ namespace CodeImp.DoomBuilder.IO
 		}
 
 		// This writes the SIDEDEFS to WAD file
-		private void WriteSidedefs(MapSet map, int position, Dictionary<string, MapLumpInfo> maplumps, IDictionary<Sector, int> sectorids)
+		private void WriteSidedefs(MapSet map, int position, Dictionary<string, MapLumpInfo> maplumps,
+			Dictionary<int, FileSidedef> fileSideDefs)
 		{
 			// Create memory to write to
 			MemoryStream mem = new MemoryStream();
 			BinaryWriter writer = new BinaryWriter(mem, WAD.ENCODING);
 
-			// Go for all sidedefs
-			foreach(Sidedef sd in map.Sidedefs)
+			writer.Write((UInt16)fileSideDefs.Count);
+			foreach (KeyValuePair<int, FileSidedef> fsd in fileSideDefs)
 			{
-				// Write properties to stream
-				writer.Write((Int16)sd.OffsetX);
-				writer.Write((Int16)sd.OffsetY);
-				writer.Write(Lump.MakeFixedName(sd.HighTexture, WAD.ENCODING));
-				writer.Write(Lump.MakeFixedName(sd.LowTexture, WAD.ENCODING));
-				writer.Write(Lump.MakeFixedName(sd.MiddleTexture, WAD.ENCODING));
-				writer.Write((UInt16)sectorids[sd.Sector]);
+				writer.Write((UInt16)fsd.Value.id);
+				writer.Write((UInt16)fsd.Value.texMid);
+				writer.Write((UInt16)fsd.Value.texHigh);
+				writer.Write((UInt16)fsd.Value.texLow);
+				writer.Write((Int32)fsd.Value.flags);
+				writer.Write((Byte)fsd.Value.animateSpeed);
 			}
 
 			// Find insert position and remove old lump
@@ -554,23 +724,33 @@ namespace CodeImp.DoomBuilder.IO
 		}
 
 		// This writes the SECTORS to WAD file
-		private void WriteSectors(MapSet map, int position, Dictionary<string, MapLumpInfo> maplumps)
+		private void WriteSectors(MapSet map, int position, Dictionary<string, MapLumpInfo> maplumps, Vector2D mapBorder)
 		{
 			// Create memory to write to
 			MemoryStream mem = new MemoryStream();
 			BinaryWriter writer = new BinaryWriter(mem, WAD.ENCODING);
 
+			writer.Write((Int16)map.Sectors.Count);
+
 			// Go for all sectors
 			foreach(Sector s in map.Sectors)
 			{
 				// Write properties to stream
-				writer.Write((Int16)s.FloorHeight);
-				writer.Write((Int16)s.CeilHeight);
-				writer.Write(Lump.MakeFixedName(s.FloorTexture, WAD.ENCODING));
-				writer.Write(Lump.MakeFixedName(s.CeilTexture, WAD.ENCODING));
-				writer.Write((Int16)s.Brightness);
-				writer.Write((UInt16)s.Effect);
 				writer.Write((UInt16)s.Tag);
+				writer.Write((UInt16)MakeGRDNumber(s.FloorTexture));
+				writer.Write((UInt16)MakeGRDNumber(s.CeilTexture));
+				writer.Write((UInt16)s.OffsetX);
+				writer.Write((UInt16)s.OffsetY);
+				writer.Write((UInt16)s.FloorHeight);
+				writer.Write((UInt16)s.CeilHeight);
+				writer.Write((Byte)s.Brightness);
+				uint flags = MakeBlakservSectorFlags(s);
+				writer.Write((Int32)flags);
+				writer.Write((Byte)s.AnimationSpeed);
+				if ((flags & SF_SLOPED_FLOOR) == SF_SLOPED_FLOOR)
+					WriteSlopeInfo(writer, map, s, mapBorder, true);
+				if ((flags & SF_SLOPED_CEILING) == SF_SLOPED_CEILING)
+					WriteSlopeInfo(writer, map, s, mapBorder, false);
 			}
 
 			// Find insert position and remove old lump
@@ -584,6 +764,102 @@ namespace CodeImp.DoomBuilder.IO
 			mem.WriteTo(lump.Stream);
 		}
 		
+		private void WriteSlopeInfo(BinaryWriter writer, MapSet map, Sector s, Vector2D mapBorder, bool floor)
+		{
+			List<Vector3D> svl;
+			Plane pl;
+			int texRot = 0;
+
+			if (floor)
+			{
+				pl = Sector.GetFloorPlane(s);
+				svl = s.FloorSlopeVertexes;
+				texRot = s.FloorTexRot * 4096 / 360;
+			}
+			else
+			{
+				pl = Sector.GetCeilingPlane(s);
+				svl = s.CeilSlopeVertexes;
+				texRot = s.CeilTexRot * 4096 / 360;
+			}
+
+			// Create client slope.
+			double[] u = new double[3];
+			double[] v = new double[3];
+			double[] uv = new double[3];
+			Vector3D[] p = new Vector3D[3];
+			double ucrossv;
+			int i = 0;
+
+			foreach (Vector3D V in svl)
+			{
+				p[i].x = (V.x - mapBorder.x) * 16.0f;
+				p[i].y = (mapBorder.y - V.y) * 16.0f;
+				p[i].z = V.z * 16.0f;
+				++i;
+			}
+
+			// Compute new plane equation.
+			u[0] = p[1].x - p[0].x;
+			u[1] = p[1].y - p[0].y;
+			u[2] = p[1].z - p[0].z;
+			v[0] = p[2].x - p[0].x;
+			v[1] = p[2].y - p[0].y;
+			v[2] = p[2].z - p[0].z;
+			uv[0] = u[2] * v[1] - u[1] * v[2];
+			uv[1] = u[0] * v[2] - u[2] * v[0];
+			uv[2] = u[1] * v[0] - u[0] * v[1];
+			ucrossv = Math.Sqrt(uv[0] * uv[0] + uv[1] * uv[1] + uv[2] * uv[2]);
+
+			Vector3D newABC = new Vector3D(
+				(float)(uv[0] * 1024 / ucrossv),
+				(float)(uv[1] * 1024 / ucrossv),
+				(float)(uv[2] * 1024 / ucrossv));
+			float offset = -(newABC.x * p[0].x + newABC.y * p[0].y + newABC.z * p[0].z);
+
+			if (floor)
+			{
+				if (newABC.z < 0)
+				{
+					// normals of floors must point up
+					newABC.x = -newABC.x;
+					newABC.y = -newABC.y;
+					newABC.z = -newABC.z;
+					offset = -offset;
+				}
+			}
+			else
+			{
+				if (newABC.z > 0)
+				{
+					// normals of ceilings must point down
+					newABC.x = -newABC.x;
+					newABC.y = -newABC.y;
+					newABC.z = -newABC.z;
+					offset = -offset;
+				}
+			}
+
+			// Write out the new plane abcd.
+			writer.Write((Single)newABC.x);
+			writer.Write((Single)newABC.y);
+			writer.Write((Single)newABC.z);
+			writer.Write((Single)offset);
+
+			// Write texture origin and rotation (in client units).
+			writer.Write((Int32)p[0].x);
+			writer.Write((Int32)p[0].y);
+			writer.Write((Int32)texRot);
+
+			// Write original vertex positions, in room editor units.
+			foreach (Vector2D V in svl)
+			{
+				writer.Write((Int16)V.x);
+				writer.Write((Int16)V.y);
+				writer.Write((Int16)pl.GetZ(V.x, V.y));
+			}
+		}
+
 		#endregion
 
 		#region Utility
@@ -594,8 +870,11 @@ namespace CodeImp.DoomBuilder.IO
 		/// <param name="Reader"></param>
 		/// <param name="VSlope"></param>
 		/// <param name="Offset"></param>
+		/// <param name="TexRot"></param>
+		/// <param name="verts"></param>
 		/// <param name="IsFloor"></param>
-		private void CalculateSlope(BinaryReader Reader, out Vector3D VSlope, out float Offset, bool IsFloor)
+		private void CalculateSlope(BinaryReader Reader, out Vector3D VSlope,
+			out float Offset, out int TexRot, out List<Vector3D> verts, bool IsFloor)
 		{
 			double[] u = new double[3];
 			double[] v = new double[3];
@@ -606,13 +885,15 @@ namespace CodeImp.DoomBuilder.IO
 			// Discard existing slope calcs (used in client).
 			Reader.ReadBytes(16);
 
-			// Slope texture offsets and rotation.
-			int texX = Reader.ReadInt32();
-			int texY = Reader.ReadInt32();
-			int texAngle = Reader.ReadInt32(); // in deg
+			// Slope texture origin and rotation.
+			// Texture origin is in client units - discard.
+			Reader.ReadInt32();
+			Reader.ReadInt32();
+			TexRot = Reader.ReadInt32() * 360/4096; // in deg
 
 			short temp;
-	
+
+			verts = new List<Vector3D>(3);
 			for (int i = 0; i < 3; ++i)
 			{
 				temp = Reader.ReadInt16();
@@ -621,6 +902,7 @@ namespace CodeImp.DoomBuilder.IO
 				p[i].y = (float)temp;
 				temp = Reader.ReadInt16();
 				p[i].z = (float)temp;
+				verts.Add(new Vector3D(p[i].x, p[i].y, p[i].z));
 			}
 
 			u[0] = p[1].x - p[0].x;
@@ -717,6 +999,90 @@ namespace CodeImp.DoomBuilder.IO
 		}
 
 		/// <summary>
+		/// Converts a Linedef's flags into the blakserv/roo equivalent.
+		/// </summary>
+		/// <param name="l"></param>
+		/// <param name="positive"></param>
+		/// <returns></returns>
+		private uint MakeBlakservSidedefFlags(Linedef l, bool positive)
+		{
+			uint blak_flags = 0, flags = 0;
+
+			Dictionary<string, bool> stringflags = l.Flags;
+
+			foreach (KeyValuePair<string, bool> f in l.Flags)
+			{
+				int fnum;
+				if (f.Value && int.TryParse(f.Key, out fnum))
+					blak_flags |= (uint)fnum;
+			}
+
+			if ((positive && ((blak_flags & BF_POS_BACKWARDS) == BF_POS_BACKWARDS))
+				|| (!positive && ((blak_flags & BF_NEG_BACKWARDS) == BF_NEG_BACKWARDS)))
+				flags |= WF_BACKWARDS;
+			if ((positive && ((blak_flags & BF_POS_TRANSPARENT) == BF_POS_TRANSPARENT))
+				|| (!positive && ((blak_flags & BF_NEG_TRANSPARENT) == BF_NEG_TRANSPARENT)))
+				flags |= WF_TRANSPARENT;
+			if ((positive && ((blak_flags & BF_POS_PASSABLE) == BF_POS_PASSABLE))
+				|| (!positive && ((blak_flags & BF_NEG_PASSABLE) == BF_NEG_PASSABLE)))
+				flags |= WF_PASSABLE;
+			if ((positive && ((blak_flags & BF_POS_NOLOOKTHROUGH) == BF_POS_NOLOOKTHROUGH))
+				|| (!positive && ((blak_flags & BF_NEG_NOLOOKTHROUGH) == BF_NEG_NOLOOKTHROUGH)))
+				flags |= WF_NOLOOKTHROUGH;
+			if ((positive && ((blak_flags & BF_POS_ABOVE_BUP) == BF_POS_ABOVE_BUP))
+				|| (!positive && ((blak_flags & BF_NEG_ABOVE_BUP) == BF_NEG_ABOVE_BUP)))
+				flags |= WF_ABOVE_BOTTOMUP;
+			if ((positive && ((blak_flags & BF_POS_BELOW_TDOWN) == BF_POS_BELOW_TDOWN))
+				|| (!positive && ((blak_flags & BF_NEG_BELOW_TDOWN) == BF_NEG_BELOW_TDOWN)))
+				flags |= WF_BELOW_TOPDOWN;
+			if ((positive && ((blak_flags & BF_POS_NORMAL_TDOWN) == BF_POS_NORMAL_TDOWN))
+				|| (!positive && ((blak_flags & BF_NEG_NORMAL_TDOWN) == BF_NEG_NORMAL_TDOWN)))
+				flags |= WF_NORMAL_TOPDOWN;
+			if ((positive && ((blak_flags & BF_POS_NO_VTILE) == BF_POS_NO_VTILE))
+				|| (!positive && ((blak_flags & BF_NEG_NO_VTILE) == BF_NEG_NO_VTILE)))
+				flags |= WF_NO_VTILE;
+
+			if ((blak_flags & BF_MAP_NEVER) == BF_MAP_NEVER)
+				flags |= WF_MAP_NEVER;
+			if ((blak_flags & BF_MAP_ALWAYS) == BF_MAP_ALWAYS)
+				flags |= WF_MAP_ALWAYS;
+
+			if (positive)
+			{
+				flags |= (uint)l.FrontScrollFlags.Speed << 10;
+				flags |= (uint)l.FrontScrollFlags.Direction << 12;
+			}
+			else
+			{
+				flags |= (uint)l.BackScrollFlags.Speed << 10;
+				flags |= (uint)l.BackScrollFlags.Direction << 12;
+			}
+
+			return flags;
+		}
+
+		private uint MakeBlakservSectorFlags(Sector S)
+		{
+			uint flags = 0;
+			if (S.Flicker)
+				flags |= SF_FLICKER;
+			if (S.ScrollFloor)
+				flags |= SF_SCROLL_FLOOR;
+			if (S.ScrollCeiling)
+				flags |= SF_SCROLL_CEILING;
+			if (S.Depth > 0)
+				flags |= (uint)S.Depth;
+			if (S.FloorSlope.GetLengthSq() > 0 && !float.IsNaN(S.FloorSlopeOffset / S.FloorSlope.z))
+				flags |= SF_SLOPED_FLOOR;
+			if (S.CeilSlope.GetLengthSq() > 0 && !float.IsNaN(S.CeilSlopeOffset / S.CeilSlope.z))
+				flags |= SF_SLOPED_CEILING;
+			flags |= (uint)S.ScrollFlags.Speed << 2;
+			flags |= (uint)S.ScrollFlags.Direction << 4;
+
+			return flags;
+		}
+	
+		/// <summary>
 		/// Gets the wall scroll speed from the saved blakserv sidedef flags.
 		/// </summary>
 		/// <param name="flags"></param>
@@ -734,6 +1100,16 @@ namespace CodeImp.DoomBuilder.IO
 		private int WallScrollDirection(int flags)
 		{
 			return ((flags & 0x00007000) >> 12);
+		}
+
+		private int SectorScrollSpeed(int flags)
+		{
+			return ((flags & 0x0000000C) >> 2);
+		}
+
+		private int SectorScrollDirection(int flags)
+		{
+			return ((flags & 0x00000070) >> 4);
 		}
 
 		/// <summary>
@@ -766,13 +1142,61 @@ namespace CodeImp.DoomBuilder.IO
 		/// </summary>
 		/// <param name="Name"></param>
 		/// <returns></returns>
-		private int MakeGRDNumber(string Name)
+		private uint MakeGRDNumber(string Name)
 		{
 			if (Name == "-" || Name == "")
 				return 0;
-			if (!Name.StartsWith("grd"))
+			if (!Name.StartsWith("grd", StringComparison.CurrentCultureIgnoreCase))
 				return 0;
-			return Int32.Parse(Name.Substring(3, 5));
+			return UInt16.Parse(Name.Substring(3, 5));
+		}
+
+		/// <summary>
+		/// Takes a FileSidedef struct and a Sidedef, returns true if they match.
+		/// </summary>
+		/// <param name="s1"></param>
+		/// <param name="s"></param>
+		/// <param name="flags"></param>
+		/// <returns></returns>
+		private bool SidedefsEquivalent(FileSidedef s1, Sidedef s, uint flags)
+		{
+			return (s1.id == s.Tag &&
+				s1.texHigh == MakeGRDNumber(s.HighTexture) &&
+				s1.texLow == MakeGRDNumber(s.LowTexture) &&
+				s1.texMid == MakeGRDNumber(s.MiddleTexture) &&
+				s1.flags == (int)flags &&
+				s1.animateSpeed == s.AnimateSpeed);
+		}
+
+		private void AddFileSidedef(Sidedef SD, Dictionary<int, FileSidedef> fileSideDefs)
+		{
+			bool positive = SD.IsFront;
+			uint flags = MakeBlakservSidedefFlags(SD.Line, SD.IsFront);
+
+			foreach (KeyValuePair<int, FileSidedef>f in fileSideDefs)
+			{
+				if (SidedefsEquivalent(f.Value, SD, flags))
+				{
+					if (positive)
+						SD.Line.FileSidedef1 = f.Key;
+					else
+						SD.Line.FileSidedef2 = f.Key;
+					return;
+				}
+			}
+
+			FileSidedef fsd = new FileSidedef();
+			fsd.id = SD.Tag;
+			fsd.texMid = (int)MakeGRDNumber(SD.MiddleTexture);
+			fsd.texHigh = (int)MakeGRDNumber(SD.HighTexture);
+			fsd.texLow = (int)MakeGRDNumber(SD.LowTexture);
+			fsd.flags = (int)flags;
+			fsd.animateSpeed = SD.AnimateSpeed;
+			fileSideDefs.Add(fileSideDefs.Count + 1, fsd);
+			if (positive)
+				SD.Line.FileSidedef1 = fileSideDefs.Count;
+			else
+				SD.Line.FileSidedef2 = fileSideDefs.Count;
 		}
 
 		#endregion
