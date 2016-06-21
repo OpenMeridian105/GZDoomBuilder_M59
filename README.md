@@ -18,10 +18,10 @@ and is called when saving a room.
 To use this editor, fork the repo and open builder.sln. Build the projects and
 run /Build/Builder.exe. To easily load Meridian 59 graphics (as bgf files), put
 all the grd*.bgf files in a separate directory and add it using the editor's
-Tools->Game Configuration menu.
+Tools->Game Configuration menu. Make sure both the checkboxes for loading resources
+as flats and textures are checked as shown in the following image:
 
 ![Example](http://i.imgur.com/XwZhPra.png)
-
 
 The GZDoomBuilder port should still be able to create/modify Doom and Doom-related
 maps, but porting maps from Doom to Meridian 59 format has not been attempted yet.
