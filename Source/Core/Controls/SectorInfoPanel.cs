@@ -70,27 +70,41 @@ namespace CodeImp.DoomBuilder.Controls
 			floorname.Text = s.FloorTexture;
 			ceilingname.Text = s.CeilTexture;
 
-			//mxd. Set tags
-			if(s.Tags.Count > 1)
+			if (General.Map.MERIDIAN)
 			{
-				string[] tags = new string[s.Tags.Count];
-				for(int i = 0; i < s.Tags.Count; i++) tags[i] = s.Tags[i].ToString();
-				tag.Text = string.Join(", ", tags);
+				tag.Text = s.SectorTag.ToString();
 				tag.Enabled = true;
 				taglabel.Enabled = true;
-				taglabel.Text = "Tags:";
+				taglabel.Text = "Tag:";
+				
+				effect.Text = s.OffsetX.ToString() + ", " + s.OffsetY.ToString();
+				effect.Enabled = true;
+				effectlabel.Enabled = true;
+				effectlabel.Text = "Floor offset:";
 			}
 			else
 			{
-				tag.Text = s.Tag + (General.Map.Options.TagLabels.ContainsKey(s.Tag) ? " - " + General.Map.Options.TagLabels[s.Tag] : string.Empty);
-				tag.Enabled = (s.Tag != 0);
-				taglabel.Enabled = (s.Tag != 0);
-				taglabel.Text = "Tag:";
+				//mxd. Set tags
+				if (s.Tags.Count > 1)
+				{
+					string[] tags = new string[s.Tags.Count];
+					for (int i = 0; i < s.Tags.Count; i++) tags[i] = s.Tags[i].ToString();
+					tag.Text = string.Join(", ", tags);
+					tag.Enabled = true;
+					taglabel.Enabled = true;
+					taglabel.Text = "Tags:";
+				}
+				else
+				{
+					tag.Text = s.Tag + (General.Map.Options.TagLabels.ContainsKey(s.Tag) ? " - " + General.Map.Options.TagLabels[s.Tag] : string.Empty);
+					tag.Enabled = (s.Tag != 0);
+					taglabel.Enabled = (s.Tag != 0);
+					taglabel.Text = "Tag:";
+				}
+				//mxd
+				effect.Enabled = (s.Effect != 0);
+				effectlabel.Enabled = (s.Effect != 0);
 			}
-
-			//mxd
-			effect.Enabled = (s.Effect != 0);
-			effectlabel.Enabled = (s.Effect != 0);
 
 			//mxd. Texture size
 			if(s.LongFloorTexture == MapSet.EmptyLongName)

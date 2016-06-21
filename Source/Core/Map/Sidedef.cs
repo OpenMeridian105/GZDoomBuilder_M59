@@ -52,6 +52,10 @@ namespace CodeImp.DoomBuilder.Map
 		private long longtexnamemid;
 		private long longtexnamelow;
 
+		// Meridian 59 properties.
+		private int animatespeed;
+		private int tag;
+
 		//mxd. UDMF properties
 		private Dictionary<string, bool> flags;
 
@@ -71,6 +75,8 @@ namespace CodeImp.DoomBuilder.Map
 		public float Angle { get { return (IsFront ? linedef.Angle : Angle2D.Normalized(linedef.Angle + Angle2D.PI)); } }
 		public int OffsetX { get { return offsetx; } set { BeforePropsChange(); offsetx = value; } }
 		public int OffsetY { get { return offsety; } set { BeforePropsChange(); offsety = value; } }
+		public int AnimateSpeed { get { return animatespeed; } set { BeforePropsChange(); animatespeed = value; } } // m59
+		public int Tag { get { return tag; } set { BeforePropsChange(); tag = value; } } // m59
 		public string HighTexture { get { return texnamehigh; } }
 		public string MiddleTexture { get { return texnamemid; } }
 		public string LowTexture { get { return texnamelow; } }
@@ -206,6 +212,8 @@ namespace CodeImp.DoomBuilder.Map
 			s.rwLong(ref longtexnamehigh);
 			s.rwLong(ref longtexnamemid);
 			s.rwLong(ref longtexnamelow);
+			s.rwInt(ref animatespeed);
+			s.rwInt(ref tag);
 		}
 		
 		// This copies all properties to another sidedef
@@ -222,6 +230,8 @@ namespace CodeImp.DoomBuilder.Map
 			s.longtexnamehigh = longtexnamehigh;
 			s.longtexnamemid = longtexnamemid;
 			s.longtexnamelow = longtexnamelow;
+			s.animatespeed = animatespeed;
+			s.tag = tag;
 			s.flags = new Dictionary<string, bool>(flags); //mxd
 			base.CopyPropertiesTo(s);
 		}
@@ -338,7 +348,22 @@ namespace CodeImp.DoomBuilder.Map
 			BeforePropsChange();
 			flags.Clear();
 		}
-		
+
+		public bool IsFlipped()
+		{
+			return ((IsFront && Line.IsFlagSet("1")) || (!IsFront && Line.IsFlagSet("2")));
+		}
+
+		public bool NormalTopDown()
+		{
+			return ((IsFront && Line.IsFlagSet("65536")) || (!IsFront && Line.IsFlagSet("131072")));
+		}
+
+		public bool IsNoVTile()
+		{
+			return ((IsFront && Line.IsFlagSet("262144")) || (!IsFront && Line.IsFlagSet("524288")));
+		}
+
 		// This removes textures that are not required
 		public void RemoveUnneededTextures(bool removemiddle) { RemoveUnneededTextures(removemiddle, false, false); }
 		public void RemoveUnneededTextures(bool removemiddle, bool force, bool shiftmiddle)
@@ -689,6 +714,49 @@ namespace CodeImp.DoomBuilder.Map
 			this.offsetx = offsetx;
 			this.offsety = offsety;
 			this.flags = new Dictionary<string, bool>(flags); //mxd
+			//SetTextureMid(tmid);
+			//SetTextureLow(tlow);
+			//SetTextureHigh(thigh);
+
+			//mxd. Set mid texture
+			texnamemid = string.IsNullOrEmpty(tmid) ? "-" : tmid;
+			longtexnamemid = Lump.MakeLongName(tmid);
+
+			//mxd. Set low texture
+			texnamelow = string.IsNullOrEmpty(tlow) ? "-" : tlow;
+			longtexnamelow = Lump.MakeLongName(tlow);
+
+			//mxd. Set high texture
+			texnamehigh = string.IsNullOrEmpty(thigh) ? "-" : thigh;
+			longtexnamehigh = Lump.MakeLongName(texnamehigh);
+
+			//mxd. Map is changed
+			General.Map.IsChanged = true;
+		}
+
+		/// <summary>
+		/// Update sidedef with Meridian 59 .roo format fields.
+		/// </summary>
+		/// <param name="offsetx"></param>
+		/// <param name="offsety"></param>
+		/// <param name="thigh"></param>
+		/// <param name="tmid"></param>
+		/// <param name="tlow"></param>
+		/// <param name="animatespeed"></param>
+		/// <param name="tag"></param>
+		public void Update(int offsetx, int offsety, string thigh, string tmid, string tlow,
+						int animatespeed, int tag)
+		{
+			BeforePropsChange();
+
+			// Set roo format specific properties.
+			this.animatespeed = animatespeed;
+			this.tag = tag;
+
+			// Apply changes
+			this.offsetx = offsetx;
+			this.offsety = offsety;
+			this.flags = new Dictionary<string, bool>(new Dictionary<string, bool>(StringComparer.Ordinal));
 			//SetTextureMid(tmid);
 			//SetTextureLow(tlow);
 			//SetTextureHigh(thigh);

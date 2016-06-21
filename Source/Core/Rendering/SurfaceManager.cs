@@ -428,7 +428,8 @@ namespace CodeImp.DoomBuilder.Rendering
 					Array.Copy(update.ceilvertices, update.numvertices - vertsremaining, e.ceilvertices, 0, vertsinentry);
 					e.floortexture = update.floortexture;
 					e.ceiltexture = update.ceiltexture;
-					
+					e.offsetx = update.offsetx;
+					e.offsety = update.offsety;
 					entries.Add(e);
 					vertsremaining -= vertsinentry;
 				}
@@ -450,6 +451,8 @@ namespace CodeImp.DoomBuilder.Rendering
 						Array.Copy(update.ceilvertices, update.numvertices - vertsremaining, e.ceilvertices, 0, e.numvertices);
 						e.ceiltexture = update.ceiltexture;
 					}
+					e.offsetx = update.offsetx;
+					e.offsety = update.offsety;
 
 					vertsremaining -= e.numvertices;
 				}

@@ -444,6 +444,7 @@
     <Compile Include="VisualModes\VisualMiddleSingle.cs" />
     <Compile Include="VisualModes\VisualSidedefParts.cs" />
     <Compile Include="VisualModes\VisualUpper.cs" />
+    <Compile Include="VisualModes\BowtieFlags.cs" />
     <Compile Include="VisualModes\WallPolygon.cs" />
   </ItemGroup>
   <ItemGroup>

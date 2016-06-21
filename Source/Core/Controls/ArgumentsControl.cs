@@ -236,8 +236,14 @@ namespace CodeImp.DoomBuilder.Controls
 			if(General.Map.Config.LinedefActions.ContainsKey(action)) showaction = action;
 			
 			// Update argument infos
-			if((showaction == 0) && (info != null)) arginfo = info.Args;
-			else arginfo = General.Map.Config.LinedefActions[showaction].Args;
+			if ((showaction == 0) && (info != null))
+				arginfo = info.Args;
+			else
+			{
+				if (General.Map.Config.LinedefActions.Count == 0)
+					return;
+				arginfo = General.Map.Config.LinedefActions[showaction].Args;
+			}
 
 			// Don't update action args when thing type is changed
 			if(info != null && showaction != 0 && this.action == showaction) return;

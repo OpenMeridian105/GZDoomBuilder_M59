@@ -393,9 +393,9 @@ namespace CodeImp.DoomBuilder.Rendering
 				UpdateLights();
 			
 			// Initial renderstates
-			graphics.Device.SetRenderState(RenderState.CullMode, Cull.Counterclockwise);
-			graphics.Device.SetRenderState(RenderState.ZEnable, true);
-			graphics.Device.SetRenderState(RenderState.ZWriteEnable, true);
+			graphics.Device.SetRenderState(RenderState.CullMode, Cull.None);
+			graphics.Device.SetRenderState(RenderState.ZEnable, false);
+			graphics.Device.SetRenderState(RenderState.ZWriteEnable, false);
 			graphics.Device.SetRenderState(RenderState.AlphaBlendEnable, false);
 			graphics.Device.SetRenderState(RenderState.AlphaTestEnable, false);
 			graphics.Device.SetRenderState(RenderState.TextureFactor, -1);
@@ -408,7 +408,12 @@ namespace CodeImp.DoomBuilder.Rendering
 				ApplyMatrices3D();
 				RenderSky(skygeo);
 			}
-
+			graphics.Device.SetRenderState(RenderState.CullMode, Cull.Counterclockwise);
+			graphics.Device.SetRenderState(RenderState.AlphaTestEnable, true);
+			graphics.Device.SetRenderState(RenderState.AlphaRef, 1);
+			graphics.Device.SetRenderState(RenderState.AlphaFunc, 7);
+			graphics.Device.SetRenderState(RenderState.ZWriteEnable, true);
+			graphics.Device.SetRenderState(RenderState.ZEnable, true);
 			// SOLID PASS
 			world = Matrix.Identity;
 			ApplyMatrices3D();

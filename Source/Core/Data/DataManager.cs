@@ -943,7 +943,8 @@ namespace CodeImp.DoomBuilder.Data
 			// Make empty palette when still no palette found
 			if(palette == null)
 			{
-				General.ErrorLogger.Add(ErrorType.Warning, "None of the loaded resources define a color palette. Did you forget to configure an IWAD for this game configuration?");
+				if (!General.Map.MERIDIAN)
+					General.ErrorLogger.Add(ErrorType.Warning, "None of the loaded resources define a color palette. Did you forget to configure an IWAD for this game configuration?");
 				palette = new Playpal();
 			}
 		}
@@ -2963,7 +2964,7 @@ namespace CodeImp.DoomBuilder.Data
 				if(string.IsNullOrEmpty(skytex))
 					General.ErrorLogger.Add(ErrorType.Warning, "Skybox creation failed: Sky1 property is missing from the MAPINFO map definition");
 				else
-					General.ErrorLogger.Add(ErrorType.Warning, "Skybox creation failed: unable to load \"" + skytex + "\" texture");
+					General.ErrorLogger.Add(ErrorType.Warning, "Skybox creation failed: unable to load \"" + skytex + "\" texture. Using default texture.");
 				
 				// Use the built-in texture
 				ImageData tex = LoadInternalTexture("MissingSky3D.png");

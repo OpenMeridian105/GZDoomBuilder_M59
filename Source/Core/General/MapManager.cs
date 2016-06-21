@@ -47,6 +47,7 @@ namespace CodeImp.DoomBuilder
 		// Map header name in temporary file
 		internal const string TEMP_MAP_HEADER = "TEMPMAP";
 		internal const string BUILD_MAP_HEADER = "MAP01";
+		internal const string ROOBUILD_MAP_HEADER = "ROOM";
 		public const string CONFIG_MAP_HEADER = "~MAP";
 		private const int REPLACE_TARGET_MAP = -1; //mxd
 
@@ -127,6 +128,7 @@ namespace CodeImp.DoomBuilder
 		public bool UDMF { get { return config.UDMF; } }
 		public bool HEXEN { get { return config.HEXEN; } }
 		public bool DOOM { get { return config.DOOM; } }
+		public bool MERIDIAN { get { return config.MERIDIAN; } }
 
 		//mxd. Scripts
 		internal Dictionary<string, ScriptItem> NamedScripts { get { return namedscripts; } }
@@ -985,7 +987,10 @@ namespace CodeImp.DoomBuilder
 			} 
 
 			// Copy map lumps to target file
-			CopyLumpsByType(tempwadreader.WadFile, TEMP_MAP_HEADER, targetwad, origmapname, mapheaderindex, true, true, includenodes, true);
+			if (General.Map.MERIDIAN)
+				SaveAsRoo(tempwadreader.WadFile, TEMP_MAP_HEADER, targetwad, origmapname, mapheaderindex, true, true, includenodes, true);
+			else
+				CopyLumpsByType(tempwadreader.WadFile, TEMP_MAP_HEADER, targetwad, origmapname, mapheaderindex, true, true, includenodes, true);
 
 			// mxd. Was the map renamed?
 			if(options.LevelNameChanged) 
@@ -1195,8 +1200,10 @@ namespace CodeImp.DoomBuilder
 
 				// Copy lumps to buildwad
 				General.WriteLogLine("Copying map lumps to temporary build file...");
-				CopyLumpsByType(tempwadreader.WadFile, TEMP_MAP_HEADER, buildwad, BUILD_MAP_HEADER, REPLACE_TARGET_MAP, true, false, false, true);
-
+				if (General.Map.MERIDIAN)
+					SaveAsRoo(tempwadreader.WadFile, TEMP_MAP_HEADER, buildwad, ROOBUILD_MAP_HEADER, REPLACE_TARGET_MAP, true, false, false, true);
+				else
+					CopyLumpsByType(tempwadreader.WadFile, TEMP_MAP_HEADER, buildwad, BUILD_MAP_HEADER, REPLACE_TARGET_MAP, true, false, false, true);
 				// Close buildwad
 				buildwad.Dispose();
 
@@ -1233,14 +1240,20 @@ namespace CodeImp.DoomBuilder
 					if(buildwad != null) 
 					{
 						// Output lumps complete?
-						lumpscomplete = VerifyNodebuilderLumps(buildwad, BUILD_MAP_HEADER);
+						if (General.Map.MERIDIAN)
+							lumpscomplete = VerifyNodebuilderLumps(buildwad, ROOBUILD_MAP_HEADER);
+						else
+							lumpscomplete = VerifyNodebuilderLumps(buildwad, BUILD_MAP_HEADER);
 					}
 
 					if(lumpscomplete) 
 					{
 						// Copy nodebuilder lumps to temp file
 						General.WriteLogLine("Copying nodebuilder lumps to temporary file...");
-						CopyLumpsByType(buildwad, BUILD_MAP_HEADER, tempwadreader.WadFile, TEMP_MAP_HEADER, REPLACE_TARGET_MAP, false, false, true, false);
+						if (General.Map.MERIDIAN)
+							CopyLumpsByType(buildwad, ROOBUILD_MAP_HEADER, tempwadreader.WadFile, TEMP_MAP_HEADER, REPLACE_TARGET_MAP, false, false, true, false);
+						else
+							CopyLumpsByType(buildwad, BUILD_MAP_HEADER, tempwadreader.WadFile, TEMP_MAP_HEADER, REPLACE_TARGET_MAP, false, false, true, false);
 					}
 					else 
 					{
@@ -1479,6 +1492,15 @@ namespace CodeImp.DoomBuilder
 			target.WriteHeaders(); //mxd
 
 			return headerpos;
+		}
+
+		private void SaveAsRoo(WAD source, string sourcemapname,
+									 WAD target, string targetmapname,
+									 int targetheaderinsertindex, //mxd
+									 bool copyrequired, bool copyblindcopy,
+									 bool copynodebuild, bool copyscript)
+		{
+			target.RooFileWriteAll(source);
 		}
 
 		// This copies specific map lumps from one WAD to another

@@ -56,10 +56,142 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			// We have no destructor
 			GC.SuppressFinalize(this);
 		}
-		
+
+		// This builds the geometry. Returns false when no geometry created.
+		private bool SetupMeridian()
+		{
+			Vector2D vl, vr;
+			float h0, h1, h2, h3;
+			bool drawTopDown;
+
+			//mxd. lightfog flag support
+			int lightvalue;
+			bool lightabsolute;
+			GetLightValue(out lightvalue, out lightabsolute);
+
+			// Load sector data
+			SectorData sd = Sector.GetSectorData();
+			SectorData osd = mode.GetSectorData(Sidedef.Other.Sector);
+			if (!osd.Updated)
+				osd.Update();
+
+			CalculateWallSideHeights();
+
+			// Left and right vertices for this sidedef
+			if(Sidedef.IsFront)
+			{
+				vl = new Vector2D(Sidedef.Line.Start.Position.x, Sidedef.Line.Start.Position.y);
+				vr = new Vector2D(Sidedef.Line.End.Position.x, Sidedef.Line.End.Position.y);
+				if (BowtieFlags.IsBelowPos || BowtieFlags.IsBelowNeg)
+				{
+					h0 = z1Neg;
+					h3 = zz1Neg;
+				}
+				else
+				{
+					h0 = z1;
+					h3 = zz1;
+				}
+
+				h1 = z0;
+				h2 = zz0;
+				drawTopDown = Sidedef.Line.IsFlagSet("16384");
+			}
+			else
+			{
+				vl = new Vector2D(Sidedef.Line.End.Position.x, Sidedef.Line.End.Position.y);
+				vr = new Vector2D(Sidedef.Line.Start.Position.x, Sidedef.Line.Start.Position.y);
+				h0 = zz1;
+				h1 = zz0;
+				h2 = z0;
+				h3 = z1;
+				drawTopDown = Sidedef.Line.IsFlagSet("32768");
+			}
+
+			// Texture given?
+			if(Sidedef.LongLowTexture != MapSet.EmptyLongName)
+			{
+				// Load texture
+				base.Texture = General.Map.Data.GetTextureImage(Sidedef.LongLowTexture);
+				if(base.Texture == null || base.Texture is UnknownImage)
+				{
+					base.Texture = General.Map.Data.UnknownTexture3D;
+					setuponloadedtexture = Sidedef.LongLowTexture;
+				}
+				else
+				{
+					if(!base.Texture.IsImageLoaded)
+						setuponloadedtexture = Sidedef.LongLowTexture;
+				}
+			}
+			else
+			{
+				// Use missing texture
+				base.Texture = General.Map.Data.MissingTexture3D;
+				setuponloadedtexture = 0;
+			}
+
+			// Determine texture coordinates plane as they would be in normal circumstances.
+			// We can then use this plane to find any texture coordinate we need.
+			float floorbias = (osd.Floor.plane.GetZ(vr.x, vr.y) <= sd.Floor.plane.GetZ(vr.x, vr.y)) ? 1.0f : 0.0f;
+	
+			TexturePlane tp = CalculateTexturePlane(h0, h1, h2, h3, drawTopDown);
+
+			tp.vlt = new Vector3D(vl.x, vl.y, h0);
+			tp.vrt = new Vector3D(vr.x, vr.y, h3);
+			tp.vrb = new Vector3D(vr.x, vr.y, h2);
+			tp.vlb = new Vector3D(vl.x, vl.y, h1);
+
+			// Create initial polygon, which is just a quad between floor and ceiling
+			WallPolygon poly = new WallPolygon();
+			poly.Add(new Vector3D(vl.x, vl.y, sd.Floor.plane.GetZ(vl)));
+			poly.Add(new Vector3D(vl.x, vl.y, sd.Ceiling.plane.GetZ(vl)));
+			poly.Add(new Vector3D(vr.x, vr.y, sd.Ceiling.plane.GetZ(vr)));
+			poly.Add(new Vector3D(vr.x, vr.y, sd.Floor.plane.GetZ(vr)));
+			
+			// Determine initial color
+			int lightlevel = lightabsolute ? lightvalue : sd.Ceiling.brightnessbelow + lightvalue;
+
+			//mxd. This calculates light with doom-style wall shading
+			PixelColor wallbrightness = PixelColor.FromInt(mode.CalculateBrightness(lightlevel, Sidedef));
+			PixelColor wallcolor = PixelColor.Modulate(sd.Ceiling.colorbelow, wallbrightness);
+			fogfactor = CalculateFogFactor(lightlevel);
+			poly.color = wallcolor.WithAlpha(255).ToInt();
+			
+			// Cut off the part above the other floor
+			CropPoly(ref poly, osd.Floor.plane, false);
+			CropPoly(ref poly, osd.Ceiling.plane, true);
+
+			// Cut out pieces that overlap 3D floors in this sector
+			List<WallPolygon> polygons = new List<WallPolygon> { poly };
+			ClipExtraFloors(polygons, sd.ExtraFloors, false); //mxd
+
+			if(polygons.Count > 0)
+			{
+				// Keep top and bottom planes for intersection testing
+				Vector2D linecenter = Sidedef.Line.GetCenterPoint(); //mxd. Our sector's ceiling can be lower than the other sector's floor!
+				top = (osd.Floor.plane.GetZ(linecenter) < sd.Ceiling.plane.GetZ(linecenter) ? osd.Floor.plane : sd.Ceiling.plane);
+				bottom = sd.Floor.plane;
+				
+				// Process the polygon and create vertices
+				List<WorldVertex> verts = CreatePolygonVertices(polygons, tp, sd, lightvalue, lightabsolute);
+				if(verts.Count > 2)
+				{
+					base.SetVertices(verts);
+					return true;
+				}
+			}
+			
+			base.SetVertices(null); //mxd
+			return false;
+		}
+
 		// This builds the geometry. Returns false when no geometry created.
 		public override bool Setup()
 		{
+			if (General.Map.MERIDIAN)
+				return SetupMeridian();
+
 			Vector2D vl, vr;
 
 			//mxd. lightfog flag support

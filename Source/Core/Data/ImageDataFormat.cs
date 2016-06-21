@@ -30,6 +30,7 @@ namespace CodeImp.DoomBuilder.Data
 		public const int DOOMPICTURE = 1;		// Could be Doom Picture format	(column list rendered data)
 		public const int DOOMFLAT = 2;			// Could be Doom Flat format	(raw 8-bit pixel data)
 		public const int DOOMCOLORMAP = 3;		// Could be Doom Colormap format (raw 8-bit pixel palette mapping)
+		public const int BGFFILE = 4;
 		
 		// File format signatures
 		private static readonly int[] PNG_SIGNATURE = new[] { 137, 80, 78, 71, 13, 10, 26, 10 };
@@ -66,7 +67,7 @@ namespace CodeImp.DoomBuilder.Data
 				if(CheckSignature(data, GIF_SIGNATURE)) return new UnknownImageReader(); //mxd. Not supported by (G)ZDoom
 
 				// Check for BMP signature
-				if(CheckSignature(data, BMP_SIGNATURE)) return new UnknownImageReader(); //mxd. Not supported by (G)ZDoom
+				if (CheckSignature(data, BMP_SIGNATURE)) return new FileImageReader(DevilImageType.IL_BMP); //mxd. Not supported by (G)ZDoom
 			}
 				
 			// Could it be a doom picture?
@@ -91,6 +92,12 @@ namespace CodeImp.DoomBuilder.Data
 					data.Seek(0, SeekOrigin.Begin);
 					DoomColormapReader colormapreader = new DoomColormapReader(palette);
 					if(colormapreader.Validate(data)) return colormapreader;
+					break;
+
+				case BGFFILE:
+					data.Seek(0, SeekOrigin.Begin);
+					BGFReader bgfreader = new BGFReader(palette);
+					if (bgfreader.Validate(data)) return bgfreader;
 					break;
 			}
 			

@@ -100,6 +100,7 @@ namespace CodeImp.DoomBuilder.Config
 		private readonly bool doommapformat;
 		private readonly bool hexenmapformat;
 		private readonly bool universalmapformat;
+		private readonly bool meridianmapformat;
 		
 		// Texture/flat/voxel sources
 		private readonly IDictionary textureranges;
@@ -224,6 +225,7 @@ namespace CodeImp.DoomBuilder.Config
 		public bool UDMF { get { return universalmapformat; } }
 		public bool HEXEN { get { return hexenmapformat; } }
 		public bool DOOM { get { return doommapformat; } }
+		public bool MERIDIAN { get { return meridianmapformat; } }
 
 		// Texture/flat/voxel sources
 		public IDictionary TextureRanges { get { return textureranges; } }
@@ -355,7 +357,7 @@ namespace CodeImp.DoomBuilder.Config
 			makedooractivate = cfg.ReadSetting("makedooractivate", 0);
 			linetagindicatesectors = cfg.ReadSetting("linetagindicatesectors", false);
 			decorategames = cfg.ReadSetting("decorategames", "");
-			skyflatname = cfg.ReadSetting("skyflatname", "F_SKY1");
+			skyflatname = cfg.ReadSetting("skyflatname", "-");
 			leftboundary = cfg.ReadSetting("leftboundary", -32768);
 			rightboundary = cfg.ReadSetting("rightboundary", 32767);
 			topboundary = cfg.ReadSetting("topboundary", 32767);
@@ -373,6 +375,7 @@ namespace CodeImp.DoomBuilder.Config
 			universalmapformat = (formatinterface == "UniversalMapSetIO");
 			hexenmapformat = (formatinterface == "HexenMapSetIO");
 			doommapformat = (formatinterface == "DoomMapSetIO");
+			meridianmapformat = (formatinterface == "RooMapSetIO");
 
 			//mxd. Texture names length
 			longtexturenames = cfg.ReadSetting("longtexturenames", false);
