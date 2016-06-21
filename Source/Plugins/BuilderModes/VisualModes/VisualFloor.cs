@@ -157,10 +157,11 @@ namespace CodeImp.DoomBuilder.BuilderModes
 
 			// texture angle - this is planar angle between x axis of texture & x axis of world
 			// convert angle to vector
+			Vector2D pivot = s.GetFloorSlopePivot();
 			TextureOrientation = new Vector3D((float)Math.Sin(rotate), (float)Math.Cos(rotate), 0);
 			planeNormal = new Vector3D(s.FloorSlope.x, s.FloorSlope.y, s.FloorSlope.z);
-			z = (-s.FloorSlope.x * s.Pivot.x - s.FloorSlope.y * s.Pivot.y - s.FloorSlopeOffset) / s.FloorSlope.z;
-			P0 = new Vector3D(s.Pivot.x, s.Pivot.y, z);
+			z = (-s.FloorSlope.x * pivot.x - s.FloorSlope.y * pivot.y - s.FloorSlopeOffset) / s.FloorSlope.z;
+			P0 = new Vector3D(pivot.x, pivot.y, z);
 			//z = (-s.FloorSlope.x * verts[0].x - s.FloorSlope.y * verts[0].y - s.FloorSlopeOffset) / s.FloorSlope.z;
 			//P0 = new Vector3D(verts[0].x, verts[0].y, z);
 			// cross normal with texture orientation to get vector perpendicular to texture

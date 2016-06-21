@@ -82,7 +82,10 @@ namespace CodeImp.DoomBuilder.Map
 		private bool scrollfloor;
 		private bool scrollceiling;
 		private bool flicker;
-
+		private int floortexrot;
+		private int ceiltexrot;
+		private List<Vector3D> floorslopevertexes;
+		private List<Vector3D> ceilslopevertexes;
 		// Cloning
 		private Sector clone;
 		private int serializedindex;
@@ -155,6 +158,10 @@ namespace CodeImp.DoomBuilder.Map
 		public bool ScrollFloor { get { return scrollfloor; } set { BeforePropsChange(); scrollfloor = value; updateneeded = true; } }
 		public bool ScrollCeiling { get { return scrollceiling; } set { BeforePropsChange(); scrollceiling = value; updateneeded = true; } }
 		public bool Flicker { get { return flicker; } set { BeforePropsChange(); flicker = value; updateneeded = true; } }
+		public int FloorTexRot { get { return floortexrot; } set { BeforePropsChange(); floortexrot = value; updateneeded = true; } }
+		public int CeilTexRot { get { return ceiltexrot; } set { BeforePropsChange(); ceiltexrot = value; updateneeded = true; } }
+		public List<Vector3D> FloorSlopeVertexes { get { return floorslopevertexes; } set { BeforePropsChange(); floorslopevertexes = value; updateneeded = true; } }
+		public List<Vector3D> CeilSlopeVertexes { get { return ceilslopevertexes; } set { BeforePropsChange(); ceilslopevertexes = value; updateneeded = true; } }
 		public SDScrollFlags ScrollFlags
 		{
 			get { return scrollflags; }
@@ -199,6 +206,8 @@ namespace CodeImp.DoomBuilder.Map
 			this.scrollceiling = false;
 			this.scrollfloor = false;
 			this.scrollflags = new SDScrollFlags();
+			this.floorslopevertexes = new List<Vector3D>();
+			this.ceilslopevertexes = new List<Vector3D>();
 
 			// We have no destructor
 			GC.SuppressFinalize(this);
@@ -310,7 +319,8 @@ namespace CodeImp.DoomBuilder.Map
 				s.rwBool(ref flicker);
 				s.rwBool(ref scrollceiling);
 				s.rwBool(ref scrollfloor);
-
+				s.rwInt(ref floortexrot);
+				s.rwInt(ref ceiltexrot);
 				if (s.IsWriting)
 				{
 					s.wInt(scrollflags.Speed);
@@ -391,6 +401,10 @@ namespace CodeImp.DoomBuilder.Map
 				s.scrollceiling = scrollceiling;
 				s.scrollfloor = scrollfloor;
 				s.scrollflags = new SDScrollFlags(scrollflags.Speed, scrollflags.Direction);
+				s.floortexrot = floortexrot;
+				s.ceiltexrot = ceiltexrot;
+				s.floorslopevertexes = floorslopevertexes;
+				s.ceilslopevertexes = ceilslopevertexes;
 			}
 
 			s.updateneeded = true;
@@ -455,7 +469,7 @@ namespace CodeImp.DoomBuilder.Map
 			{
 				// Brightness color
 				int brightint = General.Map.Renderer2D.CalculateBrightness(brightness);
-				
+
 				// Make vertices
 				flatvertices = new FlatVertex[triangles.Vertices.Count];
 				for(int i = 0; i < triangles.Vertices.Count; i++)
@@ -551,6 +565,21 @@ namespace CodeImp.DoomBuilder.Map
 			base.DoUnselect();
 			if(selecteditem.List != null) selecteditem.List.Remove(selecteditem);
 			selecteditem = null;
+		}
+
+		public bool IsNoAmbient()
+		{
+			return brightness < 128;
+		}
+
+		public int NoAmbientBrightness()
+		{
+			return brightness * 2;
+		}
+
+		public int AmbientBrightness()
+		{
+			return (brightness - 128) * 2;
 		}
 
 		// This removes UDMF stuff (mxd)
@@ -714,6 +743,167 @@ namespace CodeImp.DoomBuilder.Map
 			}
 			
 			General.Map.IsChanged = true;
+		}
+
+		public List<Vertex> GetVertexes()
+		{
+			List<Vertex> vl = new List<Vertex>();
+
+			foreach (Sidedef s in Sidedefs)
+			{
+				if (vl.Count == 0)
+				{
+					vl.Add(s.Line.Start);
+					vl.Add(s.Line.End);
+				}
+				else
+				{
+					if (!vl.Contains(s.Line.Start))
+						vl.Add(s.Line.Start);
+					if (!vl.Contains(s.Line.End))
+						vl.Add(s.Line.End);
+				}
+			}
+
+			return vl;
+		}
+
+		/// <summary>
+		/// Return Vector2D pivot, let caller calculate an accurate Z.
+		/// </summary>
+		/// <returns></returns>
+		public Vector2D GetFloorSlopePivot()
+		{
+			if (floorslopevertexes.Count != 3)
+				return new Vector2D(0, 0);
+			return floorslopevertexes[0];
+		}
+
+		/// <summary>
+		/// Return Vector2D pivot, let caller calculate an accurate Z.
+		/// </summary>
+		/// <returns></returns>
+		public Vector2D GetCeilSlopePivot()
+		{
+			if (ceilslopevertexes.Count != 3)
+				return new Vector2D(0, 0);
+			return ceilslopevertexes[0];
+		}
+
+		public bool IsFloorSloped()
+		{
+			return (floorslope.GetLengthSq() > 0 && !float.IsNaN(FloorSlopeOffset / floorslope.z));
+		}
+
+		public bool IsCeilSloped()
+		{
+			return (ceilslope.GetLengthSq() > 0 && !float.IsNaN(CeilSlopeOffset / ceilslope.z));
+		}
+
+		/// <summary>
+		/// Recalculates a Meridian 59-style slope from floor or ceiling vertexes.
+		/// </summary>
+		/// <param name="floor"></param>
+		public void CalculateMeridianSlope(bool floor)
+		{
+			double[] u = new double[3];
+			double[] v = new double[3];
+			double[] uv = new double[3];
+			Vector3D[] p = new Vector3D[3];
+			double ucrossv;
+
+			int i = 0;
+			if (floor)
+			{
+				foreach (Vector3D V in floorslopevertexes)
+				{
+					p[i].x = V.x;
+					p[i].y = V.y;
+					p[i].z = V.z;
+					++i;
+				}
+			}
+			else
+			{
+				foreach (Vector3D V in ceilslopevertexes)
+				{
+					p[i].x = V.x;
+					p[i].y = V.y;
+					p[i].z = V.z;
+					++i;
+				}
+			}
+
+			u[0] = p[1].x - p[0].x;
+			u[1] = p[1].y - p[0].y;
+			u[2] = p[1].z - p[0].z;
+			v[0] = p[2].x - p[0].x;
+			v[1] = p[2].y - p[0].y;
+			v[2] = p[2].z - p[0].z;
+			uv[0] = u[2] * v[1] - u[1] * v[2];
+			uv[1] = u[0] * v[2] - u[2] * v[0];
+			uv[2] = u[1] * v[0] - u[0] * v[1];
+			ucrossv = Math.Sqrt(uv[0] * uv[0] + uv[1] * uv[1] + uv[2] * uv[2]);
+			if (floor)
+			{
+				floorslope.x = (float)(uv[0] / ucrossv);
+				floorslope.y = (float)(uv[1] / ucrossv);
+				floorslope.z = (float)(uv[2] / ucrossv);
+				flooroffset = -(floorslope.x * p[0].x + floorslope.y * p[0].y + floorslope.z * p[0].z);
+				if (floorslope.z < 0)
+				{
+					// normals of floors must point up
+					floorslope.x = -floorslope.x;
+					floorslope.y = -floorslope.y;
+					floorslope.z = -floorslope.z;
+					flooroffset = -flooroffset;
+				}
+			}
+			else
+			{
+				ceilslope.x = (float)(uv[0] / ucrossv);
+				ceilslope.y = (float)(uv[1] / ucrossv);
+				ceilslope.z = (float)(uv[2] / ucrossv);
+				ceiloffset = -(ceilslope.x * p[0].x + ceilslope.y * p[0].y + ceilslope.z * p[0].z);
+				if (ceilslope.z > 0)
+				{
+					// normals of ceilings must point down
+					ceilslope.x = -ceilslope.x;
+					ceilslope.y = -ceilslope.y;
+					ceilslope.z = -ceilslope.z;
+					ceiloffset = -ceiloffset;
+				}
+			}
+
+			//mxd. Map is changed
+			General.Map.IsChanged = true;
+			updateneeded = true;
+		}
+
+		/// <summary>
+		/// Removes a meridian slope.
+		/// </summary>
+		/// <param name="floor"></param>
+		public void RemoveMeridianSlope(bool floor)
+		{
+			if (floor)
+			{
+				flooroffset = 0f;
+				floorslope.x = 0f;
+				floorslope.y = 0f;
+				floorslope.z = 0f;
+				floortexrot = 0;
+				floorslopevertexes.Clear();
+			}
+			else
+			{
+				ceiloffset = 0f;
+				ceilslope.x = 0f;
+				ceilslope.y = 0f;
+				ceilslope.z = 0f;
+				ceiltexrot = 0;
+				ceilslopevertexes.Clear();
+			}
 		}
 
 		//mxd
@@ -892,7 +1082,7 @@ namespace CodeImp.DoomBuilder.Map
 
 		// Meridian specific version.
 		public void Update(int hfloor, int hceil, int offsetx, int offsety, string tfloor, string tceil,
-			float floorOffset, float ceilOffset, Vector3D floorslope, Vector3D ceilSlope,
+			float floorOffset, float ceilOffset, int texRotFloor, int texRotCeil, Vector3D fl, Vector3D cl,
 			int tag, int brightness, int depth, int animationspeed, bool flicker,
 			bool scrollfloor, bool scrollceiling)
 		{
@@ -904,8 +1094,10 @@ namespace CodeImp.DoomBuilder.Map
 			this.scrollceiling = scrollceiling;
 			this.offsetx = offsetx;
 			this.offsety = offsety;
+			this.floortexrot = texRotFloor;
+			this.ceiltexrot = texRotCeil;
 			Update(hfloor, hceil, tfloor, tceil, 0, new Dictionary<string, bool>(StringComparer.Ordinal),
-				new List<int> { 0 }, brightness, floorOffset, floorslope, ceilOffset, ceilSlope);
+				new List<int> { 0 }, brightness, floorOffset, fl, ceilOffset, cl);
 		}
 
 		//mxd. This updates all properties (Doom/Hexen version)

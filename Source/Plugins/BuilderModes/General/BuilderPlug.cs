@@ -607,10 +607,12 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			float z;
 			// texture angle - this is planar angle between x axis of texture & x axis of world
 			// convert angle to vector
+			Vector2D pivot = s.GetFloorSlopePivot();
+
 			TextureOrientation = new Vector3D((float)Math.Sin(rotate), (float)Math.Cos(rotate), 0);
 			planeNormal = new Vector3D(s.FloorSlope.x, s.FloorSlope.y, s.FloorSlope.z);
-			z = (-s.FloorSlope.x * s.Pivot.x - s.FloorSlope.y * s.Pivot.y - s.FloorSlopeOffset) / s.FloorSlope.z;
-			P0 = new Vector3D(s.Pivot.x, s.Pivot.y, z);
+			z = (-s.FloorSlope.x * pivot.x - s.FloorSlope.y * pivot.y - s.FloorSlopeOffset) / s.FloorSlope.z;
+			P0 = new Vector3D(pivot.x, pivot.y, z);
 			// cross normal with texture orientation to get vector perpendicular to texture
 			//  orientation and normal = v axis direction
 			v2 = Vector3D.CrossProduct(planeNormal, TextureOrientation);
@@ -739,10 +741,11 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			float z;
 			// texture angle - this is planar angle between x axis of texture & x axis of world
 			// convert angle to vector
+			Vector2D pivot = s.GetCeilSlopePivot();
 			TextureOrientation = new Vector3D((float)Math.Cos(rotate), (float)Math.Sin(rotate), 0);
 			planeNormal = new Vector3D(s.CeilSlope.x, s.CeilSlope.y, s.CeilSlope.z);
-			z = (-s.CeilSlope.x * s.Pivot.x - s.CeilSlope.y * s.Pivot.y - s.CeilSlopeOffset) / s.CeilSlope.z;
-			P0 = new Vector3D(s.Pivot.x, s.Pivot.y, z);
+			z = (-s.CeilSlope.x * pivot.x - s.CeilSlope.y * pivot.y - s.CeilSlopeOffset) / s.CeilSlope.z;
+			P0 = new Vector3D(pivot.x, pivot.y, z);
 			// cross normal with texture orientation to get vector perpendicular to texture
 			//  orientation and normal = v axis direction
 			v2 = Vector3D.CrossProduct(planeNormal, TextureOrientation);
