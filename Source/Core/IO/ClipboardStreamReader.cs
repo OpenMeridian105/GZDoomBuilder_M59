@@ -161,6 +161,8 @@ namespace CodeImp.DoomBuilder.IO
 				List<Vector3D> ceilslopev = new List<Vector3D>(3);
 				List<int> floorvlist = new List<int>(3);
 				List<int> ceilvlist = new List<int>(3);
+				int sectortag = 0, animationspeed = 0, offsetx = 0, offsety = 0, frotate = 0, crotate = 0, scspeed = 0, scdir = 0, depth = 0;
+				bool flicker = false, scfloor = false, scceiling = false;
 				if (General.Map.MERIDIAN)
 				{
 					bool floorVertexes = reader.ReadBoolean();
@@ -214,6 +216,19 @@ namespace CodeImp.DoomBuilder.IO
 							}
 						}
 					}
+					// Other Meridian 59 sector props.
+					sectortag = reader.ReadInt32();
+					animationspeed = reader.ReadInt32();
+					flicker = reader.ReadBoolean();
+					depth = reader.ReadInt32();
+					scfloor = reader.ReadBoolean();
+					scceiling = reader.ReadBoolean();
+					offsetx = reader.ReadInt32();
+					offsety = reader.ReadInt32();
+					frotate = reader.ReadInt32();
+					crotate = reader.ReadInt32();
+					scspeed = reader.ReadInt32();
+					scdir = reader.ReadInt32();
 				}
 
 				//flags
@@ -233,13 +248,17 @@ namespace CodeImp.DoomBuilder.IO
 				Sector s = map.CreateSector();
 				if(s != null) 
 				{
-					s.Update(hfloor, hceil, tfloor, tceil, effect, stringflags, tags, bright, foffset, fslope, coffset, cslope);
+					if (General.Map.MERIDIAN)
+						s.Update(hfloor, hceil, offsetx, offsety, tfloor, tceil, foffset, coffset, frotate,
+							crotate, fslope, cslope, sectortag, bright, depth, animationspeed, flicker, scfloor, scceiling);
+					else
+						s.Update(hfloor, hceil, tfloor, tceil, effect, stringflags, tags, bright, foffset, fslope, coffset, cslope);
 
 					s.FloorSlopeVIndexes = floorvlist;
 					s.CeilSlopeVIndexes = ceilvlist;
 					s.FloorSlopeVertexes = floorslopev;
 					s.CeilSlopeVertexes = ceilslopev;
-
+					s.ScrollFlags = new SDScrollFlags(scspeed, scdir);
 					// Add custom fields
 					s.Fields.BeforeFieldsChange();
 					foreach(KeyValuePair<string, UniValue> group in fields) 

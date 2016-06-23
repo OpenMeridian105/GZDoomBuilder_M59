@@ -335,6 +335,20 @@ namespace CodeImp.DoomBuilder.IO
 					coll.Add("ceilvindex2", s.CeilSlopeVIndexes[2]);
 				}
 
+				// Other Meridian 59 sector props.
+				coll.Add("sectortag", s.SectorTag);
+				coll.Add("animationspeed", s.AnimationSpeed);
+				coll.Add("flicker", s.Flicker);
+				coll.Add("depth", s.Depth);
+				coll.Add("scrollfloor", s.ScrollFloor);
+				coll.Add("scrollceiling", s.ScrollCeiling);
+				coll.Add("offsetx", s.OffsetX);
+				coll.Add("offsety", s.OffsetY);
+				coll.Add("floortexrot", s.FloorTexRot);
+				coll.Add("ceiltexrot", s.CeilTexRot);
+				coll.Add("scrollspeed", s.ScrollFlags.Speed);
+				coll.Add("scrolldir", s.ScrollFlags.Direction);
+
 				//mxd. Flags
 				foreach(KeyValuePair<string, bool> flag in s.Flags)
 					if(flag.Value) coll.Add(flag.Key, flag.Value);

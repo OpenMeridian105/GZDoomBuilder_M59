@@ -256,6 +256,20 @@ namespace CodeImp.DoomBuilder.IO
 					}
 					else
 						writer.Write((Boolean)false);
+
+					// Other Meridian 59 sector props.
+					writer.Write((Int32)s.SectorTag);
+					writer.Write((Int32)s.AnimationSpeed);
+					writer.Write((Boolean)s.Flicker);
+					writer.Write((Int32)s.Depth);
+					writer.Write((Boolean)s.ScrollFloor);
+					writer.Write((Boolean)s.ScrollCeiling);
+					writer.Write((Int32)s.OffsetX);
+					writer.Write((Int32)s.OffsetY);
+					writer.Write((Int32)s.FloorTexRot);
+					writer.Write((Int32)s.CeilTexRot);
+					writer.Write((Int32)s.ScrollFlags.Speed);
+					writer.Write((Int32)s.ScrollFlags.Direction);
 				}
 
 				AddFlags(s.Flags, writer);
