@@ -56,6 +56,9 @@ namespace CodeImp.DoomBuilder.Map
 		private Vertex clone;
 		private int serializedindex;
 		
+		// M59 property
+		private int oldindex;
+
 		#endregion
 
 		#region ================== Properties
@@ -65,6 +68,7 @@ namespace CodeImp.DoomBuilder.Map
 		public Vector2D Position { get { return pos; } }
 		internal Vertex Clone { get { return clone; } set { clone = value; } }
 		internal int SerializedIndex { get { return serializedindex; } set { serializedindex = value; } }
+		public int OldIndex { get { return oldindex; } set { oldindex = value; } }
 		public float ZCeiling {	//mxd
 			get { return zceiling; }
 			set {
