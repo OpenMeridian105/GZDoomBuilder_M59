@@ -150,7 +150,7 @@ namespace CodeImp.DoomBuilder.IO
 
 			// Read the map
 			Dictionary<int, Vertex> vertexlink = ReadVertices(map, textmap);
-			Dictionary<int, Sector> sectorlink = ReadSectors(map, textmap);
+			Dictionary<int, Sector> sectorlink = ReadSectors(map, textmap, vertexlink);
 			ReadLinedefs(map, textmap, vertexlink, sectorlink);
 			ReadThings(map, textmap);
 		}
@@ -357,7 +357,7 @@ namespace CodeImp.DoomBuilder.IO
 		}
 
 		// This reads the sectors
-		private Dictionary<int, Sector> ReadSectors(MapSet map, UniversalParser textmap)
+		private Dictionary<int, Sector> ReadSectors(MapSet map, UniversalParser textmap, Dictionary<int, Vertex> vertexlink)
 		{
 			// Get list of entries
 			List<UniversalCollection> collections = GetNamedCollections(textmap.Root, "sector");
@@ -409,6 +409,52 @@ namespace CodeImp.DoomBuilder.IO
 				float cslopez = GetCollectionEntry(c, "ceilingplane_c", false, 0.0f, where);
 				float coffset = GetCollectionEntry(c, "ceilingplane_d", false, float.NaN, where);
 
+				// M59 extra slope info.
+				List<int> vfloorindex = new List<int>(3), vceilindex = new List<int>(3);
+				int vindex = GetCollectionEntry(c, "floorvindex0", false, -1, where);
+				if (vindex >= 0) vfloorindex.Add(vindex);
+				vindex = GetCollectionEntry(c, "floorvindex1", false, -1, where);
+				if (vindex >= 0) vfloorindex.Add(vindex);
+				vindex = GetCollectionEntry(c, "floorvindex2", false, -1, where);
+				if (vindex >= 0) vfloorindex.Add(vindex);
+				if (vfloorindex.Count != 3)
+					vfloorindex.Clear();
+				else
+					for (int it = 0; it < 3; ++it)
+						foreach (KeyValuePair<int, Vertex> Vl in vertexlink)
+							if (Vl.Value.OldIndex == vfloorindex[it])
+								vfloorindex[it] = Vl.Value.Index;
+				vindex = GetCollectionEntry(c, "ceilvindex0", false, -1, where);
+				if (vindex >= 0) vceilindex.Add(vindex);
+				vindex = GetCollectionEntry(c, "ceilvindex1", false, -1, where);
+				if (vindex >= 0) vceilindex.Add(vindex);
+				vindex = GetCollectionEntry(c, "ceilvindex2", false, -1, where);
+				if (vindex >= 0) vceilindex.Add(vindex);
+				if (vceilindex.Count != 3)
+					vceilindex.Clear();
+				else
+					for (int it = 0; it < 3; ++it)
+						foreach (KeyValuePair<int, Vertex> Vl in vertexlink)
+							if (Vl.Value.OldIndex == vceilindex[it])
+								vceilindex[it] = Vl.Value.Index;
+
+				List<Vector3D> vfloorlist = new List<Vector3D>(3), vceillist = new List<Vector3D>(3);
+				float fz = GetCollectionEntry(c, "floorvert0_z", false, float.NaN, where);
+				if (!float.IsNaN(fz)) vfloorlist.Add(new Vector3D(0, 0, fz));
+				fz = GetCollectionEntry(c, "floorvert1_z", false, float.NaN, where);
+				if (!float.IsNaN(fz)) vfloorlist.Add(new Vector3D(0, 0, fz));
+				fz = GetCollectionEntry(c, "floorvert2_z", false, float.NaN, where);
+				if (!float.IsNaN(fz)) vfloorlist.Add(new Vector3D(0, 0, fz));
+				if (vfloorlist.Count != 3) vfloorlist.Clear();
+				fz = GetCollectionEntry(c, "ceilvert0_z", false, float.NaN, where);
+				if (!float.IsNaN(fz)) vceillist.Add(new Vector3D(0, 0, fz));
+				fz = GetCollectionEntry(c, "ceilvert1_z", false, float.NaN, where);
+				if (!float.IsNaN(fz)) vceillist.Add(new Vector3D(0, 0, fz));
+				fz = GetCollectionEntry(c, "ceilvert2_z", false, float.NaN, where);
+				if (!float.IsNaN(fz)) vceillist.Add(new Vector3D(0, 0, fz));
+				if (vceillist.Count != 3) vceillist.Clear();
+
+
 				//mxd. Read flags
 				Dictionary<string, bool> stringflags = new Dictionary<string, bool>(StringComparer.Ordinal);
 				foreach(KeyValuePair<string, string> flag in General.Map.Config.SectorFlags)
@@ -419,7 +465,10 @@ namespace CodeImp.DoomBuilder.IO
 				if(s != null)
 				{
 					s.Update(hfloor, hceil, tfloor, tceil, special, stringflags, tags, bright, foffset, new Vector3D(fslopex, fslopey, fslopez).GetNormal(), coffset, new Vector3D(cslopex, cslopey, cslopez).GetNormal());
-
+					s.FloorSlopeVIndexes = vfloorindex;
+					s.CeilSlopeVIndexes = vceilindex;
+					s.FloorSlopeVertexes = vfloorlist;
+					s.CeilSlopeVertexes = vceillist;
 					// Custom fields
 					ReadCustomFields(c, s, "sector");
 
@@ -458,7 +507,7 @@ namespace CodeImp.DoomBuilder.IO
 					//mxd. zoffsets
 					v.ZCeiling = GetCollectionEntry(c, "zceiling", false, float.NaN, where); //mxd
 					v.ZFloor = GetCollectionEntry(c, "zfloor", false, float.NaN, where); //mxd
-					
+					v.OldIndex = GetCollectionEntry(c, "oldindex", false, -1, where); // m59 property
 					// Custom fields
 					ReadCustomFields(c, v, "vertex");
 

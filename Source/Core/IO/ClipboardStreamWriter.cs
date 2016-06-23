@@ -126,6 +126,7 @@ namespace CodeImp.DoomBuilder.IO
 				writer.Write(v.Position.y);
 				writer.Write(v.ZCeiling);
 				writer.Write(v.ZFloor);
+				writer.Write(v.Index);
 
 				// Write custom fields
 				AddCustomFields(v.Fields, "vertex", writer);
@@ -220,6 +221,42 @@ namespace CodeImp.DoomBuilder.IO
 				writer.Write(s.CeilSlope.x);
 				writer.Write(s.CeilSlope.y);
 				writer.Write(s.CeilSlope.z);
+
+				if (General.Map.MERIDIAN)
+				{
+					if (s.FloorSlopeVertexes.Count != 3)
+						writer.Write((Boolean)false);
+					else
+					{
+						writer.Write((Boolean)true);
+						for (int i = 0; i < 3; ++i)
+							writer.Write(s.FloorSlopeVertexes[i].z);
+					}
+					if (s.CeilSlopeVertexes.Count != 3)
+						writer.Write((Boolean)false);
+					else
+					{
+						writer.Write((Boolean)true);
+						for (int i = 0; i < 3; ++i)
+							writer.Write(s.CeilSlopeVertexes[i].z);
+					}
+					if (s.FloorSlopeVIndexes != null && s.FloorSlopeVIndexes.Count == 3)
+					{
+						writer.Write((Boolean)true);
+						for (int i = 0; i < 3; ++i)
+							writer.Write(s.FloorSlopeVIndexes[i]);
+					}
+					else
+						writer.Write((Boolean)false);
+					if (s.CeilSlopeVIndexes != null && s.CeilSlopeVIndexes.Count == 3)
+					{
+						writer.Write((Boolean)true);
+						for (int i = 0; i < 3; ++i)
+							writer.Write(s.CeilSlopeVIndexes[i]);
+					}
+					else
+						writer.Write((Boolean)false);
+				}
 
 				AddFlags(s.Flags, writer);
 				AddCustomFields(s.Fields, "sector", writer);

@@ -74,7 +74,7 @@ namespace CodeImp.DoomBuilder.IO
 
 			// Read the map
 			Dictionary<int, Vertex> vertexlink = ReadVertices(map, reader);
-			Dictionary<int, Sector> sectorlink = ReadSectors(map, reader);
+			Dictionary<int, Sector> sectorlink = ReadSectors(map, reader, vertexlink);
 			Dictionary<int, SidedefData> sidedeflink = ReadSidedefs(reader);
 			ReadLinedefs(map, reader, vertexlink, sectorlink, sidedeflink);
 			ReadThings(map, reader);
@@ -97,6 +97,7 @@ namespace CodeImp.DoomBuilder.IO
 				float y = reader.ReadSingle();
 				float zc = reader.ReadSingle();
 				float zf = reader.ReadSingle();
+				int oldindex = reader.ReadInt32();
 
 				// Create new item
 				Dictionary<string, UniValue> fields = ReadCustomFields(reader);
@@ -106,6 +107,8 @@ namespace CodeImp.DoomBuilder.IO
 					//zoffsets
 					v.ZCeiling = zc;
 					v.ZFloor = zf;
+
+					v.OldIndex = oldindex;
 
 					// Add custom fields
 					v.Fields.BeforeFieldsChange();
@@ -123,7 +126,7 @@ namespace CodeImp.DoomBuilder.IO
 			return link;
 		}
 
-		private static Dictionary<int, Sector> ReadSectors(MapSet map, BinaryReader reader) 
+		private static Dictionary<int, Sector> ReadSectors(MapSet map, BinaryReader reader, Dictionary<int, Vertex> vertexlink) 
 		{
 			int count = reader.ReadInt32();
 
@@ -154,6 +157,65 @@ namespace CodeImp.DoomBuilder.IO
 				float coffset = reader.ReadSingle();
 				Vector3D cslope = new Vector3D(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
 
+				List<Vector3D> floorslopev = new List<Vector3D>(3);
+				List<Vector3D> ceilslopev = new List<Vector3D>(3);
+				List<int> floorvlist = new List<int>(3);
+				List<int> ceilvlist = new List<int>(3);
+				if (General.Map.MERIDIAN)
+				{
+					bool floorVertexes = reader.ReadBoolean();
+					if (floorVertexes)
+					{
+						for (int j = 0; j < 3; ++j)
+						{
+							Vector3D V = new Vector3D(0, 0, reader.ReadSingle());
+							floorslopev.Add(V);
+						}
+					}
+					bool ceilVertexes = reader.ReadBoolean();
+					if (ceilVertexes)
+					{
+						for (int j = 0; j < 3; ++j)
+						{
+							Vector3D V = new Vector3D(0, 0, reader.ReadSingle());
+							ceilslopev.Add(V);
+						}
+					}
+					// Check for sloped floor/ceiling vertex indexes;
+					bool floorCheckVal = reader.ReadBoolean();
+					if (floorCheckVal)
+					{
+						for (int j = 0; j < 3; ++j)
+						{
+							int oldindex = reader.ReadInt32();
+							foreach (KeyValuePair<int, Vertex> Vl in vertexlink)
+							{
+								if (Vl.Value.OldIndex == oldindex)
+								{
+									floorvlist.Add(Vl.Value.Index);
+									break;
+								}
+							}
+						}
+					}
+					bool ceilCheckVal = reader.ReadBoolean();
+					if (ceilCheckVal)
+					{
+						for (int j = 0; j < 3; ++j)
+						{
+							int oldindex = reader.ReadInt32();
+							foreach (KeyValuePair<int, Vertex> Vl in vertexlink)
+							{
+								if (Vl.Value.OldIndex == oldindex)
+								{
+									ceilvlist.Add(Vl.Value.Index);
+									break;
+								}
+							}
+						}
+					}
+				}
+
 				//flags
 				Dictionary<string, bool> stringflags = new Dictionary<string, bool>(StringComparer.Ordinal);
 				int numFlags = reader.ReadInt32();
@@ -172,6 +234,11 @@ namespace CodeImp.DoomBuilder.IO
 				if(s != null) 
 				{
 					s.Update(hfloor, hceil, tfloor, tceil, effect, stringflags, tags, bright, foffset, fslope, coffset, cslope);
+
+					s.FloorSlopeVIndexes = floorvlist;
+					s.CeilSlopeVIndexes = ceilvlist;
+					s.FloorSlopeVertexes = floorslopev;
+					s.CeilSlopeVertexes = ceilslopev;
 
 					// Add custom fields
 					s.Fields.BeforeFieldsChange();

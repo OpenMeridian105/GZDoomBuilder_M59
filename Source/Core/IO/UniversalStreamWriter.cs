@@ -171,7 +171,7 @@ namespace CodeImp.DoomBuilder.IO
 				if(!float.IsNaN(v.ZCeiling)) coll.Add("zceiling", v.ZCeiling); //mxd
 				if(!float.IsNaN(v.ZFloor)) coll.Add("zfloor", v.ZFloor); //mxd
 				coll.Comment = v.Index.ToString();
-
+				coll.Add("oldindex", v.Index); // m59 property, keep track of slope vertexes.
 				// Add custom fields
 				AddCustomFields(v, "vertex", coll);
 
@@ -308,6 +308,31 @@ namespace CodeImp.DoomBuilder.IO
 					coll.Add("ceilingplane_c", Math.Round(s.CeilSlope.z, Sector.SLOPE_DECIMALS));
 					coll.Add("ceilingplane_d",
 						(float.IsNaN(s.CeilSlopeOffset) ? 0f : Math.Round(s.CeilSlopeOffset, Sector.SLOPE_DECIMALS)));
+				}
+
+				if (s.FloorSlopeVertexes.Count == 3)
+				{
+					coll.Add("floorvert0_z", Math.Round(s.FloorSlopeVertexes[0].z, Sector.SLOPE_DECIMALS));
+					coll.Add("floorvert1_z", Math.Round(s.FloorSlopeVertexes[1].z, Sector.SLOPE_DECIMALS));
+					coll.Add("floorvert2_z", Math.Round(s.FloorSlopeVertexes[2].z, Sector.SLOPE_DECIMALS));
+				}
+				if (s.FloorSlopeVIndexes != null && s.FloorSlopeVIndexes.Count == 3)
+				{
+					coll.Add("floorvindex0", s.FloorSlopeVIndexes[0]);
+					coll.Add("floorvindex1", s.FloorSlopeVIndexes[1]);
+					coll.Add("floorvindex2", s.FloorSlopeVIndexes[2]);
+				}
+				if (s.CeilSlopeVertexes.Count == 3)
+				{
+					coll.Add("ceilvert0_z", Math.Round(s.CeilSlopeVertexes[0].z, Sector.SLOPE_DECIMALS));
+					coll.Add("ceilvert1_z", Math.Round(s.CeilSlopeVertexes[1].z, Sector.SLOPE_DECIMALS));
+					coll.Add("ceilvert2_z", Math.Round(s.CeilSlopeVertexes[2].z, Sector.SLOPE_DECIMALS));
+				}
+				if (s.CeilSlopeVIndexes != null && s.CeilSlopeVIndexes.Count == 3)
+				{
+					coll.Add("ceilvindex0", s.CeilSlopeVIndexes[0]);
+					coll.Add("ceilvindex1", s.CeilSlopeVIndexes[1]);
+					coll.Add("ceilvindex2", s.CeilSlopeVIndexes[2]);
 				}
 
 				//mxd. Flags
