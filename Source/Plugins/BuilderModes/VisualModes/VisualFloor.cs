@@ -286,7 +286,10 @@ namespace CodeImp.DoomBuilder.BuilderModes
 					Vector2D pos = triverts[i];
 					pos = pos.GetRotated(rotate);
 					pos.y = -pos.y;
-					pos = (pos + offset) * scale * texscale;
+					if (General.Map.MERIDIAN)
+						pos = (pos - offset) * scale * texscale;
+					else
+						pos = (pos + offset) * scale * texscale;
 					verts[i].u = pos.x;
 					verts[i].v = pos.y;
 				}
