@@ -334,7 +334,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		{
 			UpdateGeometry();
 			UpdateRectangleComponents();
-			if(General.Map.UDMF) UpdateTextureTransform(); //mxd
+			if (General.Map.UDMF || General.Map.MERIDIAN) UpdateTextureTransform(); //mxd
 			General.Map.Map.Update();
 			General.Interface.RedrawDisplay();
 		}
@@ -1124,12 +1124,18 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				// Adjust regular height
 				s.FloorHeight += flooroffset;
 
-				if(General.Map.UDMF)
+				if(General.Map.UDMF || General.Map.MERIDIAN)
 				{
 					// Adjust slope height?
 					if(s.FloorSlope.GetLengthSq() > 0 && !float.IsNaN(s.FloorSlopeOffset / s.FloorSlope.z))
 					{
 						s.FloorSlopeOffset -= flooroffset * (float)Math.Sin(s.FloorSlope.GetAngleZ());
+						if (s.FloorSlopeVertexes.Count == 3)
+						{
+							for (int i = 0; i < 3; ++i)
+								s.FloorSlopeVertexes[i] = new Vector3D(s.FloorSlopeVertexes[i].x,
+									s.FloorSlopeVertexes[i].y, s.FloorSlopeVertexes[i].z + flooroffset);
+						}
 					}
 					// Adjust vertex height?
 					else if(s.Sidedefs.Count == 3)
@@ -1157,12 +1163,18 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				// Adjust regular height
 				s.CeilHeight += ceiloffset;
 
-				if(General.Map.UDMF)
+				if (General.Map.UDMF || General.Map.MERIDIAN)
 				{
 					// Adjust slope height?
 					if(s.CeilSlope.GetLengthSq() > 0 && !float.IsNaN(s.CeilSlopeOffset / s.CeilSlope.z))
 					{
 						s.CeilSlopeOffset -= ceiloffset * (float)Math.Sin(s.CeilSlope.GetAngleZ());
+						if (s.CeilSlopeVertexes.Count == 3)
+						{
+							for (int i = 0; i < 3; ++i)
+								s.CeilSlopeVertexes[i] = new Vector3D(s.CeilSlopeVertexes[i].x,
+									s.CeilSlopeVertexes[i].y, s.CeilSlopeVertexes[i].z + ceiloffset);
+						}
 					}
 					// Adjust vertex height?
 					else if(s.Sidedefs.Count == 3)
@@ -1239,7 +1251,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 					sd.Line.End.Marked = true;
 				}
 
-				if(General.Map.UDMF) selectedsectors.Add(s, new SectorTextureInfo(s));
+				if (General.Map.UDMF || General.Map.MERIDIAN) selectedsectors.Add(s, new SectorTextureInfo(s));
 			}
 			selectedvertices = General.Map.Map.GetMarkedVertices(true);
 			selectedthings = General.Map.Map.GetMarkedThings(true);
@@ -1351,7 +1363,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				
 				// Update
 				panel.ShowOriginalValues(baseoffset, basesize);
-				panel.SetTextureTransformSettings(General.Map.UDMF); //mxd
+				panel.SetTextureTransformSettings(General.Map.UDMF || General.Map.MERIDIAN); //mxd
 				panel.SetHeightAdjustMode(heightadjustmode, sectors.Count > 0); //mxd
 				UpdateRectangleComponents();
 				UpdatePanel();
@@ -1412,7 +1424,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				}
 
 				//mxd. Reset texture offsets to original values
-				if(General.Map.UDMF) RestoreTextureTransform();
+				if (General.Map.UDMF || General.Map.MERIDIAN) RestoreTextureTransform();
 				
 				// Resume normal undo/redo recording
 				General.Map.UndoRedo.IgnorePropChanges = false;
@@ -1474,7 +1486,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 						}
 
 						//mxd. Reset texture offsets to their original position
-						if(General.Map.UDMF) RestoreTextureTransform();
+						if (General.Map.UDMF || General.Map.MERIDIAN) RestoreTextureTransform();
 
 						// Resume normal undo/redo recording
 						General.Map.UndoRedo.IgnorePropChanges = false;
@@ -1502,7 +1514,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 					}
 
 					//mxd. Reset texture offsets to their original position
-					if(General.Map.UDMF) RestoreTextureTransform();
+					if (General.Map.UDMF || General.Map.MERIDIAN) RestoreTextureTransform();
 
 					General.Map.Map.Update(true, true);
 					
@@ -1514,7 +1526,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				General.Map.UndoRedo.IgnorePropChanges = false;
 
 				//mxd. Update sector slopes?
-				if(General.Map.UDMF)
+				if (General.Map.UDMF || General.Map.MERIDIAN)
 				{
 					// We need a different kind of offset...
 					Vector2D relativeoffset = offset - baseoffset;
@@ -1549,7 +1561,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				UpdateGeometry();
 
 				//mxd. Update floor/ceiling texture settings
-				if(General.Map.UDMF) UpdateTextureTransform();
+				if (General.Map.UDMF || General.Map.MERIDIAN) UpdateTextureTransform();
 				
 				General.Map.Map.Update(true, true);
 				
@@ -2029,7 +2041,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			mode = ModifyMode.None;
 
 			//mxd. Update floor/ceiling texture settings
-			if(General.Map.UDMF) UpdateTextureTransform();
+			if (General.Map.UDMF || General.Map.MERIDIAN) UpdateTextureTransform();
 			
 			// Redraw
 			General.Map.Map.Update();
