@@ -426,7 +426,7 @@ namespace CodeImp.DoomBuilder.Map
 			if(Other != null)
 			{
 				//mxd. Check sloped ceilings...
-				if(General.Map.UDMF && this.sector != Other.Sector) 
+				if((General.Map.MERIDIAN || General.Map.UDMF) && this.sector != Other.Sector) 
 				{
 					float thisstartz = this.sector.CeilHeight;
 					float thisendz = this.sector.CeilHeight;
@@ -488,7 +488,7 @@ namespace CodeImp.DoomBuilder.Map
 			if(Other != null)
 			{
 				//mxd. Check sloped floors...
-				if(General.Map.UDMF && this.sector != Other.Sector)
+				if((General.Map.MERIDIAN || General.Map.UDMF) && this.sector != Other.Sector)
 				{
 					float thisstartz = this.sector.FloorHeight;
 					float thisendz = this.sector.FloorHeight;
@@ -520,6 +520,9 @@ namespace CodeImp.DoomBuilder.Map
 						if(!float.IsNaN(this.Line.Start.ZFloor)) otherstartz = this.Line.Start.ZFloor;
 						if(!float.IsNaN(this.Line.End.ZFloor)) otherendz = this.Line.End.ZFloor;
 					}
+
+					// If floor heights are the same, no texture required.
+					if (Math.Abs(thisstartz - otherstartz) < 0.01f && Math.Abs(thisendz - otherendz) < 0.01f) return false;
 
 					// Texture is required when our start or end vertex is lower than on the other side.
 					if(thisstartz < otherstartz || thisendz < otherendz) return true;

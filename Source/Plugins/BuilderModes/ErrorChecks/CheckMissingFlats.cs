@@ -42,7 +42,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				if(s.LongFloorTexture == MapSet.EmptyLongName) SubmitResult(new ResultMissingFlat(s, false));
 
 				// Check ceiling texture
-				if(s.LongCeilTexture == MapSet.EmptyLongName) SubmitResult(new ResultMissingFlat(s, true));
+				if(!General.Map.MERIDIAN && s.LongCeilTexture == MapSet.EmptyLongName) SubmitResult(new ResultMissingFlat(s, true));
 
 				// Handle thread interruption
 				try { Thread.Sleep(0); } catch(ThreadInterruptedException) { return; }

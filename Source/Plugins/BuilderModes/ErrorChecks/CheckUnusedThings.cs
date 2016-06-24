@@ -18,6 +18,9 @@ namespace CodeImp.DoomBuilder.BuilderModes
 
 		#endregion
 
+		// Don't check in Meridian map format
+		public override bool SkipCheck { get { return General.Map.MERIDIAN; } }
+
 		#region ================== Constructor / Destructor
 
 		public CheckUnusedThings()	
