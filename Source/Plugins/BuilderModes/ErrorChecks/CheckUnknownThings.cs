@@ -9,6 +9,9 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		
 		private const int PROGRESS_STEP = 1000;
 
+		// Don't check in Meridian map format
+		public override bool SkipCheck { get { return General.Map.MERIDIAN; } }
+
 		// Constructor
 		public CheckUnknownThings()	
 		{

@@ -741,7 +741,7 @@ namespace CodeImp.DoomBuilder.IO
 			foreach(Sector s in map.Sectors)
 			{
 				// Write properties to stream
-				writer.Write((UInt16)s.Tag);
+				writer.Write((UInt16)s.SectorTag);
 				writer.Write((UInt16)MakeGRDNumber(s.FloorTexture));
 				writer.Write((UInt16)MakeGRDNumber(s.CeilTexture));
 				writer.Write((UInt16)s.OffsetX);
