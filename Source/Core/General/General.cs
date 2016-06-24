@@ -1475,7 +1475,7 @@ namespace CodeImp.DoomBuilder
 
 			// Show save as dialog
 			SaveFileDialog savefile = new SaveFileDialog();
-			savefile.Filter = "Doom WAD Files (*.wad)|*.wad";
+			savefile.Filter = "Roo files (*.roo)|*.roo|Doom WAD Files (*.wad)|*.wad";
 			savefile.Title = "Save Map As";
 			savefile.AddExtension = true;
 			savefile.CheckPathExists = true;
@@ -1559,7 +1559,7 @@ namespace CodeImp.DoomBuilder
 
 			// Show save as dialog
 			SaveFileDialog savefile = new SaveFileDialog();
-			savefile.Filter = "Doom WAD Files (*.wad)|*.wad";
+			savefile.Filter = "Roo files (*.roo)|*.roo|Doom WAD Files (*.wad)|*.wad";
 			savefile.Title = "Save Map Into";
 			savefile.AddExtension = true;
 			savefile.CheckPathExists = true;

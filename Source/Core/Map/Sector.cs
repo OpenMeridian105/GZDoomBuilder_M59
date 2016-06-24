@@ -86,6 +86,10 @@ namespace CodeImp.DoomBuilder.Map
 		private int ceiltexrot;
 		private List<Vector3D> floorslopevertexes;
 		private List<Vector3D> ceilslopevertexes;
+		// Used for copying.
+		private List<int> floorslopevindexes;
+		private List<int> ceilslopevindexes;
+
 		// Cloning
 		private Sector clone;
 		private int serializedindex;
@@ -162,6 +166,8 @@ namespace CodeImp.DoomBuilder.Map
 		public int CeilTexRot { get { return ceiltexrot; } set { BeforePropsChange(); ceiltexrot = value; updateneeded = true; } }
 		public List<Vector3D> FloorSlopeVertexes { get { return floorslopevertexes; } set { BeforePropsChange(); floorslopevertexes = value; updateneeded = true; } }
 		public List<Vector3D> CeilSlopeVertexes { get { return ceilslopevertexes; } set { BeforePropsChange(); ceilslopevertexes = value; updateneeded = true; } }
+		public List<int> FloorSlopeVIndexes { get { return floorslopevindexes; } set { BeforePropsChange(); floorslopevindexes = value; updateneeded = true; } }
+		public List<int> CeilSlopeVIndexes { get { return ceilslopevindexes; } set { BeforePropsChange(); ceilslopevindexes = value; updateneeded = true; } }
 		public SDScrollFlags ScrollFlags
 		{
 			get { return scrollflags; }
@@ -206,8 +212,8 @@ namespace CodeImp.DoomBuilder.Map
 			this.scrollceiling = false;
 			this.scrollfloor = false;
 			this.scrollflags = new SDScrollFlags();
-			this.floorslopevertexes = new List<Vector3D>();
-			this.ceilslopevertexes = new List<Vector3D>();
+			this.floorslopevertexes = new List<Vector3D>(3);
+			this.ceilslopevertexes = new List<Vector3D>(3);
 
 			// We have no destructor
 			GC.SuppressFinalize(this);
@@ -403,8 +409,41 @@ namespace CodeImp.DoomBuilder.Map
 				s.scrollflags = new SDScrollFlags(scrollflags.Speed, scrollflags.Direction);
 				s.floortexrot = floortexrot;
 				s.ceiltexrot = ceiltexrot;
-				s.floorslopevertexes = floorslopevertexes;
-				s.ceilslopevertexes = ceilslopevertexes;
+
+				Vertex V;
+				s.ceilslopevindexes = new List<int>(3);
+				s.floorslopevindexes = new List<int>(3);
+				if (floorslopevertexes.Count == 3)
+				{
+					for (int i = 0; i < 3; ++i)
+					{
+						V = MapSet.NearestVertexSquareRange(map.Vertices, floorslopevertexes[i], 1.0f);
+						if (V != null)
+						{
+							if (V.Clone == null)
+								s.floorslopevindexes.Add(V.Index);
+							else
+								s.floorslopevindexes.Add(V.Clone.Index);
+						}
+					}
+
+				}
+				if (ceilslopevertexes.Count == 3)
+				{
+					for (int i = 0; i < 3; ++i)
+					{
+						V = MapSet.NearestVertexSquareRange(map.Vertices, ceilslopevertexes[i], 1.0f);
+						if (V != null)
+						{
+							if (V.Clone == null)
+								s.ceilslopevindexes.Add(V.Index);
+							else
+								s.ceilslopevindexes.Add(V.Clone.Index);
+						}
+					}
+				}
+				s.floorslopevertexes = new List<Vector3D>(floorslopevertexes);
+				s.ceilslopevertexes = new List<Vector3D>(ceilslopevertexes);
 			}
 
 			s.updateneeded = true;
@@ -593,10 +632,13 @@ namespace CodeImp.DoomBuilder.Map
 			this.fogmode = SectorFogMode.NONE;
 
 			// Reset Slopes
-			floorslope = new Vector3D();
-			flooroffset = 0;
-			ceilslope = new Vector3D();
-			ceiloffset = 0;
+			if (!General.Map.MERIDIAN)
+			{
+				floorslope = new Vector3D();
+				flooroffset = 0;
+				ceilslope = new Vector3D();
+				ceiloffset = 0;
+			}
 		}
 		
 		#endregion

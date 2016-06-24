@@ -26,6 +26,8 @@ namespace CodeImp.DoomBuilder.IO
 			public string HighTexture;
 			public string MiddleTexture;
 			public string LowTexture;
+			public int AnimateSpeed;
+			public int Tag;
 			public Dictionary<string, UniValue> Fields;
 			public Dictionary<string, bool> Flags;
 		}
@@ -74,7 +76,7 @@ namespace CodeImp.DoomBuilder.IO
 
 			// Read the map
 			Dictionary<int, Vertex> vertexlink = ReadVertices(map, reader);
-			Dictionary<int, Sector> sectorlink = ReadSectors(map, reader);
+			Dictionary<int, Sector> sectorlink = ReadSectors(map, reader, vertexlink);
 			Dictionary<int, SidedefData> sidedeflink = ReadSidedefs(reader);
 			ReadLinedefs(map, reader, vertexlink, sectorlink, sidedeflink);
 			ReadThings(map, reader);
@@ -97,6 +99,7 @@ namespace CodeImp.DoomBuilder.IO
 				float y = reader.ReadSingle();
 				float zc = reader.ReadSingle();
 				float zf = reader.ReadSingle();
+				int oldindex = reader.ReadInt32();
 
 				// Create new item
 				Dictionary<string, UniValue> fields = ReadCustomFields(reader);
@@ -106,6 +109,8 @@ namespace CodeImp.DoomBuilder.IO
 					//zoffsets
 					v.ZCeiling = zc;
 					v.ZFloor = zf;
+
+					v.OldIndex = oldindex;
 
 					// Add custom fields
 					v.Fields.BeforeFieldsChange();
@@ -123,7 +128,7 @@ namespace CodeImp.DoomBuilder.IO
 			return link;
 		}
 
-		private static Dictionary<int, Sector> ReadSectors(MapSet map, BinaryReader reader) 
+		private static Dictionary<int, Sector> ReadSectors(MapSet map, BinaryReader reader, Dictionary<int, Vertex> vertexlink) 
 		{
 			int count = reader.ReadInt32();
 
@@ -154,6 +159,80 @@ namespace CodeImp.DoomBuilder.IO
 				float coffset = reader.ReadSingle();
 				Vector3D cslope = new Vector3D(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
 
+				List<Vector3D> floorslopev = new List<Vector3D>(3);
+				List<Vector3D> ceilslopev = new List<Vector3D>(3);
+				List<int> floorvlist = new List<int>(3);
+				List<int> ceilvlist = new List<int>(3);
+				int sectortag = 0, animationspeed = 0, offsetx = 0, offsety = 0, frotate = 0, crotate = 0, scspeed = 0, scdir = 0, depth = 0;
+				bool flicker = false, scfloor = false, scceiling = false;
+				if (General.Map.MERIDIAN)
+				{
+					bool floorVertexes = reader.ReadBoolean();
+					if (floorVertexes)
+					{
+						for (int j = 0; j < 3; ++j)
+						{
+							Vector3D V = new Vector3D(0, 0, reader.ReadSingle());
+							floorslopev.Add(V);
+						}
+					}
+					bool ceilVertexes = reader.ReadBoolean();
+					if (ceilVertexes)
+					{
+						for (int j = 0; j < 3; ++j)
+						{
+							Vector3D V = new Vector3D(0, 0, reader.ReadSingle());
+							ceilslopev.Add(V);
+						}
+					}
+					// Check for sloped floor/ceiling vertex indexes;
+					bool floorCheckVal = reader.ReadBoolean();
+					if (floorCheckVal)
+					{
+						for (int j = 0; j < 3; ++j)
+						{
+							int oldindex = reader.ReadInt32();
+							foreach (KeyValuePair<int, Vertex> Vl in vertexlink)
+							{
+								if (Vl.Value.OldIndex == oldindex)
+								{
+									floorvlist.Add(Vl.Value.Index);
+									break;
+								}
+							}
+						}
+					}
+					bool ceilCheckVal = reader.ReadBoolean();
+					if (ceilCheckVal)
+					{
+						for (int j = 0; j < 3; ++j)
+						{
+							int oldindex = reader.ReadInt32();
+							foreach (KeyValuePair<int, Vertex> Vl in vertexlink)
+							{
+								if (Vl.Value.OldIndex == oldindex)
+								{
+									ceilvlist.Add(Vl.Value.Index);
+									break;
+								}
+							}
+						}
+					}
+					// Other Meridian 59 sector props.
+					sectortag = reader.ReadInt32();
+					animationspeed = reader.ReadInt32();
+					flicker = reader.ReadBoolean();
+					depth = reader.ReadInt32();
+					scfloor = reader.ReadBoolean();
+					scceiling = reader.ReadBoolean();
+					offsetx = reader.ReadInt32();
+					offsety = reader.ReadInt32();
+					frotate = reader.ReadInt32();
+					crotate = reader.ReadInt32();
+					scspeed = reader.ReadInt32();
+					scdir = reader.ReadInt32();
+				}
+
 				//flags
 				Dictionary<string, bool> stringflags = new Dictionary<string, bool>(StringComparer.Ordinal);
 				int numFlags = reader.ReadInt32();
@@ -171,8 +250,17 @@ namespace CodeImp.DoomBuilder.IO
 				Sector s = map.CreateSector();
 				if(s != null) 
 				{
-					s.Update(hfloor, hceil, tfloor, tceil, effect, stringflags, tags, bright, foffset, fslope, coffset, cslope);
+					if (General.Map.MERIDIAN)
+						s.Update(hfloor, hceil, offsetx, offsety, tfloor, tceil, foffset, coffset, frotate,
+							crotate, fslope, cslope, sectortag, bright, depth, animationspeed, flicker, scfloor, scceiling);
+					else
+						s.Update(hfloor, hceil, tfloor, tceil, effect, stringflags, tags, bright, foffset, fslope, coffset, cslope);
 
+					s.FloorSlopeVIndexes = floorvlist;
+					s.CeilSlopeVIndexes = ceilvlist;
+					s.FloorSlopeVertexes = floorslopev;
+					s.CeilSlopeVertexes = ceilslopev;
+					s.ScrollFlags = new SDScrollFlags(scspeed, scdir);
 					// Add custom fields
 					s.Fields.BeforeFieldsChange();
 					foreach(KeyValuePair<string, UniValue> group in fields) 
@@ -203,6 +291,14 @@ namespace CodeImp.DoomBuilder.IO
 				int v2 = reader.ReadInt32();
 				int s1 = reader.ReadInt32();
 				int s2 = reader.ReadInt32();
+
+				// Meridian 59 scrolling.
+				SDScrollFlags fscrollflags = new SDScrollFlags(), bscrollflags = new SDScrollFlags();
+				fscrollflags.Speed = reader.ReadInt32();
+				fscrollflags.Direction = reader.ReadInt32();
+				bscrollflags.Speed = reader.ReadInt32();
+				bscrollflags.Direction = reader.ReadInt32();
+
 				int special = reader.ReadInt32();
 				for(int a = 0; a < Linedef.NUM_ARGS; a++) args[a] = reader.ReadInt32();
 				int numtags = reader.ReadInt32(); //mxd
@@ -239,6 +335,9 @@ namespace CodeImp.DoomBuilder.IO
 					if(l != null) 
 					{
 						l.Update(stringflags, 0, tags, special, args);
+						l.FrontScrollFlags = fscrollflags;
+						l.BackScrollFlags = bscrollflags;
+
 						l.UpdateCache();
 
 						// Add custom fields
@@ -281,7 +380,10 @@ namespace CodeImp.DoomBuilder.IO
 				Sidedef s = map.CreateSidedef(ld, front, sectorlink[data.SectorID]);
 				if(s != null) 
 				{
-					s.Update(data.OffsetX, data.OffsetY, data.HighTexture, data.MiddleTexture, data.LowTexture, data.Flags);
+					if (General.Map.MERIDIAN)
+						s.Update(data.OffsetX, data.OffsetY, data.HighTexture, data.MiddleTexture, data.LowTexture, data.AnimateSpeed, data.Tag);
+					else
+						s.Update(data.OffsetX, data.OffsetY, data.HighTexture, data.MiddleTexture, data.LowTexture, data.Flags);
 
 					// Add custom fields
 					foreach(KeyValuePair<string, UniValue> group in data.Fields) 
@@ -311,6 +413,9 @@ namespace CodeImp.DoomBuilder.IO
 				data.HighTexture = ReadString(reader);
 				data.MiddleTexture = ReadString(reader);
 				data.LowTexture = ReadString(reader);
+
+				data.AnimateSpeed = reader.ReadInt32();
+				data.Tag = reader.ReadInt32();
 
 				//flags
 				data.Flags = new Dictionary<string, bool>(StringComparer.Ordinal);

@@ -275,6 +275,10 @@ namespace CodeImp.DoomBuilder
 			configinfo.ApplyDefaults(config);
 			General.Editing.UpdateCurrentEditModes();
 
+			// Change title if using Meridian config.
+			if (General.Map.MERIDIAN)
+				this.filetitle = options.CurrentName + ".roo";
+
 			//mxd. Check if default script compiler is required
 			if(string.IsNullOrEmpty(configinfo.DefaultScriptCompiler))
 			{
@@ -322,6 +326,16 @@ namespace CodeImp.DoomBuilder
 
 			// Update structures
 			options.ApplyGridSettings();
+
+			if (General.Map.MERIDIAN)
+			{
+				// Add two things, used as room boundary.
+				Thing t1 = map.CreateThing();
+				t1.Update(0, -500, 500, 0, 0, 0, 0, 1.0f, 1.0f, new Dictionary<string, bool>(StringComparer.Ordinal), 0, 0, new int[Thing.NUM_ARGS]);
+				Thing t2 = map.CreateThing();
+				t2.Update(0, 500, -500, 0, 0, 0, 0, 1.0f, 1.0f, new Dictionary<string, bool>(StringComparer.Ordinal), 0, 0, new int[Thing.NUM_ARGS]);
+			}
+
 			map.UpdateConfiguration();
 			map.Update();
 			thingsfilter.Update();
@@ -732,6 +746,14 @@ namespace CodeImp.DoomBuilder
 			WAD targetwad = null;
 			bool includenodes;
 			bool fileexists = File.Exists(newfilepathname); //mxd
+
+			if (General.Map.MERIDIAN && map.Things.Count != 2)
+			{
+				string msg = "Can't save Meridian room that doesn't have two things!\nThings count is " + map.Things.Count + ".";
+				General.ShowErrorMessage(msg, MessageBoxButtons.OK);
+				General.WriteLogLine(msg);
+				return false;
+			}
 
 			General.WriteLogLine("Saving map to file: " + newfilepathname);
 

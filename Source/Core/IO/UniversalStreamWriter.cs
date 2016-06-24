@@ -171,7 +171,7 @@ namespace CodeImp.DoomBuilder.IO
 				if(!float.IsNaN(v.ZCeiling)) coll.Add("zceiling", v.ZCeiling); //mxd
 				if(!float.IsNaN(v.ZFloor)) coll.Add("zfloor", v.ZFloor); //mxd
 				coll.Comment = v.Index.ToString();
-
+				coll.Add("oldindex", v.Index); // m59 property, keep track of slope vertexes.
 				// Add custom fields
 				AddCustomFields(v, "vertex", coll);
 
@@ -215,6 +215,12 @@ namespace CodeImp.DoomBuilder.IO
 				else
 					coll.Add("sideback", -1);
 				
+				// Meridian 59 scrolling.
+				coll.Add("frontscrollspeed", l.FrontScrollFlags.Speed);
+				coll.Add("frontscrolldir", l.FrontScrollFlags.Direction);
+				coll.Add("backscrollspeed", l.BackScrollFlags.Speed);
+				coll.Add("backscrolldir", l.BackScrollFlags.Direction);
+
 				// Special
 				if(l.Action != 0) coll.Add("special", l.Action);
 				if(l.Args[0] != 0) coll.Add("arg0", l.Args[0]);
@@ -250,6 +256,8 @@ namespace CodeImp.DoomBuilder.IO
 				if(s.LongMiddleTexture != MapSet.EmptyLongName) coll.Add("texturemiddle", s.MiddleTexture);
 				coll.Add("sector", sectorids[s.Sector]);
 				coll.Comment = s.Index.ToString();
+				coll.Add("sidedeftag", s.Tag);
+				coll.Add("animatespeed", s.AnimateSpeed);
 
 				//mxd. Flags
 				foreach(KeyValuePair<string, bool> flag in s.Flags)
@@ -309,6 +317,45 @@ namespace CodeImp.DoomBuilder.IO
 					coll.Add("ceilingplane_d",
 						(float.IsNaN(s.CeilSlopeOffset) ? 0f : Math.Round(s.CeilSlopeOffset, Sector.SLOPE_DECIMALS)));
 				}
+
+				if (s.FloorSlopeVertexes.Count == 3)
+				{
+					coll.Add("floorvert0_z", Math.Round(s.FloorSlopeVertexes[0].z, Sector.SLOPE_DECIMALS));
+					coll.Add("floorvert1_z", Math.Round(s.FloorSlopeVertexes[1].z, Sector.SLOPE_DECIMALS));
+					coll.Add("floorvert2_z", Math.Round(s.FloorSlopeVertexes[2].z, Sector.SLOPE_DECIMALS));
+				}
+				if (s.FloorSlopeVIndexes != null && s.FloorSlopeVIndexes.Count == 3)
+				{
+					coll.Add("floorvindex0", s.FloorSlopeVIndexes[0]);
+					coll.Add("floorvindex1", s.FloorSlopeVIndexes[1]);
+					coll.Add("floorvindex2", s.FloorSlopeVIndexes[2]);
+				}
+				if (s.CeilSlopeVertexes.Count == 3)
+				{
+					coll.Add("ceilvert0_z", Math.Round(s.CeilSlopeVertexes[0].z, Sector.SLOPE_DECIMALS));
+					coll.Add("ceilvert1_z", Math.Round(s.CeilSlopeVertexes[1].z, Sector.SLOPE_DECIMALS));
+					coll.Add("ceilvert2_z", Math.Round(s.CeilSlopeVertexes[2].z, Sector.SLOPE_DECIMALS));
+				}
+				if (s.CeilSlopeVIndexes != null && s.CeilSlopeVIndexes.Count == 3)
+				{
+					coll.Add("ceilvindex0", s.CeilSlopeVIndexes[0]);
+					coll.Add("ceilvindex1", s.CeilSlopeVIndexes[1]);
+					coll.Add("ceilvindex2", s.CeilSlopeVIndexes[2]);
+				}
+
+				// Other Meridian 59 sector props.
+				coll.Add("sectortag", s.SectorTag);
+				coll.Add("animationspeed", s.AnimationSpeed);
+				coll.Add("flicker", s.Flicker);
+				coll.Add("depth", s.Depth);
+				coll.Add("scrollfloor", s.ScrollFloor);
+				coll.Add("scrollceiling", s.ScrollCeiling);
+				coll.Add("offsetx", s.OffsetX);
+				coll.Add("offsety", s.OffsetY);
+				coll.Add("floortexrot", s.FloorTexRot);
+				coll.Add("ceiltexrot", s.CeilTexRot);
+				coll.Add("scrollspeed", s.ScrollFlags.Speed);
+				coll.Add("scrolldir", s.ScrollFlags.Direction);
 
 				//mxd. Flags
 				foreach(KeyValuePair<string, bool> flag in s.Flags)

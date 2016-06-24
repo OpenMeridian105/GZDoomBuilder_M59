@@ -204,41 +204,88 @@ namespace CodeImp.DoomBuilder.Windows
 					// Only valid if there are 3 items in floor/ceil slope vert (position) list.
 					if (floorvt.Count == 3)
 					{
-						if (floorvt[0].x == V.Position.x && floorvt[0].y == V.Position.y)
+						if (Math.Round(floorvt[0].x) == V.Position.x && Math.Round(floorvt[0].y) == V.Position.y)
 						{
-							// Rounded height to string.
-							floorvert1height.Text = Math.Round(Sector.GetFloorPlane(sc).GetZ(V.Position)).ToString();
+							// // Used to get height from plane.
+							//floorvert1height.Text = Math.Round(Sector.GetFloorPlane(sc).GetZ(V.Position)).ToString();
+							floorvert1height.Text = floorvt[0].z.ToString();
 							// Select this vertex index.
 							floorvert1.SelectedItem = V.Index;
 						}
-						if (floorvt[1].x == V.Position.x && floorvt[1].y == V.Position.y)
+						if (Math.Round(floorvt[1].x) == V.Position.x && Math.Round(floorvt[1].y) == V.Position.y)
 						{
-							floorvert2height.Text = Math.Round(Sector.GetFloorPlane(sc).GetZ(V.Position)).ToString();
+							floorvert2height.Text = floorvt[1].z.ToString();
 							floorvert2.SelectedItem = V.Index;
 						}
-						if (floorvt[2].x == V.Position.x && floorvt[2].y == V.Position.y)
+						if (Math.Round(floorvt[2].x) == V.Position.x && Math.Round(floorvt[2].y) == V.Position.y)
 						{
-							floorvert3height.Text = Math.Round(Sector.GetFloorPlane(sc).GetZ(V.Position)).ToString();
+							floorvert3height.Text = floorvt[2].z.ToString();
 							floorvert3.SelectedItem = V.Index;
 						}
 					}
 					if (ceilvt.Count == 3)
 					{
-						if (ceilvt[0].x == V.Position.x && ceilvt[0].y == V.Position.y)
+						if (Math.Round(ceilvt[0].x) == V.Position.x && Math.Round(ceilvt[0].y) == V.Position.y)
 						{
-							ceilvert1height.Text = Math.Round(Sector.GetCeilingPlane(sc).GetZ(V.Position)).ToString();
+							// Used to get height from plane.
+							//ceilvert1height.Text = Math.Round(Sector.GetCeilingPlane(sc).GetZ(V.Position)).ToString();
+							ceilvert1height.Text = ceilvt[0].z.ToString();
 							ceilvert1.SelectedItem = V.Index;
 						}
-						if (ceilvt[1].x == V.Position.x && ceilvt[1].y == V.Position.y)
+						if (Math.Round(ceilvt[1].x) == V.Position.x && Math.Round(ceilvt[1].y) == V.Position.y)
 						{
-							ceilvert2height.Text = Math.Round(Sector.GetCeilingPlane(sc).GetZ(V.Position)).ToString();
+							ceilvert2height.Text = ceilvt[1].z.ToString();
 							ceilvert2.SelectedItem = V.Index;
 						}
-						if (ceilvt[2].x == V.Position.x && ceilvt[2].y == V.Position.y)
+						if (Math.Round(ceilvt[2].x) == V.Position.x && Math.Round(ceilvt[2].y) == V.Position.y)
 						{
-							ceilvert3height.Text = Math.Round(Sector.GetCeilingPlane(sc).GetZ(V.Position)).ToString();
+							ceilvert3height.Text = ceilvt[2].z.ToString();
 							ceilvert3.SelectedItem = V.Index;
 						}
+					}
+				}
+				// Some slopes don't have vertexes in the same sector... bug or intended?
+				// Either way, add the height and find the vertex. Don't select it for now.
+				if (floorvt.Count == 3)
+				{
+					if (floorvert1height.Text == "")
+					{
+						Vertex V = MapSet.NearestVertex(sc.Map.Vertices, floorvt[0]);
+						if (V != null) floorvert1.Items.Add(V.Index);
+						floorvert1height.Text = Math.Round(floorvt[0].z).ToString();
+					}
+					if (floorvert2height.Text == "")
+					{
+						Vertex V = MapSet.NearestVertex(sc.Map.Vertices, floorvt[1]);
+						if (V != null) floorvert2.Items.Add(V.Index);
+						floorvert2height.Text = Math.Round(floorvt[1].z).ToString();
+					}
+					if (floorvert3height.Text == "")
+					{
+						Vertex V = MapSet.NearestVertex(sc.Map.Vertices, floorvt[2]);
+						if (V != null) floorvert3.Items.Add(V.Index);
+						floorvert3height.Text = Math.Round(floorvt[2].z).ToString();
+					}
+				}
+				if (ceilvt.Count == 3)
+				{
+					if (ceilvert1height.Text == "")
+					{
+						Vertex V = MapSet.NearestVertex(sc.Map.Vertices, ceilvt[0]);
+						if (V != null) ceilvert1.Items.Add(V.Index);
+						ceilvert1height.Text = Math.Round(ceilvt[0].z).ToString();
+					}
+					if (ceilvert2height.Text == "")
+					{
+						Vertex V = MapSet.NearestVertex(sc.Map.Vertices, ceilvt[1]);
+						if (V != null) ceilvert2.Items.Add(V.Index);
+						ceilvert2height.Text = Math.Round(ceilvt[1].z).ToString();
+					}
+					if (ceilvert3height.Text == "")
+					{
+						Vertex V = MapSet.NearestVertex(sc.Map.Vertices, ceilvt[2]);
+						if (V != null) ceilvert3.Items.Add(V.Index);
+						ceilvert3height.Text = Math.Round(ceilvt[2].z).ToString();
 					}
 				}
 			}
@@ -333,6 +380,48 @@ namespace CodeImp.DoomBuilder.Windows
 				// Slopes
 				if (s.CeilTexRot.ToString() != ceiltexrot.Text) ceiltexrot.Text = "";
 				if (s.FloorTexRot.ToString() != floortexrot.Text) floortexrot.Text = "";
+				if (FormHasFloorSlope())
+				{
+					// Cancel vertex selection.
+					if (s.Index != sc.Index)
+					{
+						floorvert1.SelectedItem = null;
+						floorvert2.SelectedItem = null;
+						floorvert3.SelectedItem = null;
+					}
+					if (s.FloorSlopeVertexes.Count != 3)
+						floorvert1height.Text = floorvert2height.Text = floorvert3height.Text = "";
+					else
+					{
+						if (floorvert1height.Text != s.FloorSlopeVertexes[0].z.ToString())
+							floorvert1height.Text = "";
+						if (floorvert2height.Text != s.FloorSlopeVertexes[1].z.ToString())
+							floorvert2height.Text = "";
+						if (floorvert3height.Text != s.FloorSlopeVertexes[2].z.ToString())
+							floorvert3height.Text = "";
+					}
+				}
+				if (FormHasCeilSlope())
+				{
+					// Cancel vertex selection.
+					if (s.Index != sc.Index)
+					{
+						ceilvert1.SelectedItem = null;
+						ceilvert2.SelectedItem = null;
+						ceilvert3.SelectedItem = null;
+					}
+					if (s.CeilSlopeVertexes.Count != 3)
+						ceilvert1height.Text = ceilvert2height.Text = ceilvert3height.Text = "";
+					else
+					{
+						if (ceilvert1height.Text != s.CeilSlopeVertexes[0].z.ToString())
+							ceilvert1height.Text = "";
+						if (ceilvert2height.Text != s.CeilSlopeVertexes[1].z.ToString())
+							ceilvert2height.Text = "";
+						if (ceilvert3height.Text != s.CeilSlopeVertexes[2].z.ToString())
+							ceilvert3height.Text = "";
+					}
+				}
 
 				//mxd. Store initial properties
 				sectorprops.Add(new SectorProperties(s));
@@ -456,6 +545,16 @@ namespace CodeImp.DoomBuilder.Windows
 			if (Name == "Very deep")
 				return 3;
 			return 0;
+		}
+
+		private bool FormHasFloorSlope()
+		{
+			return (floorvert1height.Text != "" || floorvert2height.Text != "" || floorvert3height.Text != "");
+		}
+
+		private bool FormHasCeilSlope()
+		{
+			return (ceilvert1height.Text != "" || ceilvert2height.Text != "" || ceilvert3height.Text != "");
 		}
 
 		#endregion
@@ -872,6 +971,11 @@ namespace CodeImp.DoomBuilder.Windows
 					// Shouldn't clear everything, but can't update the map... return.
 					return;
 				}
+				if (floorvert1.Text == floorvert2.Text || floorvert1.Text == floorvert3.Text || floorvert2.Text == floorvert3.Text)
+				{
+					// Can't make a slope with two vertexes the same.
+					return;
+				}
 				foreach (Sector s in sectors)
 				{
 					List<Vertex> vlist = s.GetVertexes();
@@ -918,6 +1022,11 @@ namespace CodeImp.DoomBuilder.Windows
 					|| ceilvert1.Text == "" || ceilvert2.Text == "" || ceilvert3.Text == "")
 				{
 					// Shouldn't clear everything, but can't update the map... return.
+					return;
+				}
+				if (ceilvert1.Text == ceilvert2.Text || ceilvert1.Text == ceilvert3.Text || ceilvert2.Text == ceilvert3.Text)
+				{
+					// Can't make a slope with two vertexes the same.
 					return;
 				}
 				foreach (Sector s in sectors)

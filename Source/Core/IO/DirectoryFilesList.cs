@@ -31,7 +31,9 @@ namespace CodeImp.DoomBuilder.IO
 
 		private static HashSet<string> EXLUDE_EXTENSIONS = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 		{
-			"wad", "pk3", "pk7", "bak", "backup1", "backup2", "backup3", "zip", "rar", "7z"
+			"wad", "pk3", "pk7", "bak", "backup1", "backup2", "backup3", "zip", "rar",
+			"7z", "ogg", "roo", "roo~", "bsf", "mp3", "dll", "wav", "gitignore", "rsb",
+			"backup1", "backup2", "backup3", "dbprefab", "dbs"
 		};
 
 		#endregion
@@ -69,7 +71,14 @@ namespace CodeImp.DoomBuilder.IO
 					continue;
 				}
 				if(EXLUDE_EXTENSIONS.Contains(e.extension)) continue;
-			
+
+				// Ignore BGFs that don't start with "grd"
+				if (string.Compare(e.extension, "bgf", true) == 0
+					&& string.Compare(e.filepathname, 0, "grd", 0, 3, true) != 0)
+				{
+					continue;
+				}
+
 				if(entries.ContainsKey(e.filepathname))
 					throw new IOException("Multiple files with the same filename in the same directory are not allowed. See: \"" + e.filepathname + "\"");
 
@@ -90,6 +99,13 @@ namespace CodeImp.DoomBuilder.IO
 					continue;
 				}
 				if(EXLUDE_EXTENSIONS.Contains(e.extension)) continue;
+
+				// Ignore BGFs that don't start with "grd"
+				if (string.Compare(e.extension, "bgf", true) == 0
+					&& string.Compare(e.filepathname, 0, "grd", 0, 3, true) != 0)
+				{
+					continue;
+				}
 
 				if(entries.ContainsKey(e.filepathname))
 					throw new IOException("Multiple files with the same filename in the same directory are not allowed. See: \"" + e.filepathname + "\"");

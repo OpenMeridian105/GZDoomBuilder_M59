@@ -716,7 +716,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 					Vector2D pos = new Vector2D(vertices[i].x, vertices[i].y);
 					pos = pos.GetRotated(rotate);
 					pos.y = -pos.y;
-					pos = (pos + offset) * scale * texscale;
+					pos = (pos - offset) * scale * texscale;
 					vertices[i].u = pos.x;
 					vertices[i].v = pos.y;
 					vertices[i].c = color;
@@ -841,7 +841,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 					Vector2D pos = new Vector2D(vertices[i].x, vertices[i].y);
 					pos = pos.GetRotated(rotate);
 					pos.y = -pos.y;
-					pos = (pos + offset) * scale * texscale;
+					pos = (pos - offset) * scale * texscale;
 					vertices[i].u = pos.x;
 					vertices[i].v = pos.y;
 					vertices[i].c = color;

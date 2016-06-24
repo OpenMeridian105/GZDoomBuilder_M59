@@ -160,6 +160,11 @@ namespace CodeImp.DoomBuilder.IO
 			// Remove unused vertices.
 			map.RemoveUnusedVertices();
 			
+			// Check sector/vertex references - some Meridian maps have slopes
+			// with vertexes outside the sector. Not sure if this was intended
+			// or just incorrect references. Disabled for now.
+			//CheckSectorSlopeVerts(sectorlink);
+
 			// Return result;
 			return map;
 		}
@@ -1197,6 +1202,33 @@ namespace CodeImp.DoomBuilder.IO
 				SD.Line.FileSidedef1 = fileSideDefs.Count;
 			else
 				SD.Line.FileSidedef2 = fileSideDefs.Count;
+		}
+
+		private void CheckSectorSlopeVerts(Dictionary<int, Sector> sectors)
+		{
+			foreach (KeyValuePair<int, Sector> s in sectors)
+			{
+				List<Vertex> vList = s.Value.GetVertexes();
+
+				if (s.Value.FloorSlopeVertexes.Count == 3)
+				{
+					foreach (Vector3D v3 in s.Value.FloorSlopeVertexes)
+					{
+						Vertex vert = MapSet.NearestVertexSquareRange(vList, v3, 1.0f);
+						if (vert == null)
+							General.ErrorLogger.Add(ErrorType.Error, "Sector " + s.Value.Index + " has an invalid vertex in floor slope!");
+					}
+				}
+				if (s.Value.CeilSlopeVertexes.Count == 3)
+				{
+					foreach (Vector3D v3 in s.Value.CeilSlopeVertexes)
+					{
+						Vertex vert = MapSet.NearestVertexSquareRange(vList, v3, 1.0f);
+						if (vert == null)
+							General.ErrorLogger.Add(ErrorType.Error, "Sector " + s.Value.Index + " has an invalid vertex in ceiling slope!");
+					}
+				}
+			}
 		}
 
 		#endregion

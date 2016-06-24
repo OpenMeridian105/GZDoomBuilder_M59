@@ -2352,8 +2352,52 @@ namespace CodeImp.DoomBuilder.Map
 			List<Sector> newsectors = General.Map.Map.GetMarkedSectors(true); //mxd
 			foreach(Sector s in newsectors)
 			{
+				// Update slope references.
+				Vertex V;
+				if (s.FloorSlopeVIndexes != null && s.FloorSlopeVIndexes.Count == 3)
+				{
+					List<Vector3D> VList = new List<Vector3D>(3);
+					for (int i = 0; i < 3; ++i)
+					{
+						V = s.Map.Vertices.FirstOrDefault(v => v.Index == (s.FloorSlopeVIndexes[i]));
+						if (V != null)
+							VList.Add(new Vector3D((float)Math.Round(V.Position.x), (float)Math.Round(V.Position.y), s.FloorSlopeVertexes[i].z));
+					}
+					if (VList.Count == 3)
+					{
+						s.FloorSlopeVertexes = VList;
+						s.CalculateMeridianSlope(true);
+					}
+					else
+					{
+						s.FloorSlopeVIndexes.Clear();
+						s.FloorSlopeVertexes.Clear();
+					}
+				}
+
+				if (s.CeilSlopeVIndexes != null && s.CeilSlopeVIndexes.Count == 3)
+				{
+					List<Vector3D> VList = new List<Vector3D>(3);
+					for (int i = 0; i < 3; ++i)
+					{
+						V = s.Map.Vertices.FirstOrDefault(v => v.Index == (s.CeilSlopeVIndexes[i]));
+						if (V != null)
+							VList.Add(new Vector3D((float)Math.Round(V.Position.x), (float)Math.Round(V.Position.y), s.CeilSlopeVertexes[i].z));
+					}
+					if (VList.Count == 3)
+					{
+						s.CeilSlopeVertexes = VList;
+						s.CalculateMeridianSlope(false);
+					}
+					else
+					{
+						s.CeilSlopeVIndexes.Clear();
+						s.CeilSlopeVertexes.Clear();
+					}
+				}
+
 				// Skip if sector already has properties
-				if(s.CeilTexture != "-") continue;
+				if(s.FloorTexture != "-" || s.CeilTexture != "-") continue;
 
 				// Copy from adjacent sector if any
 				if(sector_copy != null)

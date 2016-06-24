@@ -126,6 +126,7 @@ namespace CodeImp.DoomBuilder.IO
 				writer.Write(v.Position.y);
 				writer.Write(v.ZCeiling);
 				writer.Write(v.ZFloor);
+				writer.Write(v.Index);
 
 				// Write custom fields
 				AddCustomFields(v.Fields, "vertex", writer);
@@ -147,6 +148,12 @@ namespace CodeImp.DoomBuilder.IO
 				//sidedefs
 				writer.Write((l.Front != null && sidedefids.ContainsKey(l.Front)) ? sidedefids[l.Front] : -1);
 				writer.Write((l.Back != null && sidedefids.ContainsKey(l.Back)) ? sidedefids[l.Back] : -1);
+
+				// Meridian 59 Scrolling
+				writer.Write(l.FrontScrollFlags.Speed);
+				writer.Write(l.FrontScrollFlags.Direction);
+				writer.Write(l.BackScrollFlags.Speed);
+				writer.Write(l.BackScrollFlags.Direction);
 
 				//action and args
 				writer.Write(l.Action);
@@ -181,6 +188,10 @@ namespace CodeImp.DoomBuilder.IO
 				writer.Write(s.MiddleTexture.ToCharArray());
 				writer.Write(s.LowTexture.Length);
 				writer.Write(s.LowTexture.ToCharArray());
+
+				// Meridian 59 properties
+				writer.Write(s.AnimateSpeed);
+				writer.Write(s.Tag);
 
 				AddFlags(s.Flags, writer);
 				AddCustomFields(s.Fields, "sidedef", writer);
@@ -220,6 +231,56 @@ namespace CodeImp.DoomBuilder.IO
 				writer.Write(s.CeilSlope.x);
 				writer.Write(s.CeilSlope.y);
 				writer.Write(s.CeilSlope.z);
+
+				if (General.Map.MERIDIAN)
+				{
+					if (s.FloorSlopeVertexes.Count != 3)
+						writer.Write((Boolean)false);
+					else
+					{
+						writer.Write((Boolean)true);
+						for (int i = 0; i < 3; ++i)
+							writer.Write(s.FloorSlopeVertexes[i].z);
+					}
+					if (s.CeilSlopeVertexes.Count != 3)
+						writer.Write((Boolean)false);
+					else
+					{
+						writer.Write((Boolean)true);
+						for (int i = 0; i < 3; ++i)
+							writer.Write(s.CeilSlopeVertexes[i].z);
+					}
+					if (s.FloorSlopeVIndexes != null && s.FloorSlopeVIndexes.Count == 3)
+					{
+						writer.Write((Boolean)true);
+						for (int i = 0; i < 3; ++i)
+							writer.Write(s.FloorSlopeVIndexes[i]);
+					}
+					else
+						writer.Write((Boolean)false);
+					if (s.CeilSlopeVIndexes != null && s.CeilSlopeVIndexes.Count == 3)
+					{
+						writer.Write((Boolean)true);
+						for (int i = 0; i < 3; ++i)
+							writer.Write(s.CeilSlopeVIndexes[i]);
+					}
+					else
+						writer.Write((Boolean)false);
+
+					// Other Meridian 59 sector props.
+					writer.Write((Int32)s.SectorTag);
+					writer.Write((Int32)s.AnimationSpeed);
+					writer.Write((Boolean)s.Flicker);
+					writer.Write((Int32)s.Depth);
+					writer.Write((Boolean)s.ScrollFloor);
+					writer.Write((Boolean)s.ScrollCeiling);
+					writer.Write((Int32)s.OffsetX);
+					writer.Write((Int32)s.OffsetY);
+					writer.Write((Int32)s.FloorTexRot);
+					writer.Write((Int32)s.CeilTexRot);
+					writer.Write((Int32)s.ScrollFlags.Speed);
+					writer.Write((Int32)s.ScrollFlags.Direction);
+				}
 
 				AddFlags(s.Flags, writer);
 				AddCustomFields(s.Fields, "sector", writer);

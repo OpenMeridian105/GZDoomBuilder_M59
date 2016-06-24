@@ -1328,6 +1328,15 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				return null;
 			}
 
+			if (General.Map.MERIDIAN)
+			{
+				if (General.Map.Map.Things.Count == 2)
+				{
+					General.Interface.DisplayStatus(StatusType.Warning, "Cannot have more than two things in a Meridian map!");
+					return null;
+				}
+			}
+
 			// Create thing
 			Thing t = General.Map.Map.CreateThing();
 			if(t != null)

@@ -140,6 +140,11 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			float offsetx = dragdelta.x;
 			float offsety = dragdelta.y;
 
+			if (General.Map.MERIDIAN)
+			{
+				offsetx = -offsetx;
+				offsety = -offsety;
+			}
 			bool lockX = General.Interface.CtrlState && !General.Interface.ShiftState;
 			bool lockY = !General.Interface.CtrlState && General.Interface.ShiftState;
 
