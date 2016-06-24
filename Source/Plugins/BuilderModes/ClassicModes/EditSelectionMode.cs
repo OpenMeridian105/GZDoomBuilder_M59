@@ -90,13 +90,24 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			public SectorTextureInfo(Sector s)
 			{
 				// Get transform properties
-				Floor.Offset = new Vector2D(UniFields.GetFloat(s.Fields, "xpanningfloor", 0f), UniFields.GetFloat(s.Fields, "ypanningfloor", 0f));
-				Ceiling.Offset = new Vector2D(UniFields.GetFloat(s.Fields, "xpanningceiling", 0f), UniFields.GetFloat(s.Fields, "ypanningceiling", 0f));
+
 				Floor.Scale = new Vector2D(UniFields.GetFloat(s.Fields, "xscalefloor", 1.0f), -UniFields.GetFloat(s.Fields, "yscalefloor", 1.0f));
 				Ceiling.Scale = new Vector2D(UniFields.GetFloat(s.Fields, "xscaleceiling", 1.0f), -UniFields.GetFloat(s.Fields, "yscaleceiling", 1.0f));
-				Floor.Rotation = Angle2D.DegToRad(UniFields.GetFloat(s.Fields, "rotationfloor", 0f));
-				Ceiling.Rotation = Angle2D.DegToRad(UniFields.GetFloat(s.Fields, "rotationceiling", 0f));
 
+				if (General.Map.MERIDIAN)
+				{
+					Floor.Offset = new Vector2D(s.OffsetX, s.OffsetY);
+					Ceiling.Offset = new Vector2D(s.OffsetX, s.OffsetY);
+					Floor.Rotation = Angle2D.DegToRad(s.FloorTexRot);
+					Ceiling.Rotation = Angle2D.DegToRad(s.CeilTexRot);
+				}
+				else
+				{
+					Floor.Offset = new Vector2D(UniFields.GetFloat(s.Fields, "xpanningfloor", 0f), UniFields.GetFloat(s.Fields, "ypanningfloor", 0f));
+					Ceiling.Offset = new Vector2D(UniFields.GetFloat(s.Fields, "xpanningceiling", 0f), UniFields.GetFloat(s.Fields, "ypanningceiling", 0f));
+					Floor.Rotation = Angle2D.DegToRad(UniFields.GetFloat(s.Fields, "rotationfloor", 0f));
+					Ceiling.Rotation = Angle2D.DegToRad(UniFields.GetFloat(s.Fields, "rotationceiling", 0f));
+				}
 				// Get texture sizes
 				Floor.TextureSize = GetTextureSize(s.LongFloorTexture);
 				Ceiling.TextureSize = GetTextureSize(s.LongCeilTexture);
@@ -870,8 +881,16 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				group.Key.Fields.BeforeFieldsChange();
 
 				// Apply transforms
-				UpdateTextureTransform(group.Key.Fields, group.Value.Ceiling, transformceiloffsets, rotateceiloffsets, scaleceiloffsets);
-				UpdateTextureTransform(group.Key.Fields, group.Value.Floor, transformflooroffsets, rotateflooroffsets, scaleflooroffsets);
+				if (General.Map.MERIDIAN)
+				{
+					UpdateTextureTransform(group.Key, group.Value.Ceiling, transformceiloffsets, rotateceiloffsets, scaleceiloffsets);
+					UpdateTextureTransform(group.Key, group.Value.Floor, transformflooroffsets, rotateflooroffsets, scaleflooroffsets);
+				}
+				else
+				{
+					UpdateTextureTransform(group.Key.Fields, group.Value.Ceiling, transformceiloffsets, rotateceiloffsets, scaleceiloffsets);
+					UpdateTextureTransform(group.Key.Fields, group.Value.Floor, transformflooroffsets, rotateflooroffsets, scaleflooroffsets);
+				}
 
 				// Update cache
 				group.Key.UpdateNeeded = true;
@@ -925,6 +944,44 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			}
 		}
 
+		private void UpdateTextureTransform(Sector s, SurfaceTextureInfo si, bool transformoffsets, bool rotateoffsets, bool scaleoffsets)
+		{
+			// Get offset-ready values
+			float texrotation = Angle2D.PI2 - rotation;
+
+			// Update texture offsets
+			if (transformoffsets)
+			{
+				Vector2D toffset = (selectionbasecenter - selectioncenter).GetRotated((texrotation + si.Rotation));
+				Vector2D soffset = si.Offset.GetRotated(texrotation + si.Rotation);
+				s.OffsetX = (int)Math.Round(soffset.x + toffset.x, General.Map.FormatInterface.VertexDecimals) % si.TextureSize.Width;
+				s.OffsetY = (int)Math.Round(-(soffset.y + toffset.y), General.Map.FormatInterface.VertexDecimals) % si.TextureSize.Height;
+			}
+			// Restore texture offsets
+			else
+			{
+				s.OffsetX = (int)si.Offset.x;
+				s.OffsetY = (int)si.Offset.y;
+			}
+
+			// Update rotation
+			if (rotateoffsets)
+			{
+				if (si.Part == "floor")
+					s.FloorTexRot = (int)General.ClampAngle((float)Math.Round(Angle2D.RadToDeg(si.Rotation + texrotation), General.Map.FormatInterface.VertexDecimals));
+				else
+					s.CeilTexRot = (int)General.ClampAngle((float)Math.Round(Angle2D.RadToDeg(si.Rotation + texrotation), General.Map.FormatInterface.VertexDecimals));
+			}
+			// Restore rotation
+			else
+			{
+				if (si.Part == "floor")
+					s.FloorTexRot = (int)Angle2D.RadToDeg(si.Rotation);
+				else
+					s.CeilTexRot = (int)Angle2D.RadToDeg(si.Rotation);
+			}
+		}
+
 		//mxd. This restores texture transforms for all sectors
 		private void RestoreTextureTransform() 
 		{
@@ -933,9 +990,16 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				group.Key.Fields.BeforeFieldsChange();
 
 				// Revert transforms
-				RestoreTextureTransform(group.Key.Fields, group.Value.Ceiling);
-				RestoreTextureTransform(group.Key.Fields, group.Value.Floor);
-
+				if (General.Map.MERIDIAN)
+				{
+					RestoreTextureTransform(group.Key, group.Value.Ceiling);
+					RestoreTextureTransform(group.Key, group.Value.Floor);
+				}
+				else
+				{
+					RestoreTextureTransform(group.Key.Fields, group.Value.Ceiling);
+					RestoreTextureTransform(group.Key.Fields, group.Value.Floor);
+				}
 				// Update cache
 				group.Key.UpdateNeeded = true;
 				group.Key.UpdateCache();
@@ -951,7 +1015,18 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			fields["xpanning" + si.Part] = new UniValue(UniversalType.Float, si.Offset.x);
 			fields["ypanning" + si.Part] = new UniValue(UniversalType.Float, si.Offset.y);
 		}
-		
+
+		private static void RestoreTextureTransform(Sector s, SurfaceTextureInfo si)
+		{
+			if (si.Part == "floor")
+				s.FloorTexRot = (int)Angle2D.RadToDeg(si.Rotation);
+			else
+				s.CeilTexRot = (int)Angle2D.RadToDeg(si.Rotation);
+
+			s.OffsetX = (int)si.Offset.x;
+			s.OffsetY = (int)si.Offset.y;
+		}
+
 		// This updates the selection rectangle components
 		private void UpdateRectangleComponents()
 		{
