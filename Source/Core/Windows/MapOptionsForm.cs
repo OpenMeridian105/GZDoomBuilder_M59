@@ -96,6 +96,19 @@ namespace CodeImp.DoomBuilder.Windows
 				}
 			}
 
+			// Always select Meridian format if this is a first start.
+			if (string.IsNullOrEmpty(General.Settings.LastUsedConfigName))
+			{
+				foreach (ConfigurationInfo ci in config.Items)
+				{
+					if (ci.Name == "Meridian 59 (roo v15 format)")
+					{
+						config.SelectedItem = ci;
+						break;
+					}
+				}
+			}
+
 			//mxd. Still better than nothing :)
 			if(config.SelectedIndex == -1 && config.Items.Count > 0) config.SelectedIndex = 0;
 
