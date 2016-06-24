@@ -26,6 +26,8 @@ namespace CodeImp.DoomBuilder.IO
 			public string HighTexture;
 			public string MiddleTexture;
 			public string LowTexture;
+			public int AnimateSpeed;
+			public int Tag;
 			public Dictionary<string, UniValue> Fields;
 			public Dictionary<string, bool> Flags;
 		}
@@ -289,6 +291,14 @@ namespace CodeImp.DoomBuilder.IO
 				int v2 = reader.ReadInt32();
 				int s1 = reader.ReadInt32();
 				int s2 = reader.ReadInt32();
+
+				// Meridian 59 scrolling.
+				SDScrollFlags fscrollflags = new SDScrollFlags(), bscrollflags = new SDScrollFlags();
+				fscrollflags.Speed = reader.ReadInt32();
+				fscrollflags.Direction = reader.ReadInt32();
+				bscrollflags.Speed = reader.ReadInt32();
+				bscrollflags.Direction = reader.ReadInt32();
+
 				int special = reader.ReadInt32();
 				for(int a = 0; a < Linedef.NUM_ARGS; a++) args[a] = reader.ReadInt32();
 				int numtags = reader.ReadInt32(); //mxd
@@ -325,6 +335,9 @@ namespace CodeImp.DoomBuilder.IO
 					if(l != null) 
 					{
 						l.Update(stringflags, 0, tags, special, args);
+						l.FrontScrollFlags = fscrollflags;
+						l.BackScrollFlags = bscrollflags;
+
 						l.UpdateCache();
 
 						// Add custom fields
@@ -367,7 +380,10 @@ namespace CodeImp.DoomBuilder.IO
 				Sidedef s = map.CreateSidedef(ld, front, sectorlink[data.SectorID]);
 				if(s != null) 
 				{
-					s.Update(data.OffsetX, data.OffsetY, data.HighTexture, data.MiddleTexture, data.LowTexture, data.Flags);
+					if (General.Map.MERIDIAN)
+						s.Update(data.OffsetX, data.OffsetY, data.HighTexture, data.MiddleTexture, data.LowTexture, data.AnimateSpeed, data.Tag);
+					else
+						s.Update(data.OffsetX, data.OffsetY, data.HighTexture, data.MiddleTexture, data.LowTexture, data.Flags);
 
 					// Add custom fields
 					foreach(KeyValuePair<string, UniValue> group in data.Fields) 
@@ -397,6 +413,9 @@ namespace CodeImp.DoomBuilder.IO
 				data.HighTexture = ReadString(reader);
 				data.MiddleTexture = ReadString(reader);
 				data.LowTexture = ReadString(reader);
+
+				data.AnimateSpeed = reader.ReadInt32();
+				data.Tag = reader.ReadInt32();
 
 				//flags
 				data.Flags = new Dictionary<string, bool>(StringComparer.Ordinal);

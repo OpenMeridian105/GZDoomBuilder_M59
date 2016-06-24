@@ -149,6 +149,12 @@ namespace CodeImp.DoomBuilder.IO
 				writer.Write((l.Front != null && sidedefids.ContainsKey(l.Front)) ? sidedefids[l.Front] : -1);
 				writer.Write((l.Back != null && sidedefids.ContainsKey(l.Back)) ? sidedefids[l.Back] : -1);
 
+				// Meridian 59 Scrolling
+				writer.Write(l.FrontScrollFlags.Speed);
+				writer.Write(l.FrontScrollFlags.Direction);
+				writer.Write(l.BackScrollFlags.Speed);
+				writer.Write(l.BackScrollFlags.Direction);
+
 				//action and args
 				writer.Write(l.Action);
 				for(int i = 0; i < l.Args.Length; i++) writer.Write(l.Args[i]);
@@ -182,6 +188,10 @@ namespace CodeImp.DoomBuilder.IO
 				writer.Write(s.MiddleTexture.ToCharArray());
 				writer.Write(s.LowTexture.Length);
 				writer.Write(s.LowTexture.ToCharArray());
+
+				// Meridian 59 properties
+				writer.Write(s.AnimateSpeed);
+				writer.Write(s.Tag);
 
 				AddFlags(s.Flags, writer);
 				AddCustomFields(s.Fields, "sidedef", writer);

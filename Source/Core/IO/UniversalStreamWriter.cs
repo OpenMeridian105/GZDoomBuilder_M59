@@ -215,6 +215,12 @@ namespace CodeImp.DoomBuilder.IO
 				else
 					coll.Add("sideback", -1);
 				
+				// Meridian 59 scrolling.
+				coll.Add("frontscrollspeed", l.FrontScrollFlags.Speed);
+				coll.Add("frontscrolldir", l.FrontScrollFlags.Direction);
+				coll.Add("backscrollspeed", l.BackScrollFlags.Speed);
+				coll.Add("backscrolldir", l.BackScrollFlags.Direction);
+
 				// Special
 				if(l.Action != 0) coll.Add("special", l.Action);
 				if(l.Args[0] != 0) coll.Add("arg0", l.Args[0]);
@@ -250,6 +256,8 @@ namespace CodeImp.DoomBuilder.IO
 				if(s.LongMiddleTexture != MapSet.EmptyLongName) coll.Add("texturemiddle", s.MiddleTexture);
 				coll.Add("sector", sectorids[s.Sector]);
 				coll.Comment = s.Index.ToString();
+				coll.Add("sidedeftag", s.Tag);
+				coll.Add("animatespeed", s.AnimateSpeed);
 
 				//mxd. Flags
 				foreach(KeyValuePair<string, bool> flag in s.Flags)

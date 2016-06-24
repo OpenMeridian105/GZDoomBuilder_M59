@@ -290,6 +290,10 @@ namespace CodeImp.DoomBuilder.IO
 					if(l != null)
 					{
 						l.Update(stringflags, 0, tags, special, args);
+						l.FrontScrollFlags = new SDScrollFlags(GetCollectionEntry(lc, "frontscrollspeed", false, 0, where),
+							GetCollectionEntry(lc, "frontscrolldir", false, 0, where));
+						l.FrontScrollFlags = new SDScrollFlags(GetCollectionEntry(lc, "backscrollspeed", false, 0, where),
+							GetCollectionEntry(lc, "backscrolldir", false, 0, where));
 						l.UpdateCache();
 
 						// Custom fields
@@ -332,7 +336,8 @@ namespace CodeImp.DoomBuilder.IO
 			string tlow = GetCollectionEntry(sc, "texturebottom", false, "-", where);
 			string tmid = GetCollectionEntry(sc, "texturemiddle", false, "-", where);
 			int sector = GetCollectionEntry(sc, "sector", true, 0, where);
-
+			int tag = GetCollectionEntry(sc, "sidedeftag", false, 0, where);
+			int animatespeed = GetCollectionEntry(sc, "animatespeed", false, 0, where);
 			//mxd. Flags
 			Dictionary<string, bool> stringflags = new Dictionary<string, bool>(StringComparer.Ordinal);
 			foreach(KeyValuePair<string, string> flag in General.Map.Config.SidedefFlags)
@@ -344,7 +349,10 @@ namespace CodeImp.DoomBuilder.IO
 				Sidedef s = map.CreateSidedef(ld, front, sectorlink[sector]);
 				if(s != null)
 				{
-					s.Update(offsetx, offsety, thigh, tmid, tlow, stringflags);
+					if (General.Map.MERIDIAN)
+						s.Update(offsetx, offsety, thigh, tmid, tlow, animatespeed, tag);
+					else
+						s.Update(offsetx, offsety, thigh, tmid, tlow, stringflags);
 
 					// Custom fields
 					ReadCustomFields(sc, s, "sidedef");
