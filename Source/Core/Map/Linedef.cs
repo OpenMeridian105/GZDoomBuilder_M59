@@ -1173,7 +1173,7 @@ namespace CodeImp.DoomBuilder.Map
 					if(this.front != null) this.front.AddTexturesTo(other.back);
 
 					// Change sidedefs?
-					if(back != null && !JoinChangeSidedefs(other, true, back)) return false;
+					if(!JoinChangeSidedefs(other, true, back)) return false;
 				}
 				// Compare back sectors
 				else if((otherbs != null) && (otherbs == thisbs))
@@ -1183,7 +1183,7 @@ namespace CodeImp.DoomBuilder.Map
 					if(this.back != null) this.back.AddTexturesTo(other.front);
 
 					// Change sidedefs?
-					if(front != null && !JoinChangeSidedefs(other, false, front)) return false;
+					if(!JoinChangeSidedefs(other, false, front)) return false;
 				}
 				// Compare front and back
 				else if((otherfs != null) && (otherfs == thisbs))
@@ -1193,7 +1193,7 @@ namespace CodeImp.DoomBuilder.Map
 					if(this.back != null) this.back.AddTexturesTo(other.back);
 
 					// Change sidedefs?
-					if(front != null && !JoinChangeSidedefs(other, true, front)) return false;
+					if(!JoinChangeSidedefs(other, true, front)) return false;
 				}
 				// Compare back and front
 				else if((otherbs != null) && (otherbs == thisfs))
@@ -1203,7 +1203,7 @@ namespace CodeImp.DoomBuilder.Map
 					if(this.front != null) this.front.AddTexturesTo(other.front);
 
 					// Change sidedefs?
-					if(back != null && !JoinChangeSidedefs(other, false, back)) return false;
+					if(!JoinChangeSidedefs(other, false, back)) return false;
 				}
 				else
 				{
@@ -1217,7 +1217,7 @@ namespace CodeImp.DoomBuilder.Map
 							if(this.back != null) this.back.AddTexturesTo(other.front);
 
 							// Change sidedefs?
-							if(front != null && !JoinChangeSidedefs(other, false, front)) return false;
+							if(!JoinChangeSidedefs(other, false, front)) return false;
 						}
 						else
 						{
@@ -1225,7 +1225,7 @@ namespace CodeImp.DoomBuilder.Map
 							if(this.front != null) this.front.AddTexturesTo(other.front);
 
 							// Change sidedefs?
-							if(back != null && !JoinChangeSidedefs(other, false, back)) return false;
+							if(!JoinChangeSidedefs(other, false, back)) return false;
 						}
 					}
 					// This line single sided?
@@ -1260,50 +1260,22 @@ namespace CodeImp.DoomBuilder.Map
 						// This line with its back to the other?
 						if(this.start == other.end)
 						{
-							//mxd. Attach our front to other back?
-							if(otherbs == null)
-							{
-								// Copy textures
-								if(other.back != null) other.back.AddTexturesTo(this.front);
-								if(this.back != null) this.back.AddTexturesTo(other.front);
+							// Copy textures
+							if(other.back != null) other.back.AddTexturesTo(this.front);
+							if(this.back != null) this.back.AddTexturesTo(other.front);
 
-								// Change sidedefs (replace other back with our front)
-								if(front != null && !JoinChangeSidedefs(other, false, front)) return false;
-							}
-							//mxd. Attach our back to other front?
-							else if(otherfs == null)
-							{
-								// Copy textures
-								if(other.front != null) other.front.AddTexturesTo(this.back);
-								if(this.front != null) this.front.AddTexturesTo(other.back);
-
-								// Change sidedefs (replace other back with our front)
-								if(back != null && !JoinChangeSidedefs(other, true, back)) return false;
-							}
+							// Change sidedefs
+							if(!JoinChangeSidedefs(other, false, front)) return false;
 						}
 						// Both lines face the same way
 						else
 						{
-							//mxd. Attach our back to other back?
-							if(otherbs == null)
-							{
-								// Copy textures
-								if(other.back != null) other.back.AddTexturesTo(this.back);
-								if(this.front != null) this.front.AddTexturesTo(other.front);
+							// Copy textures
+							if(other.back != null) other.back.AddTexturesTo(this.back);
+							if(this.front != null) this.front.AddTexturesTo(other.front);
 
-								// Change sidedefs
-								if(back != null && !JoinChangeSidedefs(other, false, back)) return false;
-							}
-							//mxd. Attach our front to other front?
-							else if(otherfs == null)
-							{
-								// Copy textures
-								if(other.front != null) other.front.AddTexturesTo(this.front);
-								if(this.back != null) this.back.AddTexturesTo(other.back);
-
-								// Change sidedefs
-								if(front != null && !JoinChangeSidedefs(other, true, front)) return false;
-							}
+							// Change sidedefs
+							if(!JoinChangeSidedefs(other, false, back)) return false;
 						}
 					}
 				}
