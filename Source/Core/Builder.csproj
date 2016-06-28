@@ -189,6 +189,7 @@
     </Compile>
     <Compile Include="IO\BGFReader.cs" />
     <Compile Include="IO\RooMapSetIO.cs" />
+    <Compile Include="Map\KodCoordinates.cs" />
     <Compile Include="Map\SDScrollFlags.cs" />
     <Compile Include="Windows\LinedefEditFormMeridian.cs">
       <SubType>Form</SubType>

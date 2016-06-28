@@ -39,6 +39,7 @@ namespace CodeImp.DoomBuilder.Windows
 			System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
 			System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
 			System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+			System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
 			this.seperatorfileopen = new System.Windows.Forms.ToolStripSeparator();
 			this.seperatorfilerecent = new System.Windows.Forms.ToolStripSeparator();
@@ -241,6 +242,14 @@ namespace CodeImp.DoomBuilder.Windows
 			this.itemzoom10 = new System.Windows.Forms.ToolStripMenuItem();
 			this.itemzoom5 = new System.Windows.Forms.ToolStripMenuItem();
 			this.itemzoomfittoscreen = new System.Windows.Forms.ToolStripMenuItem();
+			this.kodRowHeader = new System.Windows.Forms.ToolStripStatusLabel();
+			this.kodRowPos = new System.Windows.Forms.ToolStripStatusLabel();
+			this.rowcommalabel = new System.Windows.Forms.ToolStripStatusLabel();
+			this.kodFineRowPos = new System.Windows.Forms.ToolStripStatusLabel();
+			this.kodColHeader = new System.Windows.Forms.ToolStripStatusLabel();
+			this.kodColPos = new System.Windows.Forms.ToolStripStatusLabel();
+			this.colcommalabel = new System.Windows.Forms.ToolStripStatusLabel();
+			this.kodFineColPos = new System.Windows.Forms.ToolStripStatusLabel();
 			this.xposlabel = new System.Windows.Forms.ToolStripStatusLabel();
 			this.yposlabel = new System.Windows.Forms.ToolStripStatusLabel();
 			this.warnsLabel = new System.Windows.Forms.ToolStripStatusLabel();
@@ -275,6 +284,7 @@ namespace CodeImp.DoomBuilder.Windows
 			toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
 			toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
 			toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+			toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
 			this.menumain.SuspendLayout();
 			this.toolbar.SuspendLayout();
 			this.toolbarContextMenu.SuspendLayout();
@@ -316,6 +326,12 @@ namespace CodeImp.DoomBuilder.Windows
 			toolStripSeparator3.Margin = new System.Windows.Forms.Padding(3, 0, 3, 0);
 			toolStripSeparator3.Name = "toolStripSeparator3";
 			toolStripSeparator3.Size = new System.Drawing.Size(6, 23);
+			// 
+			// toolStripSeparator6
+			// 
+			toolStripSeparator6.Margin = new System.Windows.Forms.Padding(3, 0, 3, 0);
+			toolStripSeparator6.Name = "toolStripSeparator6";
+			toolStripSeparator6.Size = new System.Drawing.Size(6, 23);
 			// 
 			// seperatorfileopen
 			// 
@@ -2034,6 +2050,15 @@ namespace CodeImp.DoomBuilder.Windows
             this.zoomlabel,
             this.buttonzoom,
             toolStripSeparator3,
+            this.kodRowHeader,
+            this.kodRowPos,
+            this.rowcommalabel,
+            this.kodFineRowPos,
+            this.kodColHeader,
+            this.kodColPos,
+            this.colcommalabel,
+            this.kodFineColPos,
+            toolStripSeparator6,
             this.xposlabel,
             this.poscommalabel,
             this.yposlabel,
@@ -2294,6 +2319,72 @@ namespace CodeImp.DoomBuilder.Windows
 			this.itemzoomfittoscreen.Size = new System.Drawing.Size(156, 22);
 			this.itemzoomfittoscreen.Text = "Fit to screen";
 			this.itemzoomfittoscreen.Click += new System.EventHandler(this.itemzoomfittoscreen_Click);
+			// 
+			// kodRowHeader
+			// 
+			this.kodRowHeader.Name = "kodRowHeader";
+			this.kodRowHeader.Size = new System.Drawing.Size(37, 18);
+			this.kodRowHeader.Text = "Row:";
+			this.kodRowHeader.ToolTipText = "Current row/col coordinates on map.";
+			// 
+			// kodRowPos
+			// 
+			this.kodRowPos.AutoSize = false;
+			this.kodRowPos.Name = "kodRowPos";
+			this.kodRowPos.Size = new System.Drawing.Size(32, 18);
+			this.kodRowPos.Text = "0";
+			this.kodRowPos.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.kodRowPos.ToolTipText = "Current row/col coordinates on map.";
+			// 
+			// rowcommalabel
+			// 
+			this.rowcommalabel.Name = "rowcommalabel";
+			this.rowcommalabel.Size = new System.Drawing.Size(11, 18);
+			this.rowcommalabel.Tag = "builder_centeroncoordinates";
+			this.rowcommalabel.Text = ",";
+			this.rowcommalabel.ToolTipText = "Current row/col coordinates on map.";
+			// 
+			// kodFineRowPos
+			// 
+			this.kodFineRowPos.AutoSize = false;
+			this.kodFineRowPos.Name = "kodFineRowPos";
+			this.kodFineRowPos.Size = new System.Drawing.Size(25, 18);
+			this.kodFineRowPos.Text = "0";
+			this.kodFineRowPos.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.kodFineRowPos.ToolTipText = "Current row/col coordinates on map.";
+			// 
+			// kodColHeader
+			// 
+			this.kodColHeader.Name = "kodColHeader";
+			this.kodColHeader.Size = new System.Drawing.Size(31, 18);
+			this.kodColHeader.Text = "Col:";
+			this.kodColHeader.ToolTipText = "Current row/col coordinates on map.";
+			// 
+			// kodColPos
+			// 
+			this.kodColPos.AutoSize = false;
+			this.kodColPos.Name = "kodColPos";
+			this.kodColPos.Size = new System.Drawing.Size(32, 18);
+			this.kodColPos.Text = "0";
+			this.kodColPos.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.kodColPos.ToolTipText = "Current row/col coordinates on map.";
+			// 
+			// colcommalabel
+			// 
+			this.colcommalabel.Name = "colcommalabel";
+			this.colcommalabel.Size = new System.Drawing.Size(11, 18);
+			this.colcommalabel.Tag = "builder_centeroncoordinates";
+			this.colcommalabel.Text = ",";
+			this.colcommalabel.ToolTipText = "Current row/col coordinates on map.";
+			// 
+			// kodFineColPos
+			// 
+			this.kodFineColPos.AutoSize = false;
+			this.kodFineColPos.Name = "kodFineColPos";
+			this.kodFineColPos.Size = new System.Drawing.Size(25, 18);
+			this.kodFineColPos.Text = "0";
+			this.kodFineColPos.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.kodFineColPos.ToolTipText = "Current row/col coordinates on map.";
 			// 
 			// xposlabel
 			// 
@@ -2871,5 +2962,13 @@ namespace CodeImp.DoomBuilder.Windows
 		private ToolStripMenuItem itemdynamicgridsize;
 		private ToolStripMenuItem itemtogglecomments;
 		private ToolStripMenuItem itemtogglefixedthingsscale;
+		private ToolStripStatusLabel kodRowHeader;
+		private ToolStripStatusLabel kodRowPos;
+		private ToolStripStatusLabel rowcommalabel;
+		private ToolStripStatusLabel kodFineRowPos;
+		private ToolStripStatusLabel kodColHeader;
+		private ToolStripStatusLabel kodColPos;
+		private ToolStripStatusLabel colcommalabel;
+		private ToolStripStatusLabel kodFineColPos;
 	}
 }

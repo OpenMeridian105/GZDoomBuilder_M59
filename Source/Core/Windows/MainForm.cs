@@ -233,6 +233,11 @@ namespace CodeImp.DoomBuilder.Windows
 				xposlabel.Width = (int)Math.Round(xposlabel.Width * DPIScaler.Width);
 				yposlabel.Width = (int)Math.Round(yposlabel.Width * DPIScaler.Width);
 				warnsLabel.Width = (int)Math.Round(warnsLabel.Width * DPIScaler.Width);
+
+				kodRowPos.Width = (int)Math.Round(kodRowPos.Width * DPIScaler.Width);
+				kodFineRowPos.Width = (int)Math.Round(kodFineRowPos.Width * DPIScaler.Width);
+				kodColPos.Width = (int)Math.Round(kodColPos.Width * DPIScaler.Width);
+				kodFineColPos.Width = (int)Math.Round(kodFineColPos.Width * DPIScaler.Width);
 			}
 
 			pluginbuttons = new List<PluginToolbarButton>();
@@ -802,6 +807,32 @@ namespace CodeImp.DoomBuilder.Windows
 			if(General.Map != null)
 			{
 				// Enable items
+				if (General.Map.MERIDIAN)
+				{
+					kodRowHeader.Enabled = true;
+					kodColHeader.Enabled = true;
+					kodRowPos.Enabled = true;
+					rowcommalabel.Enabled = true;
+					kodFineRowPos.Enabled = true;
+					kodColPos.Enabled = true;
+					colcommalabel.Enabled = true;
+					kodFineColPos.Enabled = true;
+				}
+				else
+				{
+					kodRowHeader.Enabled = false;
+					kodColHeader.Enabled = false;
+					kodRowPos.Text = "--";
+					kodRowPos.Enabled = false;
+					rowcommalabel.Enabled = false;
+					kodFineRowPos.Text = "--";
+					kodFineRowPos.Enabled = false;
+					kodColPos.Text = "--";
+					kodColPos.Enabled = false;
+					colcommalabel.Enabled = false;
+					kodFineColPos.Text = "--";
+					kodFineColPos.Enabled = false;
+				}
 				xposlabel.Enabled = true;
 				yposlabel.Enabled = true;
 				poscommalabel.Enabled = true;
@@ -814,6 +845,18 @@ namespace CodeImp.DoomBuilder.Windows
 			else
 			{
 				// Disable items
+				kodRowHeader.Enabled = false;
+				kodColHeader.Enabled = false;
+				kodRowPos.Text = "--";
+				kodRowPos.Enabled = false;
+				rowcommalabel.Enabled = false;
+				kodFineRowPos.Text = "--";
+				kodFineRowPos.Enabled = false;
+				kodColPos.Text = "--";
+				kodColPos.Enabled = false;
+				colcommalabel.Enabled = false;
+				kodFineColPos.Text = "--";
+				kodFineColPos.Enabled = false;
 				xposlabel.Text = "--";
 				yposlabel.Text = "--";
 				xposlabel.Enabled = false;
@@ -958,6 +1001,13 @@ namespace CodeImp.DoomBuilder.Windows
 
 			// Y position
 			yposlabel.Text = (float.IsNaN(coords.y) ? "--" : coords.y.ToString("####0"));
+
+			// Kod coordinates (row, col)
+			KodCoordinates kc = new KodCoordinates(coords);
+			kodRowPos.Text = (float.IsNaN(coords.y) ? "--" : kc.Row.ToString("##0"));
+			kodColPos.Text = (float.IsNaN(coords.x) ? "--" : kc.Col.ToString("##0"));
+			kodFineRowPos.Text = (float.IsNaN(coords.y) ? "--" : kc.FineRow.ToString("#0"));
+			kodFineColPos.Text = (float.IsNaN(coords.x) ? "--" : kc.FineCol.ToString("#0"));
 		}
 
 		// This changes zoom display
