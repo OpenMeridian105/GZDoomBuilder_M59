@@ -373,7 +373,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 					if (vm.Setup())
 					{
 						base.AddGeometry(vm);
-						if (vm.skyhack)
+						if (vm.SkyHack)
 						{
 							VisualMiddleSingle vms = new VisualMiddleSingle(mode, this, sd);
 							if (vms.SkySideSetup())

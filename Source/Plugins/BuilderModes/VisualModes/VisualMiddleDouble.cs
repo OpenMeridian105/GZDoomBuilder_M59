@@ -164,6 +164,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 
 			if (!repeatmidtex)
 			{
+				skyhack = true;
 				if (tp.tlt.y < 0.0f)
 				{
 					float tex, wall, ratio, temp;
@@ -197,7 +198,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				}
 
 				// Create crop planes (we also need these for intersection testing)
-				topclipplane = new Plane(new Vector3D(0, 0, -1), Math.Max(tp.vlt.z, tp.vrt.z) - 1f);
+				topclipplane = new Plane(new Vector3D(0, 0, -1), Math.Max(tp.vlt.z, tp.vrt.z));
 				bottomclipplane = new Plane(new Vector3D(0, 0, 1), -Math.Min(tp.vlb.z, tp.vrb.z));
 
 				// Crop polygon by these heights

@@ -77,7 +77,7 @@ namespace CodeImp.DoomBuilder.VisualModes
 		protected VisualGeometryType geometrytype;
 		protected string partname; //UDMF part name
 		protected bool renderassky;
-		
+		protected bool skyhack; // M59 hack for no vtile textures
 		#endregion
 
 		#region ================== Properties
@@ -92,7 +92,7 @@ namespace CodeImp.DoomBuilder.VisualModes
 		public VisualGeometryType GeometryType { get { return geometrytype; } }
 		public float FogFactor { get { return fogfactor; } set { fogfactor = value; } }
 		public bool RenderAsSky { get { return renderassky; } }
-
+		public bool SkyHack { get { return skyhack; } }
 		/// <summary>
 		/// Render pass in which this geometry must be rendered. Default is Solid.
 		/// </summary>

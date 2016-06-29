@@ -804,6 +804,10 @@ namespace CodeImp.DoomBuilder.Rendering
 						// Apply changes
 						graphics.Shaders.World3D.ApplySettings();
 						
+						if (g.SkyHack)
+							graphics.Device.SetSamplerState(0, SamplerState.AddressV, TextureAddress.Clamp);
+						else
+							graphics.Device.SetSamplerState(0, SamplerState.AddressV, TextureAddress.Wrap);
 						// Render!
 						graphics.Device.DrawPrimitives(PrimitiveType.TriangleList, g.VertexOffset, g.Triangles);
 					}
@@ -1083,6 +1087,10 @@ namespace CodeImp.DoomBuilder.Rendering
 					// Apply changes
 					graphics.Shaders.World3D.ApplySettings();
 
+					if (g.SkyHack)
+						graphics.Device.SetSamplerState(0, SamplerState.AddressV, TextureAddress.Clamp);
+					else
+						graphics.Device.SetSamplerState(0, SamplerState.AddressV, TextureAddress.Wrap);
 					// Render!
 					graphics.Device.DrawPrimitives(PrimitiveType.TriangleList, g.VertexOffset, g.Triangles);
 				}

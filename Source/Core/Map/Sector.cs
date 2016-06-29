@@ -126,8 +126,9 @@ namespace CodeImp.DoomBuilder.Map
 		public int FixedIndex { get { return fixedindex; } }
 		public int FloorHeight { get { return floorheight; } set { BeforePropsChange(); floorheight = value; } }
 		public int CeilHeight { get { return ceilheight; } set { BeforePropsChange(); ceilheight = value; } }
-		public int OffsetX { get { return offsetx; } set { BeforePropsChange(); offsetx = value; } }
-		public int OffsetY { get { return offsety; } set { BeforePropsChange(); offsety = value; } }
+		// M59 wants the offsets as unsigned short.
+		public int OffsetX { get { return offsetx; } set { BeforePropsChange(); offsetx = Math.Max(Math.Min(value, ushort.MaxValue), 0); } }
+		public int OffsetY { get { return offsety; } set { BeforePropsChange(); offsety = Math.Max(Math.Min(value, ushort.MaxValue), 0); } }
 		public string FloorTexture { get { return floortexname; } }
 		public string CeilTexture { get { return ceiltexname; } }
 		public long LongFloorTexture { get { return longfloortexname; } }

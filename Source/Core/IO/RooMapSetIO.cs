@@ -231,6 +231,12 @@ namespace CodeImp.DoomBuilder.IO
 				int texCeil = reader.ReadUInt16();
 				int xoffset = reader.ReadUInt16();
 				int yoffset = reader.ReadUInt16();
+				// Some maps had some extremely high values for offset due to a bug,
+				// so set those offsets to 0.
+				if (xoffset > 10000)
+					xoffset = 0;
+				if (yoffset > 10000)
+					yoffset = 0;
 				ushort hfloor = reader.ReadUInt16();
 				ushort hceil = reader.ReadUInt16();
 				
