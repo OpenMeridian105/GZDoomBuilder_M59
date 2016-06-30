@@ -574,8 +574,8 @@ namespace CodeImp.DoomBuilder.IO
 			mapBorder.x = mapMinX;
 			mapBorder.y = mapMaxY;
 
-			int width = (int)(mapMaxX - mapMinX) * 16;
-			int height = (int)(mapMaxY - mapMinY) * 16;
+			int width = (int)Math.Round((mapMaxX - mapMinX) * 16.0f);
+			int height = (int)Math.Round((mapMaxY - mapMinY) * 16.0f);
 
 			writer.Write((Int32)width);
 			writer.Write((Int32)height);
@@ -687,10 +687,10 @@ namespace CodeImp.DoomBuilder.IO
 				writer.Write((Int16)tmp);
 
 				Vector2D vs = l.Start.Position, ve = l.End.Position;
-				writer.Write((Int32)vs.x);
-				writer.Write((Int32)vs.y);
-				writer.Write((Int32)ve.x);
-				writer.Write((Int32)ve.y);
+				writer.Write((Int32)Math.Round(vs.x));
+				writer.Write((Int32)Math.Round(vs.y));
+				writer.Write((Int32)Math.Round(ve.x));
+				writer.Write((Int32)Math.Round(ve.y));
 			}
 
 			// Find insert position and remove old lump
@@ -823,14 +823,14 @@ namespace CodeImp.DoomBuilder.IO
 			ucrossv = Math.Sqrt(uv[0] * uv[0] + uv[1] * uv[1] + uv[2] * uv[2]);
 
 			Vector3D newABC = new Vector3D(
-				(float)(uv[0] * 1024 / ucrossv),
-				(float)(uv[1] * 1024 / ucrossv),
-				(float)(uv[2] * 1024 / ucrossv));
+				(float)(uv[0] * 1024.0 / ucrossv),
+				(float)(uv[1] * 1024.0 / ucrossv),
+				(float)(uv[2] * 1024.0 / ucrossv));
 			float offset = -(newABC.x * p[0].x + newABC.y * p[0].y + newABC.z * p[0].z);
 
 			if (floor)
 			{
-				if (newABC.z < 0)
+				if (newABC.z < 0.0f)
 				{
 					// normals of floors must point up
 					newABC.x = -newABC.x;
@@ -841,7 +841,7 @@ namespace CodeImp.DoomBuilder.IO
 			}
 			else
 			{
-				if (newABC.z > 0)
+				if (newABC.z > 0.0f)
 				{
 					// normals of ceilings must point down
 					newABC.x = -newABC.x;
@@ -858,16 +858,16 @@ namespace CodeImp.DoomBuilder.IO
 			writer.Write((Single)offset);
 
 			// Write texture origin and rotation (in client units).
-			writer.Write((Int32)p[0].x);
-			writer.Write((Int32)p[0].y);
+			writer.Write((Int32)Math.Round(p[0].x));
+			writer.Write((Int32)Math.Round(p[0].y));
 			writer.Write((Int32)texRot);
 
 			// Write original vertex positions, in room editor units.
 			foreach (Vector2D V in svl)
 			{
-				writer.Write((Int16)V.x);
-				writer.Write((Int16)V.y);
-				writer.Write((Int16)pl.GetZ(V.x, V.y));
+				writer.Write((Int16)Math.Round(V.x));
+				writer.Write((Int16)Math.Round(V.y));
+				writer.Write((Int16)Math.Round(pl.GetZ(V.x, V.y)));
 			}
 		}
 
@@ -1083,10 +1083,29 @@ namespace CodeImp.DoomBuilder.IO
 				flags |= SF_SCROLL_CEILING;
 			if (S.Depth > 0)
 				flags |= (uint)S.Depth;
+
+			// Floor slope flag (and check).
 			if (S.FloorSlope.GetLengthSq() > 0 && !float.IsNaN(S.FloorSlopeOffset / S.FloorSlope.z))
 				flags |= SF_SLOPED_FLOOR;
+			if ((flags & SF_SLOPED_FLOOR) == SF_SLOPED_FLOOR
+				&& (S.FloorSlopeVertexes == null || S.FloorSlopeVertexes.Count != 3))
+			{
+				General.ErrorLogger.Add(ErrorType.Error, "Sector " + S.Index
+					+ " has an invalid floor slope! Missing at least one vertex. Not saving slope.");
+				flags &= ~SF_SLOPED_FLOOR;
+			}
+
+			// Ceiling slope flag (and check).
 			if (S.CeilSlope.GetLengthSq() > 0 && !float.IsNaN(S.CeilSlopeOffset / S.CeilSlope.z))
 				flags |= SF_SLOPED_CEILING;
+			if ((flags & SF_SLOPED_CEILING) == SF_SLOPED_CEILING
+				&& (S.CeilSlopeVertexes == null || S.CeilSlopeVertexes.Count != 3))
+			{
+				General.ErrorLogger.Add(ErrorType.Error, "Sector " + S.Index
+					+ " has an invalid ceiling slope! Missing at least one vertex. Not saving slope.");
+				flags &= ~SF_SLOPED_CEILING;
+			}
+
 			flags |= (uint)S.ScrollFlags.Speed << 2;
 			flags |= (uint)S.ScrollFlags.Direction << 4;
 
