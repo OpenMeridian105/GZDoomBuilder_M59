@@ -124,9 +124,9 @@ namespace CodeImp.DoomBuilder.Map
 		/// An unique index that does not change when other sectors are removed.
 		/// </summary>
 		public int FixedIndex { get { return fixedindex; } }
-		public int FloorHeight { get { return floorheight; } set { BeforePropsChange(); floorheight = value; } }
-		public int CeilHeight { get { return ceilheight; } set { BeforePropsChange(); ceilheight = value; } }
-		// M59 wants the offsets as unsigned short.
+		// M59 wants the offsets and heights as unsigned short.
+		public int FloorHeight { get { return floorheight; } set { BeforePropsChange(); floorheight = Math.Max(Math.Min(value, ushort.MaxValue), 0); } }
+		public int CeilHeight { get { return ceilheight; } set { BeforePropsChange(); ceilheight = Math.Max(Math.Min(value, ushort.MaxValue), 0); } }
 		public int OffsetX { get { return offsetx; } set { BeforePropsChange(); offsetx = Math.Max(Math.Min(value, ushort.MaxValue), 0); } }
 		public int OffsetY { get { return offsety; } set { BeforePropsChange(); offsety = Math.Max(Math.Min(value, ushort.MaxValue), 0); } }
 		public string FloorTexture { get { return floortexname; } }
