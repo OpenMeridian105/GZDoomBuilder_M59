@@ -525,18 +525,10 @@ namespace CodeImp.DoomBuilder.IO
 			MemoryStream mem = new MemoryStream();
 			BinaryWriter writer = new BinaryWriter(mem, WAD.ENCODING);
 
-			float mapMinX = MinCoordinate;
- 			float mapMinY = MinCoordinate;
-			float mapMaxX = MaxCoordinate;
-			float mapMaxY = MaxCoordinate;
-
-			foreach (Vertex V in map.Vertices)
-			{
-				if (V.Position.x < mapMinX) mapMinX = V.Position.x;
-				if (V.Position.x > mapMaxX) mapMaxX = V.Position.x;
-				if (V.Position.y < mapMinY) mapMinY = V.Position.y;
-				if (V.Position.y > mapMaxY) mapMaxY = V.Position.y;
-			}
+			float mapMinX = MaxCoordinate;
+ 			float mapMinY = MaxCoordinate;
+			float mapMaxX = MinCoordinate;
+			float mapMaxY = MinCoordinate;
 
 			if (map.Things.Count == 2)
 			{
@@ -571,6 +563,17 @@ namespace CodeImp.DoomBuilder.IO
 					mapMaxY = y[0];
 				}
 			}
+			else
+			{
+				foreach (Vertex V in map.Vertices)
+				{
+					if (V.Position.x < mapMinX) mapMinX = V.Position.x;
+					if (V.Position.x > mapMaxX) mapMaxX = V.Position.x;
+					if (V.Position.y < mapMinY) mapMinY = V.Position.y;
+					if (V.Position.y > mapMaxY) mapMaxY = V.Position.y;
+				}
+			}
+
 			mapBorder.x = mapMinX;
 			mapBorder.y = mapMaxY;
 
