@@ -77,10 +77,10 @@ namespace CodeImp.DoomBuilder.Controls
 				taglabel.Enabled = true;
 				taglabel.Text = "Tag:";
 				
-				effect.Text = s.OffsetX.ToString() + ", " + s.OffsetY.ToString();
+				effect.Text = "X: " + s.OffsetX.ToString() + " Y: " + s.OffsetY.ToString();
 				effect.Enabled = true;
 				effectlabel.Enabled = true;
-				effectlabel.Text = "Floor offset:";
+				effectlabel.Text = "Offsets:";
 			}
 			else
 			{

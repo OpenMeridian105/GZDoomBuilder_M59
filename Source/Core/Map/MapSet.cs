@@ -3840,6 +3840,55 @@ namespace CodeImp.DoomBuilder.Map
 		/// <summary>This finds the line closest to the specified position.</summary>
 		public Linedef NearestLinedefRange(Vector2D pos, float maxrange) { return MapSet.NearestLinedefRange(linedefs, pos, maxrange); }
 
+		public Rectangle GetMapThingBoundary()
+		{
+			float mapMinX = short.MaxValue;
+			float mapMinY = short.MaxValue;
+			float mapMaxX = short.MinValue;
+			float mapMaxY = short.MinValue;
+
+			if (things.Length == 2)
+			{
+				if (things[0].Position.x <= things[1].Position.x)
+				{
+					mapMinX = things[0].Position.x;
+					mapMaxX = things[1].Position.x;
+				}
+				else
+				{
+					mapMinX = things[1].Position.x;
+					mapMaxX = things[0].Position.x;
+				}
+				if (things[0].Position.y <= things[1].Position.y)
+				{
+					mapMinY = things[0].Position.y;
+					mapMaxY = things[1].Position.y;
+				}
+				else
+				{
+					mapMinY = things[1].Position.y;
+					mapMaxY = things[0].Position.y;
+				}
+			}
+			else
+			{
+				foreach (Vertex V in vertices)
+				{
+					if (V.Position.x < mapMinX) mapMinX = V.Position.x;
+					if (V.Position.x > mapMaxX) mapMaxX = V.Position.x;
+					if (V.Position.y < mapMinY) mapMinY = V.Position.y;
+					if (V.Position.y > mapMaxY) mapMaxY = V.Position.y;
+				}
+			}
+
+			int minX = (int)Math.Round(mapMinX);
+			int maxX = (int)Math.Round(mapMaxX);
+			int minY = (int)Math.Round(mapMinY);
+			int maxY = (int)Math.Round(mapMaxY);
+
+			return new Rectangle(minX, minY, Math.Abs(maxX - minX), Math.Abs(maxY - minY));
+		}
+
 		/// <summary>This finds the vertex closest to the specified position.</summary>
 		public Vertex NearestVertex(Vector2D pos) { return MapSet.NearestVertex(vertices, pos); }
 
