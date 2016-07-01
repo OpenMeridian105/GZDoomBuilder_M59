@@ -812,6 +812,9 @@ namespace CodeImp.DoomBuilder
 				General.MainWindow.DisplayStatus(StatusType.Busy, "Building map nodes...");
 				includenodes = (!string.IsNullOrEmpty(nodebuildername) && BuildNodes(nodebuildername, true));
 				General.MainWindow.DisplayStatus(oldstatus);
+
+				//mxd. Compress temp file...
+				tempwadreader.WadFile.Compress();
 			}
 			else 
 			{
@@ -1178,6 +1181,9 @@ namespace CodeImp.DoomBuilder
 			else
 				result = false;
 			General.MainWindow.DisplayStatus(oldstatus);
+
+			//mxd. Compress temp file...
+			tempwadreader.WadFile.Compress();
 
 			return result;
 		}
