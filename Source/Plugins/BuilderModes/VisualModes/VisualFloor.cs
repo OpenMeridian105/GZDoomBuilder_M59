@@ -171,6 +171,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			P1 = P0 + v1;
 			P2 = P0 + v2;
 
+			Rectangle mapBoundary = General.Map.Map.GetMapThingBoundary();
 			bool isSloped = s.FloorSlope.GetLengthSq() > 0 && !float.IsNaN(s.FloorSlopeOffset / s.FloorSlope.z);
 			if (isSloped)
 			{
@@ -282,16 +283,21 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				}
 				else
 				{
-					// Texture coordinates
 					Vector2D pos = triverts[i];
-					pos = pos.GetRotated(rotate);
-					pos.y = -pos.y;
 					if (General.Map.MERIDIAN)
-						pos = (pos - offset) * scale * texscale;
+					{
+						verts[i].u = Math.Abs(pos.x - mapBoundary.Left - offset.x) * scale.x * texscale.x;
+						verts[i].v = Math.Abs(pos.y - mapBoundary.Bottom + offset.y) * scale.y * texscale.y;
+					}
 					else
+					{
+						// Texture coordinates
+						pos = pos.GetRotated(rotate);
+						pos.y = -pos.y;
 						pos = (pos + offset) * scale * texscale;
-					verts[i].u = pos.x;
-					verts[i].v = pos.y;
+						verts[i].u = pos.x;
+						verts[i].v = pos.y;
+					}
 				}
 			}
 

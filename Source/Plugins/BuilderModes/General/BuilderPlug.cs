@@ -619,6 +619,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			v1 = Vector3D.CrossProduct(v2, planeNormal);
 			P1 = P0 + v1;
 			P2 = P0 + v2;
+			Rectangle mapBoundary = General.Map.Map.GetMapThingBoundary();
 			bool isSloped = s.FloorSlope.GetLengthSq() > 0 && !float.IsNaN(s.FloorSlopeOffset / s.FloorSlope.z);
 			if (isSloped)
 			{
@@ -714,12 +715,21 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				else
 				{
 					Vector2D pos = new Vector2D(vertices[i].x, vertices[i].y);
-					pos = pos.GetRotated(rotate);
-					pos.y = -pos.y;
-					pos = (pos - offset) * scale * texscale;
-					vertices[i].u = pos.x;
-					vertices[i].v = pos.y;
-					vertices[i].c = color;
+					if (General.Map.MERIDIAN)
+					{
+						vertices[i].u = Math.Abs(pos.x - mapBoundary.Left - offset.x) * scale.x * texscale.x;
+						vertices[i].v = Math.Abs(pos.y - mapBoundary.Bottom + offset.y) * scale.y * texscale.y;
+						vertices[i].c = color;
+					}
+					else
+					{
+						pos = pos.GetRotated(rotate);
+						pos.y = -pos.y;
+						pos = (pos + offset) * scale * texscale;
+						vertices[i].u = pos.x;
+						vertices[i].v = pos.y;
+						vertices[i].c = color;
+					}
 				}
 			}
 		}
@@ -752,6 +762,8 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			v1 = Vector3D.CrossProduct(v2, planeNormal);
 			P1 = P0 + v1;
 			P2 = P0 + v2;
+			Rectangle mapBoundary = General.Map.Map.GetMapThingBoundary();
+
 			bool isSloped = s.CeilSlope.GetLengthSq() > 0 && !float.IsNaN(s.CeilSlopeOffset / s.CeilSlope.z);
 			if (isSloped)
 			{
@@ -839,12 +851,21 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				else
 				{
 					Vector2D pos = new Vector2D(vertices[i].x, vertices[i].y);
-					pos = pos.GetRotated(rotate);
-					pos.y = -pos.y;
-					pos = (pos - offset) * scale * texscale;
-					vertices[i].u = pos.x;
-					vertices[i].v = pos.y;
-					vertices[i].c = color;
+					if (General.Map.MERIDIAN)
+					{
+						vertices[i].u = Math.Abs(pos.x - mapBoundary.Left - offset.x) * scale.x * texscale.x;
+						vertices[i].v = Math.Abs(pos.y - mapBoundary.Bottom + offset.y) * scale.y * texscale.y;
+						vertices[i].c = color;
+					}
+					else
+					{
+						pos = pos.GetRotated(rotate);
+						pos.y = -pos.y;
+						pos = (pos + offset) * scale * texscale;
+						vertices[i].u = pos.x;
+						vertices[i].v = pos.y;
+						vertices[i].c = color;
+					}
 				}
 			}
 		}
