@@ -2,11 +2,11 @@ GZDoomBuilder, Meridian 59 room editor port.
 --------------
   
 This is a port of the Doom map editor GZDoomBuilder from https://sourceforge.net/p/doombuilder/code/HEAD/tree/.
-
   
-![Editor images](http://i.imgur.com/EloFQrp.png)
+<p align="center">
+   <img src="http://i.imgur.com/EloFQrp.png" width="768">
+</p>
   
-
 The master branch of this repo is a mirror of the GZDoomBuilder branch from the svn repo.
 The develop branch is the up-to-date version of the Meridian 59 port.
 
@@ -15,13 +15,38 @@ special features work (e.g. stair building, some 3D room manipulations such as
 texture dragging). The old Meridian 59 roomeditor is included as a node compiler,
 and is called when saving a room.
 
-To use this editor, fork the repo and open builder.sln. Build the projects and
-run /Build/Builder.exe. To easily load Meridian 59 graphics (as bgf files), put
-all the grd*.bgf files in a separate directory and add it using the editor's
-Tools->Game Configuration menu. Make sure both the checkboxes for loading resources
-as flats and textures are checked as shown in the following image:
+Build Instructions
+--------------
 
-![Example](http://i.imgur.com/XwZhPra.png)
+You can build the editor from source by forking the repo, opening builder.sln in
+Visual Studio 2013 and building all projects, then running /Build/Builder.exe.
+
+Alternatively, you can download an up-to-date precompiled version [here](http://ww1.meridiannext.com/GZDoomBuilderRoo/GZDB_roo.7z).
+Note that this requires [7Zip](http://www.7-zip.org/) to open.
+
+Editor setup and use
+--------------
+
+To display textures in maps, you will need to add the Meridian 59 client's resource
+folder so GZDoomBuilder can load the textures. Open up GZDoomBuilder but do not
+load a map. Select `Tools` from the toolbar, then select `Game Configuration`. From
+the dialog box, select `Meridian 59 (roo v15 format)` from the list, then click
+`Add Resource`. Choose the `From Directory` tab and add in the Meridian 59 client's
+resource directory.
+
+If you installed Meridian 59 from the server 105 installer, this directory
+will be at `C:\Users\username\AppData\Local\Open Meridian\Meridian 105\resource`
+or if you used the Open Meridian patcher, it will be at `C:\Program Files\Open Meridian\Meridian 105\resource`.
+
+Make sure the checkboxes for `Load images in directory root as textures` and
+`Load images in directory root as flats` are ticked.
+
+<p align="center">
+   <img src="https://i.imgur.com/CJFuWvN.png" width="512">
+</p>
+
+The most up-to-date rooms are in the develop branch of the [server 105 GitHub repository](https://github.com/OpenMeridian105/Meridian59)
+so if editing existing rooms it is best to start from this room set.
 
 The GZDoomBuilder port should still be able to create/modify Doom and Doom-related
 maps, but porting maps from Doom to Meridian 59 format has not been attempted yet.
