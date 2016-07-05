@@ -2962,14 +2962,14 @@ namespace CodeImp.DoomBuilder.Map
 				foreach(Sector s in changedsectors) s.UpdateBBox();
 				foreach(Linedef l in alllines)
 				{
-					// Remove line when both it's start and end are inside a changed sector and neither side references it
+					// Remove line when it's start, center and end are inside a changed sector and neither side references it
 					if(l.Start != null && l.End != null &&
 					  (l.Front == null || !changedsectors.Contains(l.Front.Sector)) &&
 					  (l.Back == null || !changedsectors.Contains(l.Back.Sector)))
 					{
 						foreach(Sector s in changedsectors)
 						{
-							if(s.Intersect(l.Start.Position) && s.Intersect(l.End.Position))
+							if(s.Intersect(l.Start.Position) && s.Intersect(l.End.Position) && s.Intersect(l.GetCenterPoint()))
 							{
 								Vertex[] tocheck = { l.Start, l.End };
 								while(lines.Remove(l));
@@ -3122,7 +3122,7 @@ namespace CodeImp.DoomBuilder.Map
 				foreach(Sector s in changedsectors) s.UpdateBBox();
 				foreach(Linedef l in alllines)
 				{
-					// Remove line when both it's start and end are inside a changed sector and neither side references it
+					// Remove line when it's start, center and end are inside a changed sector and neither side references it
 					if(l.Start != null && l.End != null)
 					{
 						if(l.Front == null && l.Back == null)
@@ -3134,7 +3134,7 @@ namespace CodeImp.DoomBuilder.Map
 						{
 							foreach(Sector s in changedsectors)
 							{
-								if(s.Intersect(l.Start.Position) && s.Intersect(l.End.Position))
+								if(s.Intersect(l.Start.Position) && s.Intersect(l.End.Position) && s.Intersect(l.GetCenterPoint()))
 								{
 									Vertex[] tocheck = { l.Start, l.End };
 									l.Dispose();
