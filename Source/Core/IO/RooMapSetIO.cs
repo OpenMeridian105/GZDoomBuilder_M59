@@ -106,8 +106,8 @@ namespace CodeImp.DoomBuilder.IO
 		public override int VertexDecimals { get { return 0; } }
 		public override string DecimalsFormat { get { return "0"; } }
 		public override bool HasLinedefTag { get { return false; } }
-		public override bool HasThingTag { get { return true; } }
-		public override bool HasThingAction { get { return true; } }
+		public override bool HasThingTag { get { return false; } }
+		public override bool HasThingAction { get { return false; } }
 		public override bool HasCustomFields { get { return false; } }
 		public override bool HasThingHeight { get { return true; } }
 		public override bool HasActionArgs { get { return false; } }
