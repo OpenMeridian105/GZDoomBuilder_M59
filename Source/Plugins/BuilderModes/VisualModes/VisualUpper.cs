@@ -329,8 +329,14 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		internal void UpdateSkyRenderFlag()
 		{
 			renderassky = (Sidedef.Other != null && Sidedef.Sector != null && Sidedef.Other.Sector != null &&
-						   Sidedef.Sector.CeilTexture == General.Map.Config.SkyFlatName &&
-						   Sidedef.Other.Sector.CeilTexture == General.Map.Config.SkyFlatName);
+							Sidedef.Sector.CeilTexture == General.Map.Config.SkyFlatName &&
+							Sidedef.Other.Sector.CeilTexture == General.Map.Config.SkyFlatName);
+			// Separate processing for Meridian 59.
+			if (General.Map.MERIDIAN)
+			{
+				if (Sidedef.HighTexture != "-")
+					renderassky = false;
+			}
 		}
 		
 		#endregion

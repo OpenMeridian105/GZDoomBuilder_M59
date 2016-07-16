@@ -145,8 +145,8 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			// Create initial polygon, which is just a quad between floor and ceiling
 			WallPolygon poly = new WallPolygon();
 			poly.Add(new Vector3D(vl.x, vl.y, sd.Floor.plane.GetZ(vl)));
-			poly.Add(new Vector3D(vl.x, vl.y, sd.Ceiling.plane.GetZ(vl)));
-			poly.Add(new Vector3D(vr.x, vr.y, sd.Ceiling.plane.GetZ(vr)));
+			poly.Add(new Vector3D(vl.x, vl.y, osd.Floor.plane.GetZ(vl)));
+			poly.Add(new Vector3D(vr.x, vr.y, osd.Floor.plane.GetZ(vr)));
 			poly.Add(new Vector3D(vr.x, vr.y, sd.Floor.plane.GetZ(vr)));
 			
 			// Determine initial color
