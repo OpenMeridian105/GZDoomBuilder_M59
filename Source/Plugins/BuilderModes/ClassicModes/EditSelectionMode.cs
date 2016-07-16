@@ -1109,8 +1109,27 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		// This flips all linedefs in the selection (used for mirroring)
 		private void FlipLinedefs()
 		{
+			//mxd. Check if we need to flip sidedefs
+			bool flipsides = false;
+			HashSet<Linedef> selectedlineshash = new HashSet<Linedef>(selectedlines);
+			foreach(Vertex v in selectedvertices)
+			{
+				foreach(Linedef l in v.Linedefs)
+				{
+					if(!selectedlineshash.Contains(l))
+					{
+						flipsides = true;
+						break;
+					}
+				}
+			}
+
 			// Flip linedefs
-			foreach(Linedef ld in selectedlines) ld.FlipVertices();
+			foreach(Linedef ld in selectedlines)
+			{
+				ld.FlipVertices();
+				if(flipsides) ld.FlipSidedefs(); //mxd
+			}
 			
 			// Done
 			linesflipped = !linesflipped;

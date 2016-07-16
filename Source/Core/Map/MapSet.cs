@@ -3123,40 +3123,34 @@ namespace CodeImp.DoomBuilder.Map
 				foreach(Linedef l in alllines)
 				{
 					// Remove line when it's start, center and end are inside a changed sector and neither side references it
-					if(l.Start != null && l.End != null)
+					if(l.Start != null && l.End != null 
+						&& (l.Front == null || !changedsectors.Contains(l.Front.Sector)) 
+						&& (l.Back == null || !changedsectors.Contains(l.Back.Sector)))
 					{
-						if(l.Front == null && l.Back == null)
+						foreach(Sector s in changedsectors)
 						{
-							l.Dispose();
-						}
-						else if((l.Front == null || !changedsectors.Contains(l.Front.Sector)) &&
-								(l.Back == null || !changedsectors.Contains(l.Back.Sector)))
-						{
-							foreach(Sector s in changedsectors)
+							if(s.Intersect(l.Start.Position) && s.Intersect(l.End.Position) && s.Intersect(l.GetCenterPoint()))
 							{
-								if(s.Intersect(l.Start.Position) && s.Intersect(l.End.Position) && s.Intersect(l.GetCenterPoint()))
+								Vertex[] tocheck = { l.Start, l.End };
+								l.Dispose();
+
+								foreach(Vertex v in tocheck)
 								{
-									Vertex[] tocheck = { l.Start, l.End };
-									l.Dispose();
-
-									foreach(Vertex v in tocheck)
+									// If the newly created vertex only has 2 linedefs attached, then merge the linedefs
+									if(!v.IsDisposed && v.Linedefs.Count == 2 && splitverts.Contains(v))
 									{
-										// If the newly created vertex only has 2 linedefs attached, then merge the linedefs
-										if(!v.IsDisposed && v.Linedefs.Count == 2 && splitverts.Contains(v))
-										{
-											Linedef ld1 = General.GetByIndex(v.Linedefs, 0);
-											Linedef ld2 = General.GetByIndex(v.Linedefs, 1);
-											Vertex v2 = (ld2.Start == v) ? ld2.End : ld2.Start;
-											if(ld1.Start == v) ld1.SetStartVertex(v2); else ld1.SetEndVertex(v2);
-											ld2.Dispose();
+										Linedef ld1 = General.GetByIndex(v.Linedefs, 0);
+										Linedef ld2 = General.GetByIndex(v.Linedefs, 1);
+										Vertex v2 = (ld2.Start == v) ? ld2.End : ld2.Start;
+										if(ld1.Start == v) ld1.SetStartVertex(v2); else ld1.SetEndVertex(v2);
+										ld2.Dispose();
 
-											// Trash vertex
-											v.Dispose();
-										}
+										// Trash vertex
+										v.Dispose();
 									}
-
-									break;
 								}
+
+								break;
 							}
 						}
 					}
@@ -3587,18 +3581,20 @@ namespace CodeImp.DoomBuilder.Map
 				{
 					//mxd. Multiple tags support...
 					bool changed = false;
-					for(int i = 0; i < s.Tags.Count; i++)
+					// Make a copy of tags, otherwise BeforePropsChange will be triggered after tag changes
+					List<int> tags = new List<int>(s.Tags);
+					for(int i = 0; i < tags.Count; i++)
 					{
-						int tag = s.Tags[i];
+						int tag = tags[i];
 						handler(s, false, UniversalType.SectorTag, ref tag, obj);
-						if(tag != s.Tags[i])
+						if(tag != tags[i])
 						{
-							s.Tags[i] = tag;
+							tags[i] = tag;
 							changed = true;
 						}
 					}
 
-					if(changed) s.Tags = s.Tags.Distinct().ToList();
+					if(changed) s.Tags = tags.Distinct().ToList();
 				}
 			}
 
@@ -3646,18 +3642,20 @@ namespace CodeImp.DoomBuilder.Map
 					{
 						//mxd. Multiple tags support...
 						bool changed = false;
-						for(int i = 0; i < l.Tags.Count; i++)
+						// Make a copy of tags, otherwise BeforePropsChange will be triggered after tag changes
+						List<int> tags = new List<int>(l.Tags);
+						for(int i = 0; i < tags.Count; i++)
 						{
-							int tag = l.Tags[i];
+							int tag = tags[i];
 							handler(l, false, UniversalType.LinedefTag, ref tag, obj);
-							if(tag != l.Tags[i])
+							if(tag != tags[i])
 							{
-								l.Tags[i] = tag;
+								tags[i] = tag;
 								changed = true;
 							}
 						}
 
-						if(changed) l.Tags = l.Tags.Distinct().ToList();
+						if(changed) l.Tags = tags.Distinct().ToList();
 					}
 				}
 			}

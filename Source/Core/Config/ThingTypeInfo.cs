@@ -17,6 +17,7 @@
 #region ================== Namespaces
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -24,6 +25,7 @@ using CodeImp.DoomBuilder.Data;
 using CodeImp.DoomBuilder.GZBuilder.Data;
 using CodeImp.DoomBuilder.IO;
 using CodeImp.DoomBuilder.Map;
+using CodeImp.DoomBuilder.Rendering;
 using CodeImp.DoomBuilder.ZDoom;
 
 #endregion
@@ -84,10 +86,12 @@ namespace CodeImp.DoomBuilder.Config
 		private readonly bool locksprite; //mxd
 		private bool obsolete; //mxd
 		private string obsoletemessage; //mxd
+		private Dictionary<string, Dictionary<string, string>> flagsrename; //mxd. <MapSetIOName, <flag, title>>
 
 		//mxd. GZDoom rendering properties
 		private ThingRenderMode rendermode;
 		private bool rollsprite;
+		private bool rollcenter;
 		private bool dontflip;
 		
 		#endregion
@@ -124,10 +128,12 @@ namespace CodeImp.DoomBuilder.Config
 		public SizeF SpriteScale { get { return spritescale; } }
 		public string ClassName { get { return classname; } } //mxd. Need this to add model overrides for things defined in configs
 		public string LightName { get { return lightname; } } //mxd
+		public Dictionary<string, string> FlagsRename { get { return flagsrename.ContainsKey(General.Map.Config.FormatInterface) ? flagsrename[General.Map.Config.FormatInterface] : null ; } } //mxd
 
 		//mxd. GZDoom rendering properties
 		public ThingRenderMode RenderMode { get { return rendermode; } }
 		public bool RollSprite { get { return rollsprite; } }
+		public bool RollCenter { get { return rollcenter; } }
 		public bool DontFlip { get { return dontflip; } }
 
 		#endregion
@@ -165,6 +171,7 @@ namespace CodeImp.DoomBuilder.Config
 			this.absolutez = false;
 			this.xybillboard = false;
 			this.locksprite = false; //mxd
+			this.flagsrename = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase); //mxd
 			
 			// We have no destructor
 			GC.SuppressFinalize(this);
@@ -204,6 +211,28 @@ namespace CodeImp.DoomBuilder.Config
 			this.spritescale = new SizeF(sscale, sscale);
 			this.locksprite = cfg.ReadSetting("thingtypes." + cat.Name + "." + key + ".locksprite", false); //mxd
 			this.classname = cfg.ReadSetting("thingtypes." + cat.Name + "." + key + ".class", String.Empty); //mxd
+
+			//mxd. Read flagsrename
+			this.flagsrename = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+			IDictionary maindic = cfg.ReadSetting("thingtypes." + cat.Name + "." + key + ".flagsrename", new Hashtable());
+			foreach(DictionaryEntry de in maindic)
+			{
+				string ioname = de.Key.ToString().ToLowerInvariant();
+				switch(ioname)
+				{
+					case "doommapsetio":
+					case "hexenmapsetio":
+					case "universalmapsetio":
+						IDictionary flagdic = de.Value as IDictionary;
+						if(flagdic == null) continue;
+						flagsrename.Add(ioname, new Dictionary<string, string>());
+						foreach(DictionaryEntry fe in flagdic)
+							flagsrename[ioname].Add(fe.Key.ToString(), fe.Value.ToString());
+						break;
+
+					default: throw new NotImplementedException("Unsupported MapSetIO");
+				}
+			}
 			
 			// Read the args
 			for(int i = 0; i < Linedef.NUM_ARGS; i++)
@@ -251,7 +280,8 @@ namespace CodeImp.DoomBuilder.Config
 			this.fixedrotation = cat.FixedRotation; //mxd
 			this.absolutez = cat.AbsoluteZ;
 			this.spritescale = new SizeF(cat.SpriteScale, cat.SpriteScale);
-			this.locksprite = false;
+			this.locksprite = false; //mxd
+			this.flagsrename = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase); //mxd
 
 			// Safety
 			if(this.radius < 4f || this.fixedsize) this.radius = THING_FIXED_SIZE;
@@ -295,6 +325,7 @@ namespace CodeImp.DoomBuilder.Config
 			this.fixedrotation = cat.FixedRotation; //mxd
 			this.absolutez = cat.AbsoluteZ;
 			this.spritescale = new SizeF(cat.SpriteScale, cat.SpriteScale);
+			this.flagsrename = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase); //mxd
 
 			// Safety
 			if(this.hangs && this.absolutez) this.hangs = false; //mxd
@@ -341,6 +372,7 @@ namespace CodeImp.DoomBuilder.Config
 			this.fixedrotation = cat.FixedRotation; //mxd
 			this.absolutez = cat.AbsoluteZ;
 			this.spritescale = new SizeF(cat.SpriteScale, cat.SpriteScale);
+			this.flagsrename = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase); //mxd
 
 			// Safety
 			if(this.hangs && this.absolutez) this.hangs = false; //mxd
@@ -390,11 +422,13 @@ namespace CodeImp.DoomBuilder.Config
 			this.absolutez = other.absolutez;
 			this.xybillboard = other.xybillboard; //mxd
 			this.spritescale = new SizeF(other.spritescale.Width, other.spritescale.Height);
+			this.flagsrename = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase); //mxd
 
 			//mxd. Copy GZDoom rendering properties
 			this.rendermode = other.rendermode;
 			this.dontflip = other.dontflip;
 			this.rollsprite = other.rollsprite;
+			this.rollcenter = other.rollcenter;
 
 			// We have no destructor
 			GC.SuppressFinalize(this);
@@ -439,7 +473,9 @@ namespace CodeImp.DoomBuilder.Config
 				int argtype = actor.GetPropertyValueInt("$arg" + i + "type", 0);
 				int defaultvalue = actor.GetPropertyValueInt("$arg" + i + "default", 0);
 				string argenum = ZDTextParser.StripQuotes(actor.GetPropertyAllValues("$arg" + i + "enum"));
-				args[i] = new ArgumentInfo(title, argtitle, argtooltip, argtype, defaultvalue, argenum, General.Map.Config.Enums);
+				string argrenderstyle = ZDTextParser.StripQuotes(actor.GetPropertyAllValues("$arg" + i + "renderstyle"));
+				string argrendercolor = ZDTextParser.StripQuotes(actor.GetPropertyAllValues("$arg" + i + "rendercolor"));
+				args[i] = new ArgumentInfo(title, argtitle, argtooltip, argrenderstyle, argrendercolor, argtype, defaultvalue, argenum, General.Map.Config.Enums);
 			}
 
 			//mxd. Some SLADE compatibility
@@ -459,14 +495,13 @@ namespace CodeImp.DoomBuilder.Config
 			
 			// Set sprite
 			StateStructure.FrameInfo info = actor.FindSuitableSprite(); //mxd
-			string suitablesprite = (locksprite ? string.Empty : info.Sprite); //mxd
-			if(!string.IsNullOrEmpty(suitablesprite)) 
-				sprite = suitablesprite;
+			if(!locksprite && info != null) //mxd. Added locksprite property
+				sprite = info.Sprite;
 			else if(string.IsNullOrEmpty(sprite))//mxd
 				sprite = DataManager.INTERNAL_PREFIX + "unknownthing";
 
 			//mxd. Store dynamic light name
-			lightname = info.LightName;
+			lightname = (info != null ? info.LightName : string.Empty);
 
 			//mxd. Create sprite frame
 			this.spriteframe = new[] { new SpriteFrameInfo { Sprite = sprite, SpriteLongName = Lump.MakeLongName(sprite, true) } };
@@ -509,12 +544,12 @@ namespace CodeImp.DoomBuilder.Config
 			}
 			else if(actor.HasProperty("defaultalpha"))
 			{
-				this.alpha = (General.Map.Config.GameType == GameType.HERETIC ? 0.4f : 0.6f);
+				this.alpha = (General.Map.Config.BaseGame == GameType.HERETIC ? 0.4f : 0.6f);
 				this.alphabyte = (byte)(this.alpha * 255);
 			}
 
 			//mxd. BRIGHT
-			this.bright = info.Bright || actor.GetFlagValue("bright", false);
+			this.bright = (info != null && info.Bright) || actor.GetFlagValue("bright", false);
 			
 			// Safety
 			if(this.radius < 4f || this.fixedsize) this.radius = THING_FIXED_SIZE;
@@ -528,7 +563,8 @@ namespace CodeImp.DoomBuilder.Config
 			xybillboard = actor.GetFlagValue("forcexybillboard", false); //mxd
 
 			//mxd. GZDoom rendering flags
-			rollsprite = actor.GetFlagValue("rollsprite", false); 
+			rollsprite = actor.GetFlagValue("rollsprite", false);
+			if(rollsprite) rollcenter = actor.GetFlagValue("rollcenter", false);
 			if(actor.GetFlagValue("wallsprite", false)) rendermode = ThingRenderMode.WALLSPRITE;
 			if(actor.GetFlagValue("flatsprite", false))
 			{
@@ -548,42 +584,121 @@ namespace CodeImp.DoomBuilder.Config
 			if(blocking > THING_BLOCKING_NONE) errorcheck = THING_ERROR_INSIDE_STUCK;
 		}
 
-		//mxd. This tries to find all possible sprite rotations
-		internal void SetupSpriteFrame()
+		//mxd. This tries to find all possible sprite rotations. Returns true when voxel substitute exists
+		internal bool SetupSpriteFrame(HashSet<string> allspritenames, HashSet<string> allvoxelnames)
 		{
-			// Empty or internal sprites don't have rotations
-			if(string.IsNullOrEmpty(sprite) || sprite.StartsWith(DataManager.INTERNAL_PREFIX)) return;
+			// Empty, invalid or internal sprites don't have rotations
+			// Info: we can have either partial 5-char sprite name from DECORATE parser,
+			// or fully defined 6/8-char sprite name defined in Game configuration or by $Sprite property 
+			if(string.IsNullOrEmpty(sprite) || sprite.StartsWith(DataManager.INTERNAL_PREFIX) 
+				|| (sprite.Length != 5 && sprite.Length != 6 && sprite.Length != 8)) return false;
 
-			// Skip sprites with strange names
-			if(sprite.Length != 6 && sprite.Length != 8) return;
+			string sourcename = sprite.Substring(0, 4);
+			char   sourceframe = sprite[4];
+
+			// First try voxels
+			if(allvoxelnames.Count > 0)
+			{
+				// Find a voxel, which matches sourcename
+				HashSet<string> voxelnames = new HashSet<string>();
+				foreach(string s in allvoxelnames)
+				{
+					if(s.StartsWith(sourcename)) voxelnames.Add(s);
+				}
+
+				// Find a voxel, which matches baseframe
+				// Valid voxel can be either 4-char (POSS), 5-char (POSSA) or 6-char (POSSA0)
+				string newsprite = string.Empty;
+
+				// Check 6-char voxels...
+				foreach(string v in voxelnames)
+				{
+					if(v.Length == 6 && v.StartsWith(sourcename + sourceframe) && WADReader.IsValidSpriteName(v))
+					{
+						newsprite = v;
+						break;
+					}
+				}
+
+				// Check 5-char voxels...
+				if(voxelnames.Contains(sourcename + sourceframe)) newsprite = sourcename + sourceframe;
+
+				// Check 4-char voxels...
+				if(voxelnames.Contains(sourcename)) newsprite = sourcename;
+
+				// Voxel found?
+				if(!string.IsNullOrEmpty(newsprite))
+				{
+					// Assign new sprite
+					sprite = newsprite;
+
+					// Recreate sprite frame
+					spriteframe = new[] { new SpriteFrameInfo { Sprite = sprite, SpriteLongName = Lump.MakeLongName(sprite, true) } };
+
+					// Substitute voxel found
+					return true;
+				}
+			}
+
+			// Then try sprites
+			// Find a sprite, which matches sourcename
+			string sourcesprite = string.Empty;
+			HashSet<string> spritenames = new HashSet<string>();
+			foreach(string s in allspritenames)
+			{
+				if(s.StartsWith(sourcename)) spritenames.Add(s);
+			}
+
+			// Find a sprite, which matches baseframe
+			foreach(string s in spritenames)
+			{
+				if(s[4] == sourceframe || (s.Length == 8 && s[6] == sourceframe))
+				{
+					sourcesprite = s;
+					break;
+				}
+			}
+
+			// Abort if no sprite was found
+			if(string.IsNullOrEmpty(sourcesprite)) return false;
 
 			// Get sprite angle
-			string anglestr = sprite.Substring(5, 1);
+			string anglestr = sourcesprite.Substring(5, 1);
 			int sourceangle;
 			if(!int.TryParse(anglestr, NumberStyles.Integer, CultureInfo.InvariantCulture, out sourceangle))
 			{
-				General.ErrorLogger.Add(ErrorType.Error, "Error in actor \"" + title + "\":" + index + ". Unable to get sprite angle from sprite \"" + sprite + "\"");
-				return;
+				General.ErrorLogger.Add(ErrorType.Error, "Error in actor \"" + title + "\":" + index + ". Unable to get sprite angle from sprite \"" + sourcesprite + "\"");
+				return false;
 			}
 
 			if(sourceangle < 0 || sourceangle > 8)
 			{
-				General.ErrorLogger.Add(ErrorType.Error, "Error in actor \"" + title + "\":" + index + ", sprite \"" + sprite + "\". Sprite angle must be in [0..8] range");
-				return;
+				General.ErrorLogger.Add(ErrorType.Error, "Error in actor \"" + title + "\":" + index + ", sprite \"" + sourcesprite + "\". Sprite angle must be in [0..8] range");
+				return false;
 			}
 
-			// No rotations?
-			if(sourceangle == 0) return;
+			// No rotations? Then spriteframe is already setup
+			if(sourceangle == 0)
+			{
+				// Sprite name still incomplete?
+				if(sprite.Length < 6)
+				{
+					sprite = sourcesprite;
+
+					// Recreate sprite frame. Mirror the sprite if sourceframe matches the second frame block
+					spriteframe = new[] { new SpriteFrameInfo { Sprite = sprite, SpriteLongName = Lump.MakeLongName(sprite, true), 
+																Mirror = (sprite.Length == 8 && sprite[6] == sourceframe) } };
+				}
+				
+				return false;
+			}
 			
 			// Gather rotations
 			string[] frames = new string[8];
 			bool[] mirror = new bool[8];
 			int processedcount = 0;
-			string sourcename = sprite.Substring(0, 4);
-			IEnumerable<string> spritenames = General.Map.Data.GetSpriteNames(sourcename);
 
 			// Process gathered sprites
-			char sourceframe = sprite[4];
 			foreach(string s in spritenames)
 			{
 				// Check first frame block
@@ -596,7 +711,7 @@ namespace CodeImp.DoomBuilder.Config
 					if(!int.TryParse(anglestr, NumberStyles.Integer, CultureInfo.InvariantCulture, out targetangle))
 					{
 						General.ErrorLogger.Add(ErrorType.Error, "Error in actor \"" + title + "\":" + index + ". Unable to get sprite angle from sprite \"" + s + "\"");
-						return;
+						return false;
 					}
 
 					// Sanity checks
@@ -610,7 +725,7 @@ namespace CodeImp.DoomBuilder.Config
 					if(targetangle < 1 || targetangle > 8)
 					{
 						General.ErrorLogger.Add(ErrorType.Error, "Error in actor \"" + title + "\":" + index + ", sprite \"" + s + "\". Expected sprite angle in [1..8] range");
-						return;
+						return false;
 					}
 
 					// Even more sanity checks
@@ -640,7 +755,7 @@ namespace CodeImp.DoomBuilder.Config
 					if(!int.TryParse(anglestr, NumberStyles.Integer, CultureInfo.InvariantCulture, out targetangle))
 					{
 						General.ErrorLogger.Add(ErrorType.Error, "Error in actor \"" + title + "\":" + index + ". Unable to get sprite angle from sprite \"" + s + "\"");
-						return;
+						return false;
 					}
 
 					// Sanity checks
@@ -654,7 +769,7 @@ namespace CodeImp.DoomBuilder.Config
 					if(targetangle < 1 || targetangle > 8)
 					{
 						General.ErrorLogger.Add(ErrorType.Error, "Error in actor \"" + title + "\":" + index + ", sprite \"" + s + "\". Expected sprite angle in [1..8] range");
-						return;
+						return false;
 					}
 
 					// Even more sanity checks
@@ -697,7 +812,7 @@ namespace CodeImp.DoomBuilder.Config
 				}
 
 				General.ErrorLogger.Add(ErrorType.Error, "Error in actor \"" + title + "\":" + index + ". Sprite rotations " + ma + " for sprite " + sourcename + ", frame " + sourceframe + " are missing");
-				return;
+				return false;
 			}
 
 			// Create collection
@@ -706,6 +821,12 @@ namespace CodeImp.DoomBuilder.Config
 			{
 				spriteframe[i] = new SpriteFrameInfo { Sprite = frames[i], SpriteLongName = Lump.MakeLongName(frames[i]), Mirror = mirror[i] };
 			}
+
+			// Update preview sprite
+			sprite = spriteframe[1].Sprite;
+
+			// Done
+			return false;
 		}
 
 		// This is used for sorting

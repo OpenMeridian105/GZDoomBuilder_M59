@@ -19,8 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
-using CodeImp.DoomBuilder.GZBuilder.Data;
+using CodeImp.DoomBuilder.Config;
 using CodeImp.DoomBuilder.ZDoom;
 
 #endregion
@@ -422,8 +421,8 @@ namespace CodeImp.DoomBuilder.Data
 			return new List<ImageData>(images.Values);
 		}
 
-		//mxd. Returns all sprites, which name starts with given string
-		public override HashSet<string> GetSpriteNames(string startswith)
+		//mxd. This returns all sprite names
+		public override HashSet<string> GetSpriteNames()
 		{
 			// Error when suspended
 			if(issuspended) throw new Exception("Data reader is suspended");
@@ -434,11 +433,11 @@ namespace CodeImp.DoomBuilder.Data
 			// Note the backward order, because the last wad's images have priority
 			for(int i = wads.Count - 1; i >= 0; i--)
 			{
-				result.UnionWith(wads[i].GetSpriteNames(startswith));
+				result.UnionWith(wads[i].GetSpriteNames());
 			}
 
 			// Load from out own files
-			string[] files = GetAllFilesWhichTitleStartsWith(SPRITES_DIR, startswith, true);
+			string[] files = GetAllFiles(SPRITES_DIR, true);
 			foreach(string file in files)
 			{
 				// Some users tend to place all manner of graphics into the "Sprites" folder...
@@ -553,22 +552,29 @@ namespace CodeImp.DoomBuilder.Data
 		#region ================== VOXELDEF (mxd)
 
 		//mxd. This returns the list of voxels, which can be used without VOXELDEF definition
-		public override IEnumerable<string> GetVoxelNames() 
+		public override HashSet<string> GetVoxelNames() 
 		{
 			// Error when suspended
 			if(issuspended) throw new Exception("Data reader is suspended");
 
-			string[] files = GetAllFiles("voxels", false);
-			List<string> voxels = new List<string>();
-			Regex spritename = new Regex(SPRITE_NAME_PATTERN);
+			HashSet<string> result = new HashSet<string>();
 
+			// Load from wad files
+			// Note the backward order, because the last wad's images have priority
+			for(int i = wads.Count - 1; i >= 0; i--)
+			{
+				result.UnionWith(wads[i].GetVoxelNames());
+			}
+
+			// Load from out own files
+			string[] files = GetAllFiles("voxels", false);
 			foreach(string t in files)
 			{
 				string s = Path.GetFileNameWithoutExtension(t).ToUpperInvariant();
-				if(spritename.IsMatch(s)) voxels.Add(s);
+				if(WADReader.IsValidVoxelName(s)) result.Add(s);
 			}
 
-			return voxels.ToArray();
+			return result;
 		}
 
 		//mxd
@@ -623,7 +629,7 @@ namespace CodeImp.DoomBuilder.Data
 		#region ================== GLDEFS (mxd)
 
 		//mxd
-		public override IEnumerable<TextResourceData> GetGldefsData(GameType gametype) 
+		public override IEnumerable<TextResourceData> GetGldefsData(string basegame) 
 		{
 			// Error when suspended
 			if(issuspended) throw new Exception("Data reader is suspended");
@@ -634,9 +640,9 @@ namespace CodeImp.DoomBuilder.Data
 			List<string> files = new List<string>();
 
 			// Try to load game specific GLDEFS first
-			if(gametype != GameType.UNKNOWN) 
+			if(basegame != GameType.UNKNOWN)
 			{
-				string lumpname = Gldefs.GLDEFS_LUMPS_PER_GAME[(int)gametype];
+				string lumpname = GameType.GldefsLumpsPerGame[basegame];
 				files.AddRange(GetAllFilesWhichTitleStartsWith("", lumpname, false));
 			}
 
@@ -648,7 +654,7 @@ namespace CodeImp.DoomBuilder.Data
 				result.Add(new TextResourceData(this, LoadFile(s), s, true));
 
 			// Find in any of the wad files
-			foreach(WADReader wr in wads) result.AddRange(wr.GetGldefsData(gametype));
+			foreach(WADReader wr in wads) result.AddRange(wr.GetGldefsData(basegame));
 
 			return result;
 		}
@@ -803,6 +809,28 @@ namespace CodeImp.DoomBuilder.Data
 
 			// Find in any of the wad files
 			foreach(WADReader wr in wads) result.AddRange(wr.GetCvarInfoData());
+
+			return result;
+		}
+
+		#endregion
+
+		#region ================== Lockdefs (mxd)
+
+		public override IEnumerable<TextResourceData> GetLockDefsData()
+		{
+			// Error when suspended
+			if(issuspended) throw new Exception("Data reader is suspended");
+
+			List<TextResourceData> result = new List<TextResourceData>();
+			string[] files = GetAllFilesWithTitle("", "LOCKDEFS", false);
+
+			// Add to collection
+			foreach(string s in files)
+				result.Add(new TextResourceData(this, LoadFile(s), s, true));
+
+			// Find in any of the wad files
+			foreach(WADReader wr in wads) result.AddRange(wr.GetLockDefsData());
 
 			return result;
 		}

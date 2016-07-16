@@ -743,7 +743,7 @@
     <Compile Include="Actions\HintsManager.cs" />
     <Compile Include="Config\AllTexturesSet.cs" />
     <Compile Include="Config\FlagTranslation.cs" />
-    <Compile Include="Config\RenderModeEnums.cs" />
+    <Compile Include="Rendering\RenderModeEnums.cs" />
     <Compile Include="Config\PasteOptions.cs" />
     <Compile Include="Config\ScriptDocumentSettings.cs" />
     <Compile Include="Config\SectorEffectData.cs" />
@@ -863,6 +863,7 @@
     <Compile Include="Data\PK3FileImage.cs" />
     <Compile Include="Data\PK3StructuredReader.cs" />
     <Compile Include="Data\DynamicBitmapImage.cs" />
+    <Compile Include="Data\VoxelImage.cs" />
     <Compile Include="Editing\CustomThingsFilter.cs" />
     <Compile Include="General\CRC.cs" />
     <Compile Include="General\ErrorItem.cs" />
@@ -918,7 +919,7 @@
     </Compile>
     <Compile Include="GZBuilder\Data\BoundingBox.cs" />
     <Compile Include="GZBuilder\Data\EngineInfo.cs" />
-    <Compile Include="GZBuilder\Data\GameType.cs" />
+    <Compile Include="Config\GameType.cs" />
     <Compile Include="GZBuilder\Data\DynamicLight.cs" />
     <Compile Include="GZBuilder\Data\GlowingFlatData.cs" />
     <Compile Include="GZBuilder\Data\LinedefColorPreset.cs" />
@@ -936,6 +937,7 @@
     <Compile Include="Geometry\Line3D.cs" />
     <Compile Include="Data\Scripting\ScriptHandlerAttribute.cs" />
     <Compile Include="ZDoom\DecorateCategoryInfo.cs" />
+    <Compile Include="ZDoom\LockDefsParser.cs" />
     <Compile Include="ZDoom\Scripting\DecorateParserSE.cs" />
     <Compile Include="ZDoom\GldefsParser.cs" />
     <Compile Include="ZDoom\MapinfoParser.cs" />

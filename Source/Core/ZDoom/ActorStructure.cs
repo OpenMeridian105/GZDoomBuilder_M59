@@ -31,7 +31,7 @@ namespace CodeImp.DoomBuilder.ZDoom
 	{
 		#region ================== Constants
 		
-		private readonly string[] SPRITE_POSTFIXES = new[] {"2C8", "2D8", "2A8", "2B8", "1C1", "1D1", "1A1", "1B1", "A2", "A1", "A0", "2", "1", "0" };
+		private readonly string[] SPRITE_CHECK_STATES = { "idle", "see", "inactive", "spawn" }; //mxd
 		internal const string ACTOR_CLASS_SPECIAL_TOKENS = ":{}\n;,"; //mxd
 
 		#endregion
@@ -476,7 +476,7 @@ namespace CodeImp.DoomBuilder.ZDoom
 					{
 						//states
 						if(states.Count == 0 && !string.IsNullOrEmpty(ti.Value.Sprite))
-							states.Add("spawn", new StateStructure(ti.Value.Sprite.Substring(0, 4)));
+							states.Add("spawn", new StateStructure(ti.Value.Sprite.Substring(0, 5)));
 
 						//flags
 						if(ti.Value.Hangs && !flags.ContainsKey("spawnceiling"))
@@ -668,8 +668,7 @@ namespace CodeImp.DoomBuilder.ZDoom
 		/// </summary>
 		public StateStructure.FrameInfo FindSuitableSprite()
 		{
-			StateStructure.FrameInfo result = new StateStructure.FrameInfo(); //mxd
-			
+			// Info: actual sprites are resolved in ThingTypeInfo.SetupSpriteFrame() - mxd
 			// Sprite forced?
 			if(HasPropertyWithValue("$sprite"))
 			{
@@ -677,145 +676,32 @@ namespace CodeImp.DoomBuilder.ZDoom
 
 				//mxd. Valid when internal or exists
 				if(sprite.StartsWith(DataManager.INTERNAL_PREFIX, StringComparison.OrdinalIgnoreCase) || General.Map.Data.GetSpriteExists(sprite))
-				{
-					result.Sprite = sprite; //mxd
-					return result; 
-				}
+					return new StateStructure.FrameInfo { Sprite = sprite };
 
 				//mxd. Bitch and moan
 				General.ErrorLogger.Add(ErrorType.Warning, "DECORATE warning in " + classname + ":" + doomednum + ". The sprite \"" + sprite + "\" assigned by the \"$sprite\" property does not exist.");
 			}
 
-			// Try the idle state
-			if(HasState("idle"))
+			//mxd. Try to get a suitable sprite from our hardcoded states list
+			foreach(string state in SPRITE_CHECK_STATES)
 			{
-				StateStructure s = GetState("idle");
+				if(!HasState(state)) continue;
+
+				StateStructure s = GetState(state);
 				StateStructure.FrameInfo info = s.GetSprite(0);
-				if(!string.IsNullOrEmpty(info.Sprite)) result = info;
-			}
-			
-			// Try the see state
-			if(string.IsNullOrEmpty(result.Sprite) && HasState("see"))
-			{
-				StateStructure s = GetState("see");
-				StateStructure.FrameInfo info = s.GetSprite(0);
-				if(!string.IsNullOrEmpty(info.Sprite)) result = info;
-			}
-			
-			// Try the inactive state
-			if(string.IsNullOrEmpty(result.Sprite) && HasState("inactive"))
-			{
-				StateStructure s = GetState("inactive");
-				StateStructure.FrameInfo info = s.GetSprite(0);
-				if(!string.IsNullOrEmpty(info.Sprite)) result = info;
-			}
-			
-			// Try the spawn state
-			if(string.IsNullOrEmpty(result.Sprite) && HasState("spawn"))
-			{
-				StateStructure s = GetState("spawn");
-				StateStructure.FrameInfo info = s.GetSprite(0);
-				if(!string.IsNullOrEmpty(info.Sprite)) result = info;
+				if(!string.IsNullOrEmpty(info.Sprite)) return info;
 			}
 			
 			// Still no sprite found? then just pick the first we can find
-			if(string.IsNullOrEmpty(result.Sprite))
+			Dictionary<string, StateStructure> list = GetAllStates();
+			foreach(StateStructure s in list.Values)
 			{
-				Dictionary<string, StateStructure> list = GetAllStates();
-				foreach(StateStructure s in list.Values)
-				{
-					StateStructure.FrameInfo info = s.GetSprite(0);
-					if(!string.IsNullOrEmpty(info.Sprite))
-					{
-						result = info;
-						break;
-					}
-				}
+				StateStructure.FrameInfo info = s.GetSprite(0);
+				if(!string.IsNullOrEmpty(info.Sprite)) return info;
 			}
 			
-			if(!string.IsNullOrEmpty(result.Sprite))
-			{
-				// The sprite name is not actually complete, we still have to append
-				// the direction characters to it. Find an existing sprite with direction.
-				foreach(string postfix in SPRITE_POSTFIXES)
-				{
-					if(General.Map.Data.GetSpriteExists(result.Sprite + postfix))
-					{
-						result.Sprite += postfix;
-						return result;
-					}
-				}
-			}
-			
-			// No sprite found
-			return result;
-		}
-
-		//mxd. 
-		///TODO: rewrite this
-		public string FindSuitableVoxel(HashSet<string> voxels) 
-		{
-			string result = string.Empty;
-			
-			// Try the idle state
-			if(HasState("idle")) 
-			{
-				StateStructure s = GetState("idle");
-				StateStructure.FrameInfo info = s.GetSprite(0);
-				if(!string.IsNullOrEmpty(info.Sprite)) result = info.Sprite;
-			}
-
-			// Try the see state
-			if(string.IsNullOrEmpty(result) && HasState("see")) 
-			{
-				StateStructure s = GetState("see");
-				StateStructure.FrameInfo info = s.GetSprite(0);
-				if(!string.IsNullOrEmpty(info.Sprite)) result = info.Sprite;
-			}
-
-			// Try the inactive state
-			if(string.IsNullOrEmpty(result) && HasState("inactive")) 
-			{
-				StateStructure s = GetState("inactive");
-				StateStructure.FrameInfo info = s.GetSprite(0);
-				if(!string.IsNullOrEmpty(info.Sprite)) result = info.Sprite;
-			}
-
-			// Try the spawn state
-			if(string.IsNullOrEmpty(result) && HasState("spawn")) 
-			{
-				StateStructure s = GetState("spawn");
-				StateStructure.FrameInfo info = s.GetSprite(0);
-				if(!string.IsNullOrEmpty(info.Sprite)) result = info.Sprite;
-			}
-
-			// Still no sprite found? then just pick the first we can find
-			if(string.IsNullOrEmpty(result)) 
-			{
-				Dictionary<string, StateStructure> list = GetAllStates();
-				foreach(StateStructure s in list.Values) 
-				{
-					StateStructure.FrameInfo info = s.GetSprite(0);
-					if(!string.IsNullOrEmpty(info.Sprite)) 
-					{
-						result = info.Sprite;
-						break;
-					}
-				}
-			}
-
-			if(!string.IsNullOrEmpty(result)) 
-			{
-				if(voxels.Contains(result)) return result;
-
-				// The sprite name may be incomplete. Find an existing sprite with direction.
-				foreach(string postfix in SPRITE_POSTFIXES)
-					if(voxels.Contains(result + postfix)) return result + postfix;
-			}
-
-
-			// No voxel found
-			return "";
+			//mxd. No dice...
+			return null;
 		}
 		
 		#endregion

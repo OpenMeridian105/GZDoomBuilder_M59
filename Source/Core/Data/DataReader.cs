@@ -86,8 +86,6 @@ namespace CodeImp.DoomBuilder.Data
 	{
 		#region ================== Constants
 
-		protected const string SPRITE_NAME_PATTERN = "(?i)\\A[a-z0-9]{4}([a-z][0-9]{0,2})$"; //mxd
-
 		#endregion
 
 		#region ================== Variables
@@ -215,7 +213,7 @@ namespace CodeImp.DoomBuilder.Data
 		public abstract bool GetSpriteExists(string pname);
 
 		//mxd. When implemented, returns all sprites, which name starts with given string
-		public abstract HashSet<string> GetSpriteNames(string startswith);
+		public abstract HashSet<string> GetSpriteNames();
 		
 		#endregion
 
@@ -231,7 +229,7 @@ namespace CodeImp.DoomBuilder.Data
 		public abstract IEnumerable<TextResourceData> GetMapinfoData();
 
 		//mxd. When implemented, this returns GLDEFS lumps
-		public abstract IEnumerable<TextResourceData> GetGldefsData(GameType gametype);
+		public abstract IEnumerable<TextResourceData> GetGldefsData(string basegame);
 
 		//mxd. When implemented, this returns REVERBS lumps
 		public abstract IEnumerable<TextResourceData> GetReverbsData();
@@ -257,11 +255,14 @@ namespace CodeImp.DoomBuilder.Data
 		//mxd. When implemented, this returns CVARINFO lumps
 		public abstract IEnumerable<TextResourceData> GetCvarInfoData();
 
+		//mxd. When implemented, this returns LOCKDEFS lumps
+		public abstract IEnumerable<TextResourceData> GetLockDefsData();
+
 		//mxd. When implemented, this returns the list of voxel model names
-		public abstract IEnumerable<string> GetVoxelNames();
+		public abstract HashSet<string> GetVoxelNames();
 
 		//mxd. When implemented, this returns the voxel lump
-		public abstract Stream GetVoxelData(string name);
+		public abstract Stream GetVoxelData(string name, ref string voxellocation);
 
 		#endregion
 
