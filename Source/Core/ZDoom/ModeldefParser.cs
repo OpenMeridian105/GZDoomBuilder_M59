@@ -92,7 +92,7 @@ namespace CodeImp.DoomBuilder.ZDoom
 							if(mds.Frames.ContainsKey(targetsprite))
 							{
 								// Create model data
-								ModelData md = new ModelData { InheritActorPitch = mds.InheritActorPitch, InheritActorRoll = mds.InheritActorRoll };
+								ModelData md = new ModelData { InheritActorPitch = mds.InheritActorPitch, UseActorPitch = mds.UseActorPitch, UseActorRoll = mds.UseActorRoll };
 
 								// Things are complicated in GZDoom...
 								Matrix moffset = Matrix.Translation(mds.Offset.Y, -mds.Offset.X, mds.Offset.Z);
@@ -118,9 +118,10 @@ namespace CodeImp.DoomBuilder.ZDoom
 									}
 									
 									// Texture name will be empty when skin path is embedded in the model
-									string texturename = (!string.IsNullOrEmpty(mds.TextureNames[fs.ModelIndex]) ? mds.TextureNames[fs.ModelIndex].ToLowerInvariant() : string.Empty);
+									string skinname = (!string.IsNullOrEmpty(mds.SkinNames[fs.ModelIndex]) ? mds.SkinNames[fs.ModelIndex].ToLowerInvariant() : string.Empty);
 
-									md.TextureNames.Add(texturename);
+									md.SkinNames.Add(skinname);
+									md.SurfaceSkinNames.Add(mds.SurfaceSkinNames[fs.ModelIndex]); 
 									md.ModelNames.Add(mds.ModelNames[fs.ModelIndex].ToLowerInvariant());
 									md.FrameNames.Add(fs.FrameName);
 									md.FrameIndices.Add(fs.FrameIndex);

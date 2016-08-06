@@ -77,7 +77,7 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 			}
 
 			//clear unneeded data
-			mde.TextureNames = null;
+			mde.SkinNames = null;
 			mde.ModelNames = null;
 
 			if(mde.Model.Meshes == null || mde.Model.Meshes.Count == 0) 
@@ -95,10 +95,15 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 			//load models and textures
 			for(int i = 0; i < mde.ModelNames.Count; i++) 
 			{
-				//need to use model skins?
-				bool useSkins = string.IsNullOrEmpty(mde.TextureNames[i]);
+				// Use model skins?
+				// INFO: Skin MODELDEF property overrides both embedded surface names and ones set using SurfaceSkin MODELDEF property 
+				Dictionary<int, string> skins = null;
+				if(string.IsNullOrEmpty(mde.SkinNames[i]))
+				{
+					skins = (mde.SurfaceSkinNames[i].Count > 0 ? mde.SurfaceSkinNames[i] : new Dictionary<int, string>());
+				}
 			
-				//load mesh
+				// Load mesh
 				MemoryStream ms = LoadFile(containers, mde.ModelNames[i], true);
 				if(ms == null) 
 				{
@@ -115,7 +120,7 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 							General.ErrorLogger.Add(ErrorType.Error, "Error while loading \"" + mde.ModelNames[i] + "\": frame names are not supported for MD3 models!");
 							continue;
 						}
-						result = ReadMD3Model(ref bbs, useSkins, ms, device, mde.FrameIndices[i]);
+						result = ReadMD3Model(ref bbs, skins, ms, device, mde.FrameIndices[i]);
 						break;
 					case ".md2":
 						result = ReadMD2Model(ref bbs, ms, device, mde.FrameIndices[i], mde.FrameNames[i]);
@@ -145,7 +150,7 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 					List<string> errors = new List<string>();
 
 					// Texture not defined in MODELDEF?
-					if(useSkins) 
+					if(skins != null) 
 					{
 						//try to use model's own skins 
 						for(int m = 0; m < result.Meshes.Count; m++) 
@@ -169,7 +174,7 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 
 							//relative path?
 							if(path.IndexOf(Path.DirectorySeparatorChar) == -1)
-								path = Path.Combine(Path.GetDirectoryName(mde.ModelNames[useSkins ? i : m]), path);
+								path = Path.Combine(Path.GetDirectoryName(mde.ModelNames[i]), path);
 
 							Texture t = LoadTexture(containers, path, device);
 
@@ -186,11 +191,11 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 					//Try to use texture loaded from MODELDEFS
 					else
 					{
-						Texture t = LoadTexture(containers, mde.TextureNames[i], device);
+						Texture t = LoadTexture(containers, mde.SkinNames[i], device);
 						if(t == null) 
 						{
 							mde.Model.Textures.Add(General.Map.Data.UnknownTexture3D.Texture);
-							errors.Add("unable to load texture \"" + mde.TextureNames[i] + "\"");
+							errors.Add("unable to load texture \"" + mde.SkinNames[i] + "\"");
 						} 
 						else 
 						{
@@ -208,7 +213,7 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 			}
 
 			//clear unneeded data
-			mde.TextureNames = null;
+			mde.SkinNames = null;
 			mde.ModelNames = null;
 
 			if(mde.Model.Meshes == null || mde.Model.Meshes.Count == 0) 
@@ -231,7 +236,7 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 
 		#region ================== MD3
 
-		internal static MD3LoadResult ReadMD3Model(ref BoundingBoxSizes bbs, bool useSkins, Stream s, Device device, int frame) 
+		internal static MD3LoadResult ReadMD3Model(ref BoundingBoxSizes bbs, Dictionary<int, string> skins, Stream s, Device device, int frame) 
 		{
 			long start = s.Position;
 			MD3LoadResult result = new MD3LoadResult();
@@ -265,6 +270,7 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 				Dictionary<string, List<List<int>>> polyIndecesListsPerTexture = new Dictionary<string, List<List<int>>>(StringComparer.Ordinal);
 				Dictionary<string, List<WorldVertex>> vertListsPerTexture = new Dictionary<string, List<WorldVertex>>(StringComparer.Ordinal);
 				Dictionary<string, List<int>> vertexOffsets = new Dictionary<string, List<int>>(StringComparer.Ordinal);
+				bool useskins = false;
 
 				for(int c = 0; c < numSurfaces; c++) 
 				{
@@ -277,8 +283,22 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 						return result;
 					}
 
-					if(useSkins) 
+					// Pick a skin to use
+					if(skins == null)
 					{
+						// skins is null when Skin MODELDEF property is set
+						skin = string.Empty;
+					}
+					else if(skins.ContainsKey(c))
+					{
+						// Overrtide surface skin with SurfaceSkin MODELDEF property
+						skin = skins[c];
+					}
+
+					if(!string.IsNullOrEmpty(skin))
+					{
+						useskins = true;
+						
 						if(polyIndecesListsPerTexture.ContainsKey(skin)) 
 						{
 							polyIndecesListsPerTexture[skin].Add(polyIndecesList);
@@ -298,8 +318,8 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 					}
 				}
 
-				if(!useSkins) 
-				{ 
+				if(!useskins) 
+				{
 					//create mesh
 					CreateMesh(device, ref result, vertList, polyIndecesList);
 					result.Skins.Add("");
@@ -614,7 +634,10 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 		{
 			PixelColor[] palette = new PixelColor[256];
 			List<WorldVertex> verts = new List<WorldVertex>();
+			List<int> indices = new List<int>();
+			Dictionary<long, int> verthashes = new Dictionary<long, int>();
 			int xsize, ysize, zsize;
+			int facescount = 0;
 			Vector3D pivot;
 
 			using(BinaryReader reader = new BinaryReader(stream, Encoding.ASCII)) 
@@ -704,7 +727,8 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 
 								if((flags & 16) != 0) 
 								{
-									AddFace(verts, new Vector3D(x, y, ztop), new Vector3D(x + 1, y, ztop), new Vector3D(x, y + 1, ztop), new Vector3D(x + 1, y + 1, ztop), pivot, colorIndices[0]);
+									AddFace(verts, indices, verthashes, new Vector3D(x, y, ztop), new Vector3D(x + 1, y, ztop), new Vector3D(x, y + 1, ztop), new Vector3D(x + 1, y + 1, ztop), pivot, colorIndices[0]);
+									facescount += 2;
 								}
 
 								int z = ztop;
@@ -716,19 +740,23 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 
 									if((flags & 1) != 0) 
 									{
-										AddFace(verts, new Vector3D(x, y, z), new Vector3D(x, y + 1, z), new Vector3D(x, y, z + c), new Vector3D(x, y + 1, z + c), pivot, colorIndices[cstart]);
+										AddFace(verts, indices, verthashes, new Vector3D(x, y, z), new Vector3D(x, y + 1, z), new Vector3D(x, y, z + c), new Vector3D(x, y + 1, z + c), pivot, colorIndices[cstart]);
+										facescount += 2;
 									}
 									if((flags & 2) != 0) 
 									{
-										AddFace(verts, new Vector3D(x + 1, y + 1, z), new Vector3D(x + 1, y, z), new Vector3D(x + 1, y + 1, z + c), new Vector3D(x + 1, y, z + c), pivot, colorIndices[cstart]);
+										AddFace(verts, indices, verthashes, new Vector3D(x + 1, y + 1, z), new Vector3D(x + 1, y, z), new Vector3D(x + 1, y + 1, z + c), new Vector3D(x + 1, y, z + c), pivot, colorIndices[cstart]);
+										facescount += 2;
 									}
 									if((flags & 4) != 0) 
 									{
-										AddFace(verts, new Vector3D(x + 1, y, z), new Vector3D(x, y, z), new Vector3D(x + 1, y, z + c), new Vector3D(x, y, z + c), pivot, colorIndices[cstart]);
+										AddFace(verts, indices, verthashes, new Vector3D(x + 1, y, z), new Vector3D(x, y, z), new Vector3D(x + 1, y, z + c), new Vector3D(x, y, z + c), pivot, colorIndices[cstart]);
+										facescount += 2;
 									}
 									if((flags & 8) != 0) 
 									{
-										AddFace(verts, new Vector3D(x, y + 1, z), new Vector3D(x + 1, y + 1, z), new Vector3D(x, y + 1, z + c), new Vector3D(x + 1, y + 1, z + c), pivot, colorIndices[cstart]);
+										AddFace(verts, indices, verthashes, new Vector3D(x, y + 1, z), new Vector3D(x + 1, y + 1, z), new Vector3D(x, y + 1, z + c), new Vector3D(x + 1, y + 1, z + c), pivot, colorIndices[cstart]);
+										facescount += 2;
 									}
 
 									if(c == 0) c++;
@@ -739,7 +767,8 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 								if((flags & 32) != 0) 
 								{
 									z = ztop + zleng - 1;
-									AddFace(verts, new Vector3D(x + 1, y, z + 1), new Vector3D(x, y, z + 1), new Vector3D(x + 1, y + 1, z + 1), new Vector3D(x, y + 1, z + 1), pivot, colorIndices[zleng - 1]);
+									AddFace(verts, indices, verthashes, new Vector3D(x + 1, y, z + 1), new Vector3D(x, y, z + 1), new Vector3D(x + 1, y + 1, z + 1), new Vector3D(x, y + 1, z + 1), pivot, colorIndices[zleng - 1]);
+									facescount += 2;
 								}
 							}
 						}
@@ -755,10 +784,10 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 			int minY = (int)((ysize / 2f - pivot.y) * mde.Scale.Y);
 			int maxY = (int)((ysize / 2f + pivot.y) * mde.Scale.Y);
 			
-			// calculate model radius
+			// Calculate model radius
 			mde.Model.Radius = Math.Max(Math.Max(Math.Abs(minY), Math.Abs(maxY)), Math.Max(Math.Abs(minX), Math.Abs(maxX)));
 
-			//create texture
+			// Create texture
 			MemoryStream memstream = new MemoryStream((4096 * 4) + 4096);
 			using(Bitmap bmp = CreateVoxelTexture(palette)) bmp.Save(memstream, ImageFormat.Bmp);
 			memstream.Seek(0, SeekOrigin.Begin);
@@ -766,78 +795,116 @@ namespace CodeImp.DoomBuilder.GZBuilder.MD3
 			Texture texture = Texture.FromStream(device, memstream, (int)memstream.Length, 64, 64, 0, Usage.None, Format.Unknown, Pool.Managed, Filter.Point, Filter.Box, 0);
 			memstream.Dispose();
 
-			//add texture
+			// Add texture
 			mde.Model.Textures.Add(texture);
 
-			//create mesh
-			int[] indices = new int[verts.Count];
-			for(int i = 0; i < verts.Count; i++) 
-			{
-				indices[i] = i;
-			}
-
-			Mesh mesh = new Mesh(device, verts.Count / 3, verts.Count, MeshFlags.Use32Bit | MeshFlags.IndexBufferManaged | MeshFlags.VertexBufferManaged, vertexElements);
+			// Create mesh
+			MeshFlags meshflags = MeshFlags.Managed;
+			if(indices.Count > ushort.MaxValue - 1) meshflags |= MeshFlags.Use32Bit;
+			
+			Mesh mesh = new Mesh(device, facescount, verts.Count, meshflags, vertexElements);
 
 			DataStream mstream = mesh.VertexBuffer.Lock(0, 0, LockFlags.None);
 			mstream.WriteRange(verts.ToArray());
 			mesh.VertexBuffer.Unlock();
 
 			mstream = mesh.IndexBuffer.Lock(0, 0, LockFlags.None);
-			mstream.WriteRange(indices);
+
+			if(indices.Count > ushort.MaxValue - 1)
+				mstream.WriteRange(indices.ToArray());
+			else
+				foreach(int index in indices) mstream.Write((ushort)index);
+
 			mesh.IndexBuffer.Unlock();
 
 			mesh.OptimizeInPlace(MeshOptimizeFlags.AttributeSort);
 
-			//add mesh
+			// Add mesh
 			mde.Model.Meshes.Add(mesh);
 		}
 
 		// Shameless GZDoom rip-off
-		private static void AddFace(List<WorldVertex> verts, Vector3D v1, Vector3D v2, Vector3D v3, Vector3D v4, Vector3D pivot, int colorIndex) 
+		private static void AddFace(List<WorldVertex> verts, List<int> indices, Dictionary<long, int> hashes, Vector3D v1, Vector3D v2, Vector3D v3, Vector3D v4, Vector3D pivot, int colorIndex) 
 		{
 			float pu0 = (colorIndex % 16) / 16f;
-			float pu1 = pu0 + 0.0001f;
+			float pu1 = pu0 + 0.001f;
 			float pv0 = (colorIndex / 16) / 16f;
-			float pv1 = pv0 + 0.0001f;
+			float pv1 = pv0 + 0.001f;
 			
-			WorldVertex wv1 = new WorldVertex();
-			wv1.x = v1.x - pivot.x;
-			wv1.y = -v1.y + pivot.y;
-			wv1.z = -v1.z + pivot.z;
-			wv1.c = -1;
-			wv1.u = pu0;
-			wv1.v = pv0;
-			verts.Add(wv1);
+			WorldVertex wv1 = new WorldVertex
+			{
+				x = v1.x - pivot.x,
+				y = -v1.y + pivot.y,
+				z = -v1.z + pivot.z,
+				c = -1,
+				u = pu0,
+				v = pv0
+			};
+			int i1 = AddVertex(wv1, verts, indices, hashes);
 
-			WorldVertex wv2 = new WorldVertex();
-			wv2.x = v2.x - pivot.x;
-			wv2.y = -v2.y + pivot.y;
-			wv2.z = -v2.z + pivot.z;
-			wv2.c = -1;
-			wv2.u = pu1;
-			wv2.v = pv1;
-			verts.Add(wv2);
+			WorldVertex wv2 = new WorldVertex
+			{
+				x = v2.x - pivot.x,
+				y = -v2.y + pivot.y,
+				z = -v2.z + pivot.z,
+				c = -1,
+				u = pu1,
+				v = pv1
+			};
+			AddVertex(wv2, verts, indices, hashes);
 
-			WorldVertex wv4 = new WorldVertex();
-			wv4.x = v4.x - pivot.x;
-			wv4.y = -v4.y + pivot.y;
-			wv4.z = -v4.z + pivot.z;
-			wv4.c = -1;
-			wv4.u = pu0;
-			wv4.v = pv0;
-			verts.Add(wv4);
+			WorldVertex wv4 = new WorldVertex
+			{
+				x = v4.x - pivot.x,
+				y = -v4.y + pivot.y,
+				z = -v4.z + pivot.z,
+				c = -1,
+				u = pu0,
+				v = pv0
+			};
+			int i4 = AddVertex(wv4, verts, indices, hashes);
 
-			WorldVertex wv3 = new WorldVertex();
-			wv3.x = v3.x - pivot.x;
-			wv3.y = -v3.y + pivot.y;
-			wv3.z = -v3.z + pivot.z;
-			wv3.c = -1;
-			wv3.u = pu1;
-			wv3.v = pv1;
-			verts.Add(wv3);
+			WorldVertex wv3 = new WorldVertex
+			{
+				x = v3.x - pivot.x,
+				y = -v3.y + pivot.y,
+				z = -v3.z + pivot.z,
+				c = -1,
+				u = pu1,
+				v = pv1
+			};
+			AddVertex(wv3, verts, indices, hashes);
 
-			verts.Add(wv1);
-			verts.Add(wv4);
+			indices.Add(i1);
+			indices.Add(i4);
+		}
+
+		// Returns index of added vert
+		private static int AddVertex(WorldVertex v, List<WorldVertex> verts, List<int> indices, Dictionary<long, int> hashes)
+		{
+			long hash;
+			unchecked // Overflow is fine, just wrap
+			{
+				hash = 2166136261;
+				hash = (hash * 16777619) ^ v.x.GetHashCode();
+				hash = (hash * 16777619) ^ v.y.GetHashCode();
+				hash = (hash * 16777619) ^ v.z.GetHashCode();
+				hash = (hash * 16777619) ^ v.u.GetHashCode();
+				hash = (hash * 16777619) ^ v.v.GetHashCode();
+			}
+
+			if(hashes.ContainsKey(hash))
+			{
+				indices.Add(hashes[hash]);
+				return hashes[hash];
+			}
+			else
+			{
+				verts.Add(v);
+				hashes.Add(hash, verts.Count - 1);
+				indices.Add(verts.Count - 1);
+				return verts.Count - 1;
+			}
 		}
 
 		private unsafe static Bitmap CreateVoxelTexture(PixelColor[] palette) 

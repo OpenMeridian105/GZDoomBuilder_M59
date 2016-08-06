@@ -30,7 +30,8 @@ namespace CodeImp.DoomBuilder.GZBuilder.Data
 		#region ================== Properties
 
 		internal List<string> ModelNames;
-		internal List<string> TextureNames;
+		internal List<string> SkinNames;
+		internal List<Dictionary<int, string>> SurfaceSkinNames;
 		internal List<string> FrameNames;
 		internal List<int> FrameIndices;
 
@@ -41,7 +42,8 @@ namespace CodeImp.DoomBuilder.GZBuilder.Data
 		internal bool OverridePalette; // Used for voxel models only 
 		internal float AngleOffset; // Used for voxel models only
 		internal bool InheritActorPitch;
-		internal bool InheritActorRoll;
+		internal bool UseActorPitch;
+		internal bool UseActorRoll;
 
 		internal bool IsVoxel;
 
@@ -61,7 +63,8 @@ namespace CodeImp.DoomBuilder.GZBuilder.Data
 		internal ModelData() 
 		{
 			ModelNames = new List<string>();
-			TextureNames = new List<string>();
+			SkinNames = new List<string>();
+			SurfaceSkinNames = new List<Dictionary<int, string>>();
 			FrameNames = new List<string>();
 			FrameIndices = new List<int>();
 			transform = Matrix.Identity;
@@ -90,8 +93,8 @@ namespace CodeImp.DoomBuilder.GZBuilder.Data
 		internal void SetTransform(Matrix rotation, Matrix offset, Vector3 scale)
 		{
 			this.scale = scale;
-			this.transform = rotation * Matrix.Scaling(scale) * offset;
-			this.transformstretched = rotation * Matrix.Scaling(scale.X, scale.Y, scale.Z * Renderer3D.GZDOOM_INVERTED_VERTICAL_VIEW_STRETCH) * offset;
+			transform = rotation * Matrix.Scaling(scale) * offset;
+			transformstretched = Matrix.Scaling(1.0f, 1.0f, Renderer3D.GZDOOM_INVERTED_VERTICAL_VIEW_STRETCH) * transform;
 		}
 
 		//mxd. This greatly speeds up Dictionary lookups
