@@ -479,34 +479,87 @@ namespace CodeImp.DoomBuilder.Windows
 		private void UpdateCeilingHeight()
 		{
 			int i = 0;
+			int diffheight = 0;
 
-			//restore values
-			if (string.IsNullOrEmpty(ceilingheight.Text))
+			if (ceilingheight.Text.StartsWith("++") || ceilingheight.Text.StartsWith("--"))
 			{
+				// Raise or lower by sector height
 				foreach (Sector s in sectors)
-					s.CeilHeight = sectorprops[i++].CeilHeight;
+				{
+					if (i == 0)
+						diffheight = (ceilingheight.GetResult(sectorprops[i].CeilHeight) - s.CeilHeight);
+					s.CeilHeight += diffheight;
+
+					// Fix up slopes too.
+					if (s.IsCeilSloped())
+					{
+						for (int j = 0; j < 3; ++j)
+						{
+							s.CeilSlopeVertexes[j] = new Vector3D(s.CeilSlopeVertexes[j].x,
+								s.CeilSlopeVertexes[j].y, s.CeilSlopeVertexes[j].z + diffheight);
+						}
+						s.CalculateMeridianSlope(false);
+					}
+					i++;
+				}
 			}
-			else //update values
+			else
 			{
-				foreach (Sector s in sectors)
-					s.CeilHeight = ceilingheight.GetResult(sectorprops[i++].CeilHeight);
+				//restore values
+				if (string.IsNullOrEmpty(ceilingheight.Text))
+				{
+					foreach (Sector s in sectors)
+						s.CeilHeight = sectorprops[i++].CeilHeight;
+				}
+				else //update values
+				{
+					foreach (Sector s in sectors)
+						s.CeilHeight = ceilingheight.GetResult(sectorprops[i++].CeilHeight);
+				}
 			}
 		}
 
+		//mxd
 		private void UpdateFloorHeight()
 		{
 			int i = 0;
+			int diffheight = 0;
 
-			//restore values
-			if (string.IsNullOrEmpty(floorheight.Text))
+			if (floorheight.Text.StartsWith("++") || floorheight.Text.StartsWith("--"))
 			{
 				foreach (Sector s in sectors)
-					s.FloorHeight = sectorprops[i++].FloorHeight;
+				{
+					// Get the change in height from the first sector.
+					if (i == 0)
+						diffheight = (floorheight.GetResult(sectorprops[i].FloorHeight) - s.FloorHeight);
+					s.FloorHeight += diffheight;
+
+					// Fix up slopes too.
+					if (s.IsFloorSloped())
+					{
+						for (int j = 0; j < 3; ++j)
+						{
+							s.FloorSlopeVertexes[j] = new Vector3D(s.FloorSlopeVertexes[j].x,
+								s.FloorSlopeVertexes[j].y, s.FloorSlopeVertexes[j].z + diffheight);
+						}
+						s.CalculateMeridianSlope(true);
+					}
+					i++;
+				}
 			}
-			else //update values
+			else
 			{
-				foreach (Sector s in sectors)
-					s.FloorHeight = floorheight.GetResult(sectorprops[i++].FloorHeight);
+				//restore values
+				if (string.IsNullOrEmpty(floorheight.Text))
+				{
+					foreach (Sector s in sectors)
+						s.FloorHeight = sectorprops[i++].FloorHeight;
+				}
+				else //update values
+				{
+					foreach (Sector s in sectors)
+						s.FloorHeight = floorheight.GetResult(sectorprops[i++].FloorHeight);
+				}
 			}
 		}
 
