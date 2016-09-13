@@ -374,15 +374,16 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			Sidedef.Fields["offsety_top"] = new UniValue(UniversalType.Float, (float)y);
 		}
 
-		protected override void MoveTextureOffset(Point xy)
+		protected override void MoveTextureOffset(int offsetx, int offsety)
 		{
 			Sidedef.Fields.BeforeFieldsChange();
 			float oldx = Sidedef.Fields.GetValue("offsetx_top", 0.0f);
 			float oldy = Sidedef.Fields.GetValue("offsety_top", 0.0f);
 			float scalex = Sidedef.Fields.GetValue("scalex_top", 1.0f);
 			float scaley = Sidedef.Fields.GetValue("scaley_top", 1.0f);
-			Sidedef.Fields["offsetx_top"] = new UniValue(UniversalType.Float, GetRoundedTextureOffset(oldx, xy.X, scalex, Texture != null ? Texture.Width : -1)); //mxd
-			Sidedef.Fields["offsety_top"] = new UniValue(UniversalType.Float, GetRoundedTextureOffset(oldy, xy.Y, scaley, Texture != null ? Texture.Height : -1)); //mxd
+			bool textureloaded = (Texture != null && Texture.IsImageLoaded); //mxd
+			Sidedef.Fields["offsetx_top"] = new UniValue(UniversalType.Float, GetRoundedTextureOffset(oldx, offsetx, scalex, textureloaded ? Texture.Width : -1)); //mxd
+			Sidedef.Fields["offsety_top"] = new UniValue(UniversalType.Float, GetRoundedTextureOffset(oldy, offsety, scaley, textureloaded ? Texture.Height : -1)); //mxd
 		}
 
 		protected override Point GetTextureOffset()

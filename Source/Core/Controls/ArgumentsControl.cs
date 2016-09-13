@@ -133,7 +133,7 @@ namespace CodeImp.DoomBuilder.Controls
 
 		#region ================== Apply
 
-		public void Apply(Linedef l)
+		public void Apply(Linedef l, int step)
 		{
 			//mxd. Script name/number handling
 			// We can't rely on control visibility here, because all controlls will be invisible if ArgumentsControl is invisible
@@ -161,7 +161,7 @@ namespace CodeImp.DoomBuilder.Controls
 
 				// Apply classic arg
 				case ArgZeroMode.DEFAULT:
-					l.Args[0] = arg0.GetResult(l.Args[0]);
+					l.Args[0] = arg0.GetResult(l.Args[0], step);
 					if(l.Fields.ContainsKey("arg0str")) l.Fields.Remove("arg0str");
 					break;
 
@@ -169,13 +169,13 @@ namespace CodeImp.DoomBuilder.Controls
 			}
 
 			// Apply the rest of args
-			l.Args[1] = arg1.GetResult(l.Args[1]);
-			l.Args[2] = arg2.GetResult(l.Args[2]);
-			l.Args[3] = arg3.GetResult(l.Args[3]);
-			l.Args[4] = arg4.GetResult(l.Args[4]);
+			l.Args[1] = arg1.GetResult(l.Args[1], step);
+			l.Args[2] = arg2.GetResult(l.Args[2], step);
+			l.Args[3] = arg3.GetResult(l.Args[3], step);
+			l.Args[4] = arg4.GetResult(l.Args[4], step);
 		}
 
-		public void Apply(Thing t)
+		public void Apply(Thing t, int step)
 		{
 			//mxd. Script name/number handling
 			// We can't rely on control visibility here, because all controlls will be invisible if ArgumentsControl is invisible
@@ -203,7 +203,7 @@ namespace CodeImp.DoomBuilder.Controls
 
 				// Apply classic arg
 				case ArgZeroMode.DEFAULT:
-					t.Args[0] = arg0.GetResult(t.Args[0]);
+					t.Args[0] = arg0.GetResult(t.Args[0], step);
 					if(t.Fields.ContainsKey("arg0str")) t.Fields.Remove("arg0str");
 					break;
 
@@ -211,10 +211,10 @@ namespace CodeImp.DoomBuilder.Controls
 			}
 
 			// Apply the rest of args
-			t.Args[1] = arg1.GetResult(t.Args[1]);
-			t.Args[2] = arg2.GetResult(t.Args[2]);
-			t.Args[3] = arg3.GetResult(t.Args[3]);
-			t.Args[4] = arg4.GetResult(t.Args[4]);
+			t.Args[1] = arg1.GetResult(t.Args[1], step);
+			t.Args[2] = arg2.GetResult(t.Args[2], step);
+			t.Args[3] = arg3.GetResult(t.Args[3], step);
+			t.Args[4] = arg4.GetResult(t.Args[4], step);
 		}
 
 		#endregion
@@ -305,22 +305,14 @@ namespace CodeImp.DoomBuilder.Controls
 					argzeromode = ArgZeroMode.SCRIPT_NAME;
 					if(General.Map.NamedScripts.ContainsKey(arg0str))
 					{
-						int i = 0;
-						foreach(ScriptItem item in General.Map.NamedScripts.Values)
-						{
-							if(item.Name == arg0str)
-							{
-								scriptnames.SelectedIndex = i;
-								UpdateScriptArguments(item);
-								break;
-							}
-							i++;
-						}
+						scriptnames.SelectedText = arg0str;
+						UpdateScriptArguments(General.Map.NamedScripts[arg0str]);
 					}
 					else
 					{
 						// Unknown script name
 						scriptnames.Text = arg0str;
+						arg0label.Text = "Script Name:";
 					}
 				}
 				else
@@ -359,7 +351,7 @@ namespace CodeImp.DoomBuilder.Controls
 				argzeromode = ArgZeroMode.DEFAULT;
 			}
 
-			arg0.Visible = (!scriptnames.Visible && !scriptnumbers.Visible);
+			arg0.Visible = (argzeromode == ArgZeroMode.DEFAULT);
 		}
 
 		private void UpdateArgument(ArgumentBox arg, Label label, ArgumentInfo info)

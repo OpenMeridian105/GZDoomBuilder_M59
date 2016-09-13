@@ -678,7 +678,8 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				if(options.FitAcrossSurfaces) 
 				{
 					scalex = Texture.ScaledWidth / (linelength * (options.GlobalBounds.Width / linelength)) * options.HorizontalRepeat;
-					offsetx = (float)Math.Round((options.Bounds.X * scalex - Sidedef.OffsetX - options.ControlSideOffsetX) % Texture.Width, General.Map.FormatInterface.VertexDecimals);
+					offsetx = (float)Math.Round((options.Bounds.X * scalex - Sidedef.OffsetX - options.ControlSideOffsetX), General.Map.FormatInterface.VertexDecimals);
+					if(Texture.IsImageLoaded) offsetx %= Texture.Width;
 				} 
 				else 
 				{
@@ -720,17 +721,24 @@ namespace CodeImp.DoomBuilder.BuilderModes
 						}
 						else
 						{
-							offsety = Tools.GetSidedefOffsetY(Sidedef, geometrytype, options.Bounds.Y * scaley - Sidedef.OffsetY - options.ControlSideOffsetY, scaley, true) % Texture.Height;
+							offsety = Tools.GetSidedefOffsetY(Sidedef, geometrytype, options.Bounds.Y * scaley - Sidedef.OffsetY - options.ControlSideOffsetY, scaley, true);
+							if(Texture.IsImageLoaded) offsety %= Texture.Height;
 						}
 					} 
 					else 
 					{
 						scaley = Texture.ScaledHeight / options.Bounds.Height * options.VerticalRepeat;
 
-						if(this is VisualLower) // Special cases, special cases...
+						// Special cases, special cases...
+						if(this is VisualLower)
+						{
 							offsety = GetLowerOffsetY(scaley);
+						} 
 						else
-							offsety = Tools.GetSidedefOffsetY(Sidedef, geometrytype, -Sidedef.OffsetY - options.ControlSideOffsetY, scaley, true) % Texture.Height;
+						{
+							offsety = Tools.GetSidedefOffsetY(Sidedef, geometrytype, -Sidedef.OffsetY - options.ControlSideOffsetY, scaley, true);
+							if(Texture.IsImageLoaded) offsety %= Texture.Height;
+						}
 					}
 
 					UniFields.SetFloat(controlside.Fields, "scaley_" + partname, (float)Math.Round(scaley, General.Map.FormatInterface.VertexDecimals), 1.0f);
@@ -748,9 +756,14 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		//mxd. Oh so special cases...
 		private float GetLowerOffsetY(float scaley) 
 		{
+			float offsety;
 			if(Sidedef.Line.IsFlagSet(General.Map.Config.LowerUnpeggedFlag))
-				return ((-Sidedef.OffsetY - Sidedef.GetMiddleHeight() - Sidedef.GetHighHeight()) * scaley) % Texture.Height;
-			return (-Sidedef.OffsetY * scaley) % Texture.Height;
+				offsety = (-Sidedef.OffsetY - Sidedef.GetMiddleHeight() - Sidedef.GetHighHeight()) * scaley;
+			else
+				offsety = -Sidedef.OffsetY * scaley;
+
+			if(Texture.IsImageLoaded) offsety %= Texture.Height;
+			return offsety;
 		}
 		
 		#endregion
@@ -764,7 +777,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		protected abstract void SetTextureOffsetX(int x);
 		protected abstract void SetTextureOffsetY(int y);
 		protected virtual void ResetTextureScale() { } //mxd
-		protected abstract void MoveTextureOffset(Point xy);
+		protected abstract void MoveTextureOffset(int offsetx, int offsety);
 		protected abstract Point GetTextureOffset();
 		public virtual void OnTextureFit(FitTextureOptions options) { } //mxd
 		
@@ -1501,10 +1514,10 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				undoticket = mode.CreateUndo("Change texture offsets");
 			
 			//mxd
-			if(General.Map.UDMF) 
+			if(General.Map.UDMF && General.Map.Config.UseLocalSidedefTextureOffsets)
 			{
-				// Apply UDMF offsets
-				MoveTextureOffset(new Point(-horizontal, -vertical));
+				// Apply per-texture offsets
+				MoveTextureOffset(-horizontal, -vertical);
 				Point p = GetTextureOffset();
 				mode.SetActionResult("Changed texture offsets to " + p.X + ", " + p.Y + ".");
 
@@ -1514,10 +1527,11 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			else 
 			{
 				//mxd. Apply classic offsets
+				bool textureloaded = (Texture != null && Texture.IsImageLoaded);
 				Sidedef.OffsetX = (Sidedef.OffsetX - horizontal);
-				if(Texture != null) Sidedef.OffsetX %= Texture.Width;
+				if(textureloaded) Sidedef.OffsetX %= Texture.Width;
 				Sidedef.OffsetY = (Sidedef.OffsetY - vertical);
-				if(geometrytype != VisualGeometryType.WALL_MIDDLE && Texture != null) Sidedef.OffsetY %= Texture.Height;
+				if(geometrytype != VisualGeometryType.WALL_MIDDLE && textureloaded) Sidedef.OffsetY %= Texture.Height;
 
 				mode.SetActionResult("Changed texture offsets to " + Sidedef.OffsetX + ", " + Sidedef.OffsetY + ".");
 
@@ -1534,7 +1548,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		//mxd
 		public virtual void OnChangeScale(int incrementX, int incrementY) 
 		{
-			if(!General.Map.UDMF || !Texture.IsImageLoaded) return;
+			if(!General.Map.UDMF || Texture == null || !Texture.IsImageLoaded) return;
 
 			if((General.Map.UndoRedo.NextUndo == null) || (General.Map.UndoRedo.NextUndo.TicketID != undoticket))
 				undoticket = mode.CreateUndo("Change wall scale");

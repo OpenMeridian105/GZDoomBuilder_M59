@@ -113,8 +113,6 @@ namespace CodeImp.DoomBuilder.Windows
 		#region ================== Variables
 
 		// Position/size
-		private Point lastposition;
-		private Size lastsize;
 		private bool displayresized = true;
 		private bool windowactive;
 		
@@ -281,6 +279,7 @@ namespace CodeImp.DoomBuilder.Windows
 			toolbarContextMenu.KeyDown += toolbarContextMenu_KeyDown;
 			toolbarContextMenu.KeyUp += toolbarContextMenu_KeyUp;
 			linedefcolorpresets.DropDown.MouseLeave += linedefcolorpresets_MouseLeave;
+			this.MouseCaptureChanged += MainForm_MouseCaptureChanged;
 			
 			// Apply shortcut keys
 			ApplyShortcutKeys();
@@ -290,10 +289,6 @@ namespace CodeImp.DoomBuilder.Windows
 			
 			// Show splash
 			ShowSplashDisplay();
-			
-			// Keep last position and size
-			lastposition = this.Location;
-			lastsize = this.Size;
 
 			//mxd
 			blinkTimer = new System.Timers.Timer {Interval = 500};
@@ -604,34 +599,13 @@ namespace CodeImp.DoomBuilder.Windows
 		// Window is loaded
 		private void MainForm_Load(object sender, EventArgs e)
 		{
-			// Position window from configuration settings
-			this.SuspendLayout();
-			this.Size = new Size(General.Settings.ReadSetting("mainwindow.sizewidth", this.Size.Width),
-								 General.Settings.ReadSetting("mainwindow.sizeheight", this.Size.Height));
-			this.Location = new Point(General.Clamp(General.Settings.ReadSetting("mainwindow.positionx", this.Location.X), 
-													SystemInformation.VirtualScreen.Left - this.Size.Width + 128,
-													SystemInformation.VirtualScreen.Right - 128),
-									  General.Clamp(General.Settings.ReadSetting("mainwindow.positiony", this.Location.Y),
-													SystemInformation.VirtualScreen.Top,
-													SystemInformation.VirtualScreen.Bottom - 128));
-			this.WindowState = (FormWindowState)General.Settings.ReadSetting("mainwindow.windowstate", (int)FormWindowState.Maximized);
-			this.ResumeLayout(true);
-			
-			// Normal windowstate?
-			if(this.WindowState == FormWindowState.Normal)
-			{
-				// Keep last position and size
-				lastposition = this.Location;
-				lastsize = this.Size;
-			}
-
 			//mxd. Enable drag and drop
 			this.AllowDrop = true;
 			this.DragEnter += OnDragEnter;
 			this.DragDrop += OnDragDrop;
 
 			// Info panel state?
-			bool expandedpanel = General.Settings.ReadSetting("mainwindow.expandedinfopanel", true);
+			bool expandedpanel = General.Settings.ReadSetting("windows." + configname + ".expandedinfopanel", true);
 			if(expandedpanel != IsInfoPanelExpanded) ToggleInfoPanel();
 		}
 
@@ -654,37 +628,13 @@ namespace CodeImp.DoomBuilder.Windows
 			BreakExclusiveMouseInput();
 			ReleaseAllKeys();
 		}
-		
-		// Window is moved
-		private void MainForm_Move(object sender, EventArgs e)
-		{
-			// Normal windowstate?
-			if(this.WindowState == FormWindowState.Normal)
-			{
-				// Keep last position and size
-				lastposition = this.Location;
-				lastsize = this.Size;
-			}
-		}
 
-		// Window resizes
-		private void MainForm_Resize(object sender, EventArgs e)
+		//mxd. Looks like in some cases StartMouseExclusive is called before app aquires the mouse
+		// which results in setting Cursor.Clip not taking effect.
+		private void MainForm_MouseCaptureChanged(object sender, EventArgs e)
 		{
-			// Resizing
-			//this.SuspendLayout();
-			//resized = true;
-		}
-
-		// Window was resized
-		private void MainForm_ResizeEnd(object sender, EventArgs e)
-		{
-			// Normal windowstate?
-			if(this.WindowState == FormWindowState.Normal)
-			{
-				// Keep last position and size
-				lastposition = this.Location;
-				lastsize = this.Size;
-			}
+			if(mouseexclusive && windowactive && mouseinside && Cursor.Clip != display.RectangleToScreen(display.ClientRectangle))
+				Cursor.Clip = display.RectangleToScreen(display.ClientRectangle);
 		}
 
 		// Window is being closed
@@ -711,19 +661,7 @@ namespace CodeImp.DoomBuilder.Windows
 				General.Actions.UnbindMethods(this);
 
 				// Determine window state to save
-				int windowstate;
-				if(this.WindowState != FormWindowState.Minimized)
-					windowstate = (int)this.WindowState;
-				else
-					windowstate = (int)FormWindowState.Normal;
-
-				// Save window settings
-				General.Settings.WriteSetting("mainwindow.positionx", lastposition.X);
-				General.Settings.WriteSetting("mainwindow.positiony", lastposition.Y);
-				General.Settings.WriteSetting("mainwindow.sizewidth", lastsize.Width);
-				General.Settings.WriteSetting("mainwindow.sizeheight", lastsize.Height);
-				General.Settings.WriteSetting("mainwindow.windowstate", windowstate);
-				General.Settings.WriteSetting("mainwindow.expandedinfopanel", IsInfoPanelExpanded);
+				General.Settings.WriteSetting("windows." + configname + ".expandedinfopanel", IsInfoPanelExpanded);
 
 				// Save recent files
 				SaveRecentFiles();
@@ -1269,7 +1207,9 @@ namespace CodeImp.DoomBuilder.Windows
 		private void display_MouseEnter(object sender, EventArgs e)
 		{
 			mouseinside = true;
-			if((General.Map != null) && (mouseinput == null) && (General.Editing.Mode != null))
+			//mxd. Skip when in mouseexclusive (e.g. Visual) mode to avoid mouse disappearing when moving it
+			// on top of inactive editor window while Visual mode is active
+			if((General.Map != null) && (mouseinput == null) && (General.Editing.Mode != null) && !mouseexclusive)
 			{
 				General.Plugins.OnEditMouseEnter(e);
 				General.Editing.Mode.OnMouseEnter(e);
@@ -2172,7 +2112,6 @@ namespace CodeImp.DoomBuilder.Windows
 			//mxd
 			modelrendermode.Visible = General.Settings.GZToolbarGZDoom && maploaded;
 			dynamiclightmode.Visible = General.Settings.GZToolbarGZDoom && maploaded;
-			buttontogglefx.Visible = General.Settings.GZToolbarGZDoom && maploaded;
 			buttontogglefog.Visible = General.Settings.GZToolbarGZDoom && maploaded;
 			buttontogglesky.Visible = General.Settings.GZToolbarGZDoom && maploaded;
 			buttontoggleeventlines.Visible = General.Settings.GZToolbarGZDoom && maploaded;
@@ -3058,7 +2997,7 @@ namespace CodeImp.DoomBuilder.Windows
 
 		#region ================== View Menu
 
-		// This sets up the modes menu
+		// This sets up the View menu
 		private void UpdateViewMenu()
 		{
 			menuview.Visible = (General.Map != null); //mxd
@@ -3071,6 +3010,25 @@ namespace CodeImp.DoomBuilder.Windows
 			itemtogglecomments.Checked = General.Settings.RenderComments; //mxd
 			itemtogglefixedthingsscale.Visible = (General.Map != null); //mxd
 			itemtogglefixedthingsscale.Checked = General.Settings.FixedThingsScale; //mxd
+			itemtogglefog.Checked = General.Settings.GZDrawFog;
+			itemtogglesky.Checked = General.Settings.GZDrawSky;
+			itemtoggleeventlines.Checked = General.Settings.GZShowEventLines;
+			itemtogglevisualverts.Visible = (General.Map != null && General.Map.UDMF);
+			itemtogglevisualverts.Checked = General.Settings.GZShowVisualVertices;
+
+			// Update Model Rendering Mode items...
+			foreach(ToolStripMenuItem item in itemmodelmodes.DropDownItems)
+			{
+				item.Checked = ((ModelRenderMode)item.Tag == General.Settings.GZDrawModelsMode);
+				if(item.Checked) itemmodelmodes.Image = item.Image;
+			}
+
+			// Update Dynamic Light Mode items...
+			foreach(ToolStripMenuItem item in itemdynlightmodes.DropDownItems)
+			{
+				item.Checked = ((LightRenderMode)item.Tag == General.Settings.GZDrawLightsMode);
+				if(item.Checked) itemdynlightmodes.Image = item.Image;
+			}
 			
 			// View mode items
 			if(General.Map != null)
@@ -3082,6 +3040,76 @@ namespace CodeImp.DoomBuilder.Windows
 					viewmodesitems[i].Checked = (i == (int)General.Map.CRenderer2D.ViewMode);
 				}
 			}
+		}
+
+		//mxd
+		[BeginAction("gztoggleenhancedrendering")]
+		public void ToggleEnhancedRendering()
+		{
+			General.Settings.EnhancedRenderingEffects = !General.Settings.EnhancedRenderingEffects;
+
+			General.Settings.GZDrawFog = General.Settings.EnhancedRenderingEffects;
+			General.Settings.GZDrawSky = General.Settings.EnhancedRenderingEffects;
+			General.Settings.GZDrawLightsMode = (General.Settings.EnhancedRenderingEffects ? LightRenderMode.ALL : LightRenderMode.NONE);
+			General.Settings.GZDrawModelsMode = (General.Settings.EnhancedRenderingEffects ? ModelRenderMode.ALL : ModelRenderMode.NONE);
+
+			UpdateGZDoomPanel();
+			UpdateViewMenu();
+			DisplayStatus(StatusType.Info, "Enhanced rendering effects are " + (General.Settings.EnhancedRenderingEffects ? "ENABLED" : "DISABLED"));
+		}
+
+		//mxd
+		[BeginAction("gztogglefog")]
+		internal void ToggleFog()
+		{
+			General.Settings.GZDrawFog = !General.Settings.GZDrawFog;
+
+			itemtogglefog.Checked = General.Settings.GZDrawFog;
+			buttontogglefog.Checked = General.Settings.GZDrawFog;
+
+			General.MainWindow.DisplayStatus(StatusType.Action, "Fog rendering is " + (General.Settings.GZDrawFog ? "ENABLED" : "DISABLED"));
+			General.MainWindow.RedrawDisplay();
+			General.MainWindow.UpdateGZDoomPanel();
+		}
+
+		//mxd
+		[BeginAction("gztogglesky")]
+		internal void ToggleSky()
+		{
+			General.Settings.GZDrawSky = !General.Settings.GZDrawSky;
+
+			itemtogglesky.Checked = General.Settings.GZDrawSky;
+			buttontogglesky.Checked = General.Settings.GZDrawSky;
+
+			General.MainWindow.DisplayStatus(StatusType.Action, "Sky rendering is " + (General.Settings.GZDrawSky ? "ENABLED" : "DISABLED"));
+			General.MainWindow.RedrawDisplay();
+			General.MainWindow.UpdateGZDoomPanel();
+		}
+
+		[BeginAction("gztoggleeventlines")]
+		internal void ToggleEventLines()
+		{
+			General.Settings.GZShowEventLines = !General.Settings.GZShowEventLines;
+
+			itemtoggleeventlines.Checked = General.Settings.GZShowEventLines;
+			buttontoggleeventlines.Checked = General.Settings.GZShowEventLines;
+
+			General.MainWindow.DisplayStatus(StatusType.Action, "Event lines are " + (General.Settings.GZShowEventLines ? "ENABLED" : "DISABLED"));
+			General.MainWindow.RedrawDisplay();
+			General.MainWindow.UpdateGZDoomPanel();
+		}
+
+		[BeginAction("gztogglevisualvertices")]
+		internal void ToggleVisualVertices()
+		{
+			General.Settings.GZShowVisualVertices = !General.Settings.GZShowVisualVertices;
+
+			itemtogglevisualverts.Checked = General.Settings.GZShowVisualVertices;
+			buttontogglevisualvertices.Checked = General.Settings.GZShowVisualVertices;
+
+			General.MainWindow.DisplayStatus(StatusType.Action, "Visual vertices are " + (General.Settings.GZShowVisualVertices ? "ENABLED" : "DISABLED"));
+			General.MainWindow.RedrawDisplay();
+			General.MainWindow.UpdateGZDoomPanel();
 		}
 
 		#endregion
@@ -3540,7 +3568,8 @@ namespace CodeImp.DoomBuilder.Windows
 					General.MainWindow.DisplayStatus(StatusType.Action, "Models rendering mode: ALL");
 					break;
 			}
-			
+
+			UpdateViewMenu();
 			UpdateGZDoomPanel();
 			RedrawDisplay();
 		}
@@ -3563,7 +3592,8 @@ namespace CodeImp.DoomBuilder.Windows
 					General.MainWindow.DisplayStatus(StatusType.Action, "Models rendering mode: ANIMATED");
 					break;
 			}
-			
+
+			UpdateViewMenu();
 			UpdateGZDoomPanel();
 			RedrawDisplay();
 		}
@@ -4237,6 +4267,17 @@ namespace CodeImp.DoomBuilder.Windows
 			// Turn off
 			processingcount = 0;
 			processor.Enabled = false;
+		}
+
+		//mxd
+		internal void ResetClock()
+		{
+			Clock.Reset();
+			lastupdatetime = 0;
+			
+			// Let the mode know...
+			if(General.Editing.Mode != null)
+				General.Editing.Mode.OnClockReset();
 		}
 		
 		// Processor event

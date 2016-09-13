@@ -396,15 +396,15 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			Sidedef.Fields["offsety_mid"] = new UniValue(UniversalType.Float, (float)y);
 		}
 
-		protected override void MoveTextureOffset(Point xy)
+		protected override void MoveTextureOffset(int offsetx, int offsety)
 		{
 			Sidedef.Fields.BeforeFieldsChange();
 			float oldx = Sidedef.Fields.GetValue("offsetx_mid", 0.0f);
 			float oldy = Sidedef.Fields.GetValue("offsety_mid", 0.0f);
 			float scalex = extrafloor.Linedef.Front.Fields.GetValue("scalex_mid", 1.0f); //mxd
 			float scaley = extrafloor.Linedef.Front.Fields.GetValue("scaley_mid", 1.0f); //mxd
-			Sidedef.Fields["offsetx_mid"] = new UniValue(UniversalType.Float, GetRoundedTextureOffset(oldx, xy.X, scalex, Texture.Width)); //mxd
-			Sidedef.Fields["offsety_mid"] = new UniValue(UniversalType.Float, GetRoundedTextureOffset(oldy, xy.Y, scaley, Texture.Height)); //mxd
+			Sidedef.Fields["offsetx_mid"] = new UniValue(UniversalType.Float, GetRoundedTextureOffset(oldx, offsetx, scalex, Texture.Width)); //mxd
+			Sidedef.Fields["offsety_mid"] = new UniValue(UniversalType.Float, GetRoundedTextureOffset(oldy, offsety, scaley, Texture.Height)); //mxd
 		}
 
 		protected override Point GetTextureOffset()
@@ -434,7 +434,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		//mxd. Only control sidedef scale is used by GZDoom
 		public override void OnChangeScale(int incrementX, int incrementY)
 		{
-			if(!General.Map.UDMF || !Texture.IsImageLoaded) return;
+			if(!General.Map.UDMF || Texture == null || !Texture.IsImageLoaded) return;
 
 			if((General.Map.UndoRedo.NextUndo == null) || (General.Map.UndoRedo.NextUndo.TicketID != undoticket))
 				undoticket = mode.CreateUndo("Change wall scale");
@@ -491,7 +491,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		//mxd
 		public override void OnResetLocalTextureOffset()
 		{
-			if(!General.Map.UDMF)
+			if(!General.Map.UDMF || !General.Map.Config.UseLocalSidedefTextureOffsets)
 			{
 				OnResetTextureOffset();
 				return;
