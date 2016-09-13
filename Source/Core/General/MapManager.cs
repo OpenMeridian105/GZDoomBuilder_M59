@@ -475,7 +475,7 @@ namespace CodeImp.DoomBuilder
 			//if(General.Editing.Mode is ClassicMode) (General.Editing.Mode as ClassicMode).CenterInScreen();
 
 			// Success
-			this.changed = maprestored; //mxd
+			this.changed = maprestored || map.ChangedDuringLoad; //mxd
 			this.maploading = false; //mxd
 			General.WriteLogLine("Map loading done");
 			General.MainWindow.UpdateMapChangedStatus(); //mxd

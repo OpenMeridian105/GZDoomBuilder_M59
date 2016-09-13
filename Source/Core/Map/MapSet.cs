@@ -163,6 +163,11 @@ namespace CodeImp.DoomBuilder.Map
 
 		internal bool AutoRemove { get { return autoremove; } set { autoremove = value; } }
 
+		/// <summary>
+		/// Set to true if something in the map gets changed during map loading.
+		/// </summary>
+		public bool ChangedDuringLoad;
+
 		#endregion
 
 		#region ================== Constructor / Disposer
@@ -183,7 +188,8 @@ namespace CodeImp.DoomBuilder.Map
 			indexholes = new List<int>();
 			lastsectorindex = 0;
 			autoremove = true;
-			
+			ChangedDuringLoad = false;
+
 			// We have no destructor
 			GC.SuppressFinalize(this);
 		}

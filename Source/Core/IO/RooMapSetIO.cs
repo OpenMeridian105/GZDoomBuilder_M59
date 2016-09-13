@@ -17,6 +17,7 @@
 #region ================== Namespaces
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using CodeImp.DoomBuilder.Config;
@@ -164,6 +165,11 @@ namespace CodeImp.DoomBuilder.IO
 			// with vertexes outside the sector. Not sure if this was intended
 			// or just incorrect references. Disabled for now.
 			//CheckSectorSlopeVerts(sectorlink);
+			foreach (KeyValuePair<int, Sector> entry in sectorlink)
+			{
+				if (FixSlopeVertRefs(entry.Value))
+					map.ChangedDuringLoad = true;
+			}
 
 			// Return result;
 			return map;
@@ -1257,6 +1263,148 @@ namespace CodeImp.DoomBuilder.IO
 					}
 				}
 			}
+		}
+
+		/// <summary>
+		/// Fixes broken sector slope vertex references, i.e. slopes that
+		/// reference vertexes from outside the sector. Unfortunately we
+		/// can't mark the map as 'changed' during loading, so user has to
+		/// manually save. This is in RooMapSetIO instead of Sector class
+		/// to avoid future merge conflicts with upstream.
+		/// </summary>
+		/// <param name="s"></param>
+		private bool FixSlopeVertRefs(Sector s)
+		{
+			bool madeChanges = false;
+
+			// Get this sector's vertexes.
+			List<Vertex> vlist = s.GetVertexes();
+
+			if (s.IsFloorSloped())
+			{
+				// Get a list of valid vertexes first to simplify later searching.
+				List<Vertex> floorverts = new List<Vertex>();
+				Vertex V;
+				foreach (Vector3D v3d in s.FloorSlopeVertexes)
+				{
+					V = vlist.FirstOrDefault(v => v.Position.x == v3d.x && v.Position.y == v3d.y);
+					if (V != null)
+						floorverts.Add(V);
+				}
+
+				// Create a copy of the vertex position list since we may modify it.
+				List<Vector3D> newfsv = new List<Vector3D>(s.FloorSlopeVertexes);
+
+				int index = 0;
+				foreach (Vector3D v3d in s.FloorSlopeVertexes)
+				{
+					// Check if vertex is valid.
+					if (vlist.FirstOrDefault(v => v.Position.x == v3d.x && v.Position.y == v3d.y) == null)
+					{
+						// True if we fix this vertex.
+						bool isFixed = false;
+
+						// Floor vertex not inside sector, replace with one that is.
+						foreach (Vertex vert in vlist)
+						{
+							// Exclude any vertex already in use.
+							if (floorverts.Contains(vert))
+								continue;
+							// Check for matching z.
+							if (Math.Round(Sector.GetFloorPlane(s).GetZ(vert.Position.x, vert.Position.y)) == Math.Round(v3d.z))
+							{
+								// Replace entry in new list.
+								newfsv[index] = new Vector3D(vert.Position.x, vert.Position.y, v3d.z);
+
+								// Add to list of vertexes in use.
+								floorverts.Add(vert);
+								General.ErrorLogger.Add(ErrorType.Warning, "Fixed floor slope vertex ref in sector " + s.Index);
+								isFixed = true;
+								break;
+							}
+						}
+
+						// If we fixed something, set madeChanges to true so map
+						// can show as changed.
+						if (isFixed)
+							madeChanges = true;
+						else
+						{
+							// We have a problem. What likely happened is the incorrect slope reference
+							// also came with an incorrect height to make the slope work. We can't fix
+							// this programmatically as the result may not match what the slope is
+							// supposed to look like. Log an error instead.
+							General.ErrorLogger.Add(ErrorType.Error, "Sector " + s.Index + " has an invalid vertex in floor slope!");
+						}
+					}
+					++index;
+				}
+				s.FloorSlopeVertexes = newfsv;
+			}
+
+			if (s.IsCeilSloped())
+			{
+				// Get a list of valid vertexes first to simplify later searching.
+				List<Vertex> ceilverts = new List<Vertex>();
+				Vertex V;
+				foreach (Vector3D v3d in s.CeilSlopeVertexes)
+				{
+					V = vlist.FirstOrDefault(v => v.Position.x == v3d.x && v.Position.y == v3d.y);
+					if (V != null)
+						ceilverts.Add(V);
+				}
+
+				// Create a copy of the vertex position list since we may modify it.
+				List<Vector3D> newcsv = new List<Vector3D>(s.CeilSlopeVertexes);
+
+				int index = 0;
+				foreach (Vector3D v3d in s.CeilSlopeVertexes)
+				{
+					// Check if vertex is valid.
+					if (vlist.FirstOrDefault(v => v.Position.x == v3d.x && v.Position.y == v3d.y) == null)
+					{
+						// True if we fix this vertex.
+						bool isFixed = false;
+
+						// Ceiling vertex not inside sector, replace with one that is.
+						foreach (Vertex vert in vlist)
+						{
+							// Exclude any vertex already in use.
+							if (ceilverts.Contains(vert))
+								continue;
+							// Check for matching z.
+							if (Math.Round(Sector.GetCeilingPlane(s).GetZ(vert.Position.x, vert.Position.y)) == Math.Round(v3d.z))
+							{
+								// Replace entry in new list.
+								newcsv[index] = new Vector3D(vert.Position.x, vert.Position.y, v3d.z);
+
+								// Add to list of vertexes in use.
+								ceilverts.Add(vert);
+								General.ErrorLogger.Add(ErrorType.Warning, "Fixed ceil slope vertex ref in sector " + s.Index);
+								isFixed = true;
+								break;
+							}
+						}
+
+						// If we fixed something, set madeChanges to true so map
+						// can show as changed.
+						if (isFixed)
+							madeChanges = true;
+						else
+						{
+							// We have a problem. What likely happened is the incorrect slope reference
+							// also came with an incorrect height to make the slope work. We can't fix
+							// this programmatically as the result may not match what the slope is
+							// supposed to look like. Log an error instead.
+							General.ErrorLogger.Add(ErrorType.Error, "Sector " + s.Index + " has an invalid vertex in ceil slope!");
+						}
+					}
+					++index;
+				}
+				s.CeilSlopeVertexes = newcsv;
+			}
+
+			return madeChanges;
 		}
 
 		#endregion
