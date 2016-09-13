@@ -1028,7 +1028,9 @@ namespace CodeImp.DoomBuilder
 				if(PendingUpdateRev != 0)
 				{
 					General.WriteLogLine("Initiating update to R" + PendingUpdateRev + "...");
-					Process.Start(Path.Combine(apppath, "Updater.exe"), "-rev " + PendingUpdateRev);
+
+					// Working directory must be set
+					Process.Start(new ProcessStartInfo { WorkingDirectory = apppath, FileName = "Updater.exe", Arguments = "-rev " + PendingUpdateRev } );
 				}
 
 				// Application ends here and now
@@ -1062,6 +1064,9 @@ namespace CodeImp.DoomBuilder
 			// Ask the user to save changes (if any)
 			if(AskSaveMap())
 			{
+				//mxd. Reset the clock...
+				MainWindow.ResetClock();
+				
 				// Open map options dialog
 				MapOptionsForm optionswindow = new MapOptionsForm(newoptions, true);
 				if(optionswindow.ShowDialog(mainwindow) == DialogResult.OK)
@@ -1457,6 +1462,9 @@ namespace CodeImp.DoomBuilder
 				Cursor.Current = Cursors.Default;
 			}
 
+			//mxd. Also reset the clock...
+			MainWindow.ResetClock();
+
 			return result;
 		}
 
@@ -1541,6 +1549,10 @@ namespace CodeImp.DoomBuilder
 			}
 			
 			savefile.Dispose();
+
+			//mxd. Also reset the clock...
+			MainWindow.ResetClock();
+
 			return result;
 		}
 
@@ -1606,6 +1618,10 @@ namespace CodeImp.DoomBuilder
 			}
 
 			savefile.Dispose();
+
+			//mxd. Also reset the clock...
+			MainWindow.ResetClock();
+
 			return result;
 		}
 		
@@ -1770,13 +1786,17 @@ namespace CodeImp.DoomBuilder
 		//mxd. This clamps angle between 0 and 359
 		public static int ClampAngle(int angle) 
 		{
-			return (angle + 360) % 360;
+			angle %= 360;
+			if(angle < 0) angle += 360;
+			return angle;
 		}
 
 		//mxd. This clamps angle between 0 and 359
 		public static float ClampAngle(float angle) 
 		{
-			return (angle + 360) % 360;
+			angle %= 360;
+			if(angle < 0) angle += 360;
+			return angle;
 		}
 
 		//mxd

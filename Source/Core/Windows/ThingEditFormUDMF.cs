@@ -54,7 +54,6 @@ namespace CodeImp.DoomBuilder.Windows
 		private Dictionary<string, string> flagsrename; //mxd
 
 		//mxd. Window setup stuff
-		private static Point location = Point.Empty;
 		private static int activetab;
 
 		//mxd. Persistent settings
@@ -101,12 +100,7 @@ namespace CodeImp.DoomBuilder.Windows
 			InitializeComponent();
 
 			//mxd. Widow setup
-			if(location != Point.Empty) 
-			{
-				this.StartPosition = FormStartPosition.Manual;
-				this.Location = location;
-				if(General.Settings.StoreSelectedEditTab && activetab > 0) tabs.SelectTab(activetab);
-			}
+			if(General.Settings.StoreSelectedEditTab && activetab > 0) tabs.SelectTab(activetab);
 
 			// Fill flags list
 			foreach(KeyValuePair<string, string> tf in General.Map.Config.ThingFlags)
@@ -134,7 +128,7 @@ namespace CodeImp.DoomBuilder.Windows
 			fieldslist.ListFixedFields(General.Map.Config.ThingFields);
 
 			//mxd. Show fixed fields?
-			hidefixedfields.Checked = !General.Settings.ReadSetting("customfieldsshowfixed", true);
+			hidefixedfields.Checked = !General.Settings.ReadSetting("windows." + configname + ".customfieldsshowfixed", true);
 
 			// Thing height?
 			posZ.Visible = General.Map.FormatInterface.HasThingHeight;
@@ -512,7 +506,7 @@ namespace CodeImp.DoomBuilder.Windows
 			}
 
 			// Go for all the things
-			int tagoffset = 0; //mxd
+			int offset = 0; //mxd
 			foreach(Thing t in things) 
 			{
 				// Coordination
@@ -532,11 +526,11 @@ namespace CodeImp.DoomBuilder.Windows
 				if(t.Position.x != px || t.Position.y != py) t.Move(new Vector2D(px, py));
 
 				// Action/tags
-				t.Tag = General.Clamp(tagSelector.GetSmartTag(t.Tag, tagoffset++), General.Map.FormatInterface.MinTag, General.Map.FormatInterface.MaxTag); //mxd
+				t.Tag = General.Clamp(tagSelector.GetSmartTag(t.Tag, offset), General.Map.FormatInterface.MinTag, General.Map.FormatInterface.MaxTag); //mxd
 				if(!action.Empty) t.Action = action.Value;
 
 				//mxd. Apply args
-				argscontrol.Apply(t);
+				argscontrol.Apply(t, offset);
 
 				//mxd. Custom fields
 				fieldslist.Apply(t.Fields);
@@ -563,6 +557,9 @@ namespace CodeImp.DoomBuilder.Windows
 
 				// Update settings
 				t.UpdateConfiguration();
+
+				//mxd. Increase offset...
+				offset++;
 			}
 
 			// Set as defaults
@@ -645,9 +642,8 @@ namespace CodeImp.DoomBuilder.Windows
 		//mxd
 		private void ThingEditForm_FormClosing(object sender, FormClosingEventArgs e) 
 		{
-			location = this.Location;
 			activetab = tabs.SelectedIndex;
-			General.Settings.WriteSetting("customfieldsshowfixed", !hidefixedfields.Checked);
+			General.Settings.WriteSetting("windows." + configname + ".customfieldsshowfixed", !hidefixedfields.Checked);
 		}
 
 		// Help
@@ -836,31 +832,34 @@ namespace CodeImp.DoomBuilder.Windows
 		private void flags_OnValueChanged(object sender, EventArgs e) 
 		{
 			if(preventchanges) return;
-			MakeUndo(); //mxd
-			int i = 0;
-
-			// Apply flags
-			foreach(Thing t in things)
+			if(!preventmapchange) //mxd
 			{
-				// Apply all flags
-				foreach(CheckBox c in flags.Checkboxes)
+				MakeUndo();
+				int i = 0;
+
+				// Apply flags
+				foreach(Thing t in things)
 				{
-					if(c.CheckState == CheckState.Checked)
-						t.SetFlag(c.Tag.ToString(), true);
-					else if(c.CheckState == CheckState.Unchecked)
-						t.SetFlag(c.Tag.ToString(), false);
-					else if(thingprops[i].Flags.ContainsKey(c.Tag.ToString()))
-						t.SetFlag(c.Tag.ToString(), thingprops[i].Flags[c.Tag.ToString()]);
-					else //things created in the editor have empty Flags by default
-						t.SetFlag(c.Tag.ToString(), false);
+					// Apply all flags
+					foreach(CheckBox c in flags.Checkboxes)
+					{
+						if(c.CheckState == CheckState.Checked)
+							t.SetFlag(c.Tag.ToString(), true);
+						else if(c.CheckState == CheckState.Unchecked)
+							t.SetFlag(c.Tag.ToString(), false);
+						else if(thingprops[i].Flags.ContainsKey(c.Tag.ToString()))
+							t.SetFlag(c.Tag.ToString(), thingprops[i].Flags[c.Tag.ToString()]);
+						else //things created in the editor have empty Flags by default
+							t.SetFlag(c.Tag.ToString(), false);
+					}
+
+					i++;
 				}
 
-				i++;
+				// Dispatch event
+				General.Map.IsChanged = true;
+				if(OnValuesChanged != null) OnValuesChanged(this, EventArgs.Empty);
 			}
-
-			// Dispatch event
-			General.Map.IsChanged = true;
-			if(OnValuesChanged != null) OnValuesChanged(this, EventArgs.Empty);
 
 			// Gather enabled flags
 			HashSet<string> activeflags = new HashSet<string>();

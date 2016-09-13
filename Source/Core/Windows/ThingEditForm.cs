@@ -52,9 +52,6 @@ namespace CodeImp.DoomBuilder.Windows
 		private List<ThingProperties> thingprops; //mxd
 		private Dictionary<string, string> flagsrename; //mxd
 
-		//mxd. Window setup stuff
-		private static Point location = Point.Empty;
-
 		private struct ThingProperties //mxd
 		{
 			//public readonly int Type;
@@ -82,13 +79,6 @@ namespace CodeImp.DoomBuilder.Windows
 		{
 			// Initialize
 			InitializeComponent();
-
-			//mxd. Widow setup
-			if(location != Point.Empty) 
-			{
-				this.StartPosition = FormStartPosition.Manual;
-				this.Location = location;
-			}
 			
 			// Fill flags list
 			foreach(KeyValuePair<string, string> tf in General.Map.Config.ThingFlags)
@@ -420,7 +410,7 @@ namespace CodeImp.DoomBuilder.Windows
 			}
 
 			// Go for all the things
-			int tagoffset = 0; //mxd
+			int offset = 0; //mxd
 			foreach(Thing t in things)
 			{
 				// Coordination
@@ -447,14 +437,17 @@ namespace CodeImp.DoomBuilder.Windows
 				}
 
 				// Action/tags
-				t.Tag = General.Clamp(tagSelector.GetSmartTag(t.Tag, tagoffset++), General.Map.FormatInterface.MinTag, General.Map.FormatInterface.MaxTag); //mxd
+				t.Tag = General.Clamp(tagSelector.GetSmartTag(t.Tag, offset), General.Map.FormatInterface.MinTag, General.Map.FormatInterface.MaxTag); //mxd
 				if(!action.Empty) t.Action = action.Value;
 
 				//mxd. Apply args
-				argscontrol.Apply(t);
+				argscontrol.Apply(t, offset);
 				
 				// Update settings
 				t.UpdateConfiguration();
+
+				//mxd. Increase offset...
+				offset++;
 			}
 
 			// Set as defaults
@@ -525,12 +518,6 @@ namespace CodeImp.DoomBuilder.Windows
 		private void ThingEditForm_Shown(object sender, EventArgs e)
 		{
 			thingtype.FocusTextbox();
-		}
-
-		//mxd
-		private void ThingEditForm_FormClosing(object sender, FormClosingEventArgs e) 
-		{
-			location = this.Location;
 		}
 
 		// Help

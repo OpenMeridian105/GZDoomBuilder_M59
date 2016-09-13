@@ -43,9 +43,6 @@ namespace CodeImp.DoomBuilder.Windows
 		private bool preventchanges;
 		private bool undocreated; //mxd
 
-		//mxd. Window setup stuff
-		private static Point location = Point.Empty;
-
 		private struct LinedefProperties //mxd
 		{
 			public readonly Dictionary<string, bool> Flags;
@@ -90,13 +87,6 @@ namespace CodeImp.DoomBuilder.Windows
 		{
 			// Initialize
 			InitializeComponent();
-
-			//mxd. Widow setup
-			if(location != Point.Empty) 
-			{
-				this.StartPosition = FormStartPosition.Manual;
-				this.Location = location;
-			}
 			
 			// Fill flags lists
 			foreach(KeyValuePair<string, string> lf in General.Map.Config.LinedefFlags)
@@ -394,7 +384,7 @@ namespace CodeImp.DoomBuilder.Windows
 			MakeUndo(); //mxd
 			
 			// Go for all the lines
-			int tagoffset = 0; //mxd
+			int offset = 0; //mxd
 			foreach(Linedef l in lines)
 			{
 				// Apply chosen activation flag
@@ -402,11 +392,11 @@ namespace CodeImp.DoomBuilder.Windows
 					l.Activate = (activation.SelectedItem as LinedefActivateInfo).Index;
 				
 				// Action/tags
-				l.Tag = General.Clamp(tagSelector.GetSmartTag(l.Tag, tagoffset++), General.Map.FormatInterface.MinTag, General.Map.FormatInterface.MaxTag); //mxd
+				l.Tag = General.Clamp(tagSelector.GetSmartTag(l.Tag, offset), General.Map.FormatInterface.MinTag, General.Map.FormatInterface.MaxTag); //mxd
 				if(!action.Empty) l.Action = action.Value;
 
 				//mxd. Apply args
-				argscontrol.Apply(l);
+				argscontrol.Apply(l, offset);
 				
 				// Remove front side?
 				if((l.Front != null) && (frontside.CheckState == CheckState.Unchecked))
@@ -457,6 +447,9 @@ namespace CodeImp.DoomBuilder.Windows
 						}
 					}
 				}
+
+				//mxd. Increase offset...
+				offset++;
 			}
 
 			// Update the used textures
@@ -521,13 +514,6 @@ namespace CodeImp.DoomBuilder.Windows
 		private void browseaction_Click(object sender, EventArgs e)
 		{
 			action.Value = ActionBrowserForm.BrowseAction(this, action.Value);
-		}
-
-		//mxd. Store window location
-		private void LinedefEditForm_FormClosing(object sender, FormClosingEventArgs e) 
-		{
-			// Save location
-			location = this.Location;
 		}
 
 		// Help!

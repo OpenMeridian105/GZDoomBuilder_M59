@@ -58,7 +58,6 @@ namespace CodeImp.DoomBuilder.Windows
 		private readonly List<PairedFieldsControl> backUdmfControls; //mxd
 
 		//mxd. Window setup stuff
-		private static Point location = Point.Empty;
 		private static int activetab;
 
 		private struct LinedefProperties //mxd
@@ -150,18 +149,13 @@ namespace CodeImp.DoomBuilder.Windows
 			InitializeComponent();
 
 			// Widow setup
-			if(location != Point.Empty) 
+			if(General.Settings.StoreSelectedEditTab && activetab > 0)
 			{
-				this.StartPosition = FormStartPosition.Manual;
-				this.Location = location;
-				if(General.Settings.StoreSelectedEditTab && activetab > 0)
-				{
-					// When front or back tab was previously selected, switch to appropriate side (selectfront/selectback are set in BaseVisualGeometrySidedef.OnEditEnd)
-					if((selectfront || selectback) && (activetab == 1 || activetab == 2))
-						tabs.SelectTab(selectfront ? 1 : 2);
-					else
-						tabs.SelectTab(activetab);
-				}
+				// When front or back tab was previously selected, switch to appropriate side (selectfront/selectback are set in BaseVisualGeometrySidedef.OnEditEnd)
+				if((selectfront || selectback) && (activetab == 1 || activetab == 2))
+					tabs.SelectTab(selectfront ? 1 : 2);
+				else
+					tabs.SelectTab(activetab);
 			}
 			
 			// Fill flags lists
@@ -232,6 +226,26 @@ namespace CodeImp.DoomBuilder.Windows
 			pfcBackScaleTop.LinkValues = linkBackTopScale;
 			pfcBackScaleMid.LinkValues = linkBackMidScale;
 			pfcBackScaleBottom.LinkValues = linkBackBottomScale;
+
+			// Disable top/mid/bottom texture offset controls?
+			if(!General.Map.Config.UseLocalSidedefTextureOffsets)
+			{
+				pfcFrontOffsetTop.Enabled = false;
+				pfcFrontOffsetMid.Enabled = false;
+				pfcFrontOffsetBottom.Enabled = false;
+
+				pfcBackOffsetTop.Enabled = false;
+				pfcBackOffsetMid.Enabled = false;
+				pfcBackOffsetBottom.Enabled = false;
+
+				labelFrontOffsetTop.Enabled = false;
+				labelFrontOffsetMid.Enabled = false;
+				labelFrontOffsetBottom.Enabled = false;
+
+				labelBackOffsetTop.Enabled = false;
+				labelBackOffsetMid.Enabled = false;
+				labelBackOffsetBottom.Enabled = false;
+			}
 		}
 
 		#endregion
@@ -668,6 +682,7 @@ namespace CodeImp.DoomBuilder.Windows
 			}
 			
 			// Go for all the lines
+			int offset = 0; //mxd
 			foreach(Linedef l in lines)
 			{
 				// UDMF activations
@@ -685,7 +700,7 @@ namespace CodeImp.DoomBuilder.Windows
 				if(!action.Empty) l.Action = action.Value;
 
 				//mxd. Apply args
-				argscontrol.Apply(l);
+				argscontrol.Apply(l, offset++);
 				
 				// Remove front side?
 				if((l.Front != null) && (frontside.CheckState == CheckState.Unchecked))
@@ -831,7 +846,6 @@ namespace CodeImp.DoomBuilder.Windows
 		private void LinedefEditForm_FormClosing(object sender, FormClosingEventArgs e) 
 		{
 			// Save location and active tab
-			location = this.Location;
 			activetab = tabs.SelectedIndex;
 		}
 

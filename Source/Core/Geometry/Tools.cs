@@ -57,6 +57,9 @@ namespace CodeImp.DoomBuilder.Geometry
 		#endregion
 		
 		#region ================== Constants
+
+		//mxd
+		private const float MINIMUM_INTERSECTION_DISTANCE = 0.25f;
 		
 		#endregion
 
@@ -979,7 +982,20 @@ namespace CodeImp.DoomBuilder.Geometry
 									if(side.Line.Line.GetIntersection(measureline, out u)) 
 									{
 										if(float.IsNaN(u) || (u <= 0.0f) || (u >= 1.0f)) continue;
-										intersections.Add(u);
+
+										//mxd. Skip intersection if both start and end of one line are closer than given distance from the other line.
+										// This allows to avoid creating "unexpected" splits when drawing on top of non-cardinal lines.
+
+										//mxd. Check if both ends of measureline are too close to side.Line.Line
+										bool valid = (side.Line.Line.GetDistanceToLineSq(measureline.v1, true) > MINIMUM_INTERSECTION_DISTANCE ||
+													  side.Line.Line.GetDistanceToLineSq(measureline.v2, true) > MINIMUM_INTERSECTION_DISTANCE);
+										
+										//mxd. Check if both ends of side.Line.Line are too close to measureline
+										valid = (valid && (measureline.GetDistanceToLineSq(side.Line.Line.v1, true) > MINIMUM_INTERSECTION_DISTANCE ||
+														   measureline.GetDistanceToLineSq(side.Line.Line.v2, true) > MINIMUM_INTERSECTION_DISTANCE));
+
+										// Store inersection
+										if(valid) intersections.Add(u);
 									}
 
 									processed.Add(side.Line);
@@ -1564,7 +1580,7 @@ namespace CodeImp.DoomBuilder.Geometry
 			float totalLength = 0f;
 			foreach(Linedef l in strip) totalLength += l.Length;
 
-			if(General.Map.UDMF)
+			if(General.Map.UDMF && General.Map.Config.UseLocalSidedefTextureOffsets)
 				AutoAlignTexturesOnSidesUdmf(strip, totalLength, (strip[0].End != strip[1].Start));
 			else
 				AutoAlignTexturesOnSides(strip, totalLength, (strip[0].End != strip[1].Start));	
@@ -1588,7 +1604,7 @@ namespace CodeImp.DoomBuilder.Geometry
 					else if(l.Front.LowRequired() && l.Front.LongLowTexture != MapSet.EmptyLongName && General.Map.Data.GetTextureExists(l.Front.LongLowTexture))
 						texture = General.Map.Data.GetTextureImage(l.Front.LongLowTexture);
 
-					if(texture != null)
+					if(texture != null && texture.IsImageLoaded)
 						l.Front.OffsetX = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength)) % texture.Width;
 				}
 
@@ -1603,7 +1619,7 @@ namespace CodeImp.DoomBuilder.Geometry
 					else if(l.Back.LowRequired() && l.Back.LongLowTexture != MapSet.EmptyLongName && General.Map.Data.GetTextureExists(l.Back.LongLowTexture))
 						texture = General.Map.Data.GetTextureImage(l.Back.LongLowTexture);
 
-					if(texture != null)
+					if(texture != null && texture.IsImageLoaded)
 						l.Back.OffsetX = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength)) % texture.Width;
 				}
 
@@ -1623,24 +1639,24 @@ namespace CodeImp.DoomBuilder.Geometry
 					if(l.Front.MiddleRequired() && l.Front.LongMiddleTexture != MapSet.EmptyLongName && General.Map.Data.GetTextureExists(l.Front.LongMiddleTexture)) 
 					{
 						ImageData texture = General.Map.Data.GetTextureImage(l.Front.LongMiddleTexture);
-						float offset = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength)) % texture.Width;
-
+						float offset = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength));
+						if(texture.IsImageLoaded) offset %= texture.Width;
 						if(offset > 0) UniFields.SetFloat(l.Front.Fields, "offsetx_mid", offset);
 					}
 
 					if(l.Front.HighRequired() && l.Front.LongHighTexture != MapSet.EmptyLongName && General.Map.Data.GetTextureExists(l.Front.LongHighTexture)) 
 					{
 						ImageData texture = General.Map.Data.GetTextureImage(l.Front.LongHighTexture);
-						float offset = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength)) % texture.Width;
-
+						float offset = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength));
+						if(texture.IsImageLoaded) offset %= texture.Width;
 						if(offset > 0) UniFields.SetFloat(l.Front.Fields, "offsetx_top", offset);
 					}
 
 					if(l.Front.LowRequired() && l.Front.LongLowTexture != MapSet.EmptyLongName && General.Map.Data.GetTextureExists(l.Front.LongLowTexture)) 
 					{
 						ImageData texture = General.Map.Data.GetTextureImage(l.Front.LongLowTexture);
-						float offset = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength)) % texture.Width;
-
+						float offset = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength));
+						if(texture.IsImageLoaded) offset %= texture.Width;
 						if(offset > 0) UniFields.SetFloat(l.Front.Fields, "offsetx_bottom", offset);
 					}
 				}
@@ -1650,24 +1666,24 @@ namespace CodeImp.DoomBuilder.Geometry
 					if(l.Back.MiddleRequired() && l.Back.LongMiddleTexture != MapSet.EmptyLongName && General.Map.Data.GetTextureExists(l.Back.LongMiddleTexture)) 
 					{
 						ImageData texture = General.Map.Data.GetTextureImage(l.Back.LongMiddleTexture);
-						float offset = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength)) % texture.Width;
-
+						float offset = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength));
+						if(texture.IsImageLoaded) offset %= texture.Width;
 						if(offset > 0) UniFields.SetFloat(l.Back.Fields, "offsetx_mid", offset);
 					}
 
 					if(l.Back.HighRequired() && l.Back.LongHighTexture != MapSet.EmptyLongName && General.Map.Data.GetTextureExists(l.Back.LongHighTexture)) 
 					{
 						ImageData texture = General.Map.Data.GetTextureImage(l.Back.LongHighTexture);
-						float offset = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength)) % texture.Width;
-
+						float offset = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength));
+						if(texture.IsImageLoaded) offset %= texture.Width;
 						if(offset > 0) UniFields.SetFloat(l.Back.Fields, "offsetx_top", offset);
 					}
 
 					if(l.Back.LowRequired() && l.Back.LongLowTexture != MapSet.EmptyLongName && General.Map.Data.GetTextureExists(l.Back.LongLowTexture)) 
 					{
 						ImageData texture = General.Map.Data.GetTextureImage(l.Back.LongLowTexture);
-						float offset = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength)) % texture.Width;
-
+						float offset = (int)Math.Round((reversed ? totalLength - curLength - l.Length : curLength));
+						if(texture.IsImageLoaded) offset %= texture.Width;
 						if(offset > 0) UniFields.SetFloat(l.Back.Fields, "offsetx_bottom", offset);
 					}
 				}
@@ -2240,11 +2256,14 @@ namespace CodeImp.DoomBuilder.Geometry
 
 		private static bool SectorWasInvalid(Sector s)
 		{
-			if(s.Sidedefs.Count < 3 || s.FlatVertices.Length < 3)
+			if(s.Sidedefs == null || s.Sidedefs.Count < 3 || s.FlatVertices.Length < 3)
 			{
 				// Collect changed lines
 				HashSet<Linedef> changedlines = new HashSet<Linedef>();
-				foreach(Sidedef side in s.Sidedefs) changedlines.Add(side.Line);
+				if(s.Sidedefs != null)
+				{
+					foreach(Sidedef side in s.Sidedefs) changedlines.Add(side.Line);
+				}
 
 				// Delete sector
 				s.Dispose();
@@ -2371,24 +2390,25 @@ namespace CodeImp.DoomBuilder.Geometry
 		}
 
 		//mxd
-		public static Sector FindPotentialSector(Linedef line, bool front)
+		public static Sector FindSectorContaining(Linedef line, bool front)
 		{
 			List<LinedefSide> sectorsides = FindPotentialSectorAt(line, front);
 			if(sectorsides == null) return null;
-			Sector result = null;
 
-			// Proceed only if all sectorsides reference the same sector
+			// Check potential sectors
 			foreach(LinedefSide sectorside in sectorsides)
 			{
 				Sidedef target = (sectorside.Front ? sectorside.Line.Front : sectorside.Line.Back);
-				if(target != null)
+				if(target != null && target.Sector != null)
 				{
-					if(result == null) result = target.Sector;
-					else if(result != target.Sector) return null; // Fial...
+					// Check if target line is inside the found sector
+					if(target.Sector.Intersect(line.Start.Position) && target.Sector.Intersect(line.End.Position))
+						return target.Sector;
 				}
 			}
 
-			return result;
+			// No dice...
+			return null;
 		}
 
 		#endregion

@@ -352,6 +352,32 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		
 		#region ================== Methods
 
+		//mxd
+		public override void OnChangeScale(int incrementX, int incrementY)
+		{
+			// Only do this when not done yet in this call
+			// Because we may be able to select the same 3D floor multiple times through multiple sectors
+			SectorData sd = mode.GetSectorData(level.sector);
+			if(!sd.FloorChanged)
+			{
+				sd.FloorChanged = true;
+				base.OnChangeScale(incrementX, incrementY);
+			}
+		}
+
+		//mxd
+		public override void OnChangeTextureRotation(float angle)
+		{
+			// Only do this when not done yet in this call
+			// Because we may be able to select the same 3D floor multiple times through multiple sectors
+			SectorData sd = mode.GetSectorData(level.sector);
+			if(!sd.FloorChanged)
+			{
+				sd.FloorChanged = true;
+				base.OnChangeTextureRotation(angle);
+			}
+		}
+
 		// Return texture coordinates
 		protected override Point GetTextureOffset()
 		{
@@ -371,8 +397,21 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			return p;
 		}
 
+		//mxd
+		public override void OnChangeTextureOffset(int horizontal, int vertical, bool doSurfaceAngleCorrection)
+		{
+			// Only do this when not done yet in this call
+			// Because we may be able to select the same 3D floor multiple times through multiple sectors
+			SectorData sd = mode.GetSectorData(level.sector);
+			if(!sd.FloorChanged)
+			{
+				sd.FloorChanged = true;
+				base.OnChangeTextureOffset(horizontal, vertical, doSurfaceAngleCorrection);
+			}
+		}
+
 		// Move texture coordinates
-		protected override void MoveTextureOffset(Point xy)
+		protected override void MoveTextureOffset(int offsetx, int offsety)
 		{
 			//mxd
 			Sector s = GetControlSector();
@@ -381,15 +420,15 @@ namespace CodeImp.DoomBuilder.BuilderModes
 			float nx, ny;
 			if (General.Map.MERIDIAN)
 			{
-				nx = s.OffsetX + xy.X % Texture.ScaledWidth;
-				ny = s.OffsetY + xy.Y % Texture.ScaledHeight;
+				nx = s.OffsetX + offsetx % Texture.ScaledWidth;
+				ny = s.OffsetY + offsety % Texture.ScaledHeight;
 				s.OffsetX = (int)nx;
 				s.OffsetY = (int)ny;
 			}
 			else
 			{
-				nx = (s.Fields.GetValue("xpanningfloor", 0.0f) + xy.X) % (Texture.ScaledWidth / s.Fields.GetValue("xscalefloor", 1.0f));
-				ny = (s.Fields.GetValue("ypanningfloor", 0.0f) + xy.Y) % (Texture.ScaledHeight / s.Fields.GetValue("yscalefloor", 1.0f));
+				nx = (s.Fields.GetValue("xpanningfloor", 0.0f) + offsetx) % (Texture.ScaledWidth / s.Fields.GetValue("xscalefloor", 1.0f));
+				ny = (s.Fields.GetValue("ypanningfloor", 0.0f) + offsety) % (Texture.ScaledHeight / s.Fields.GetValue("yscalefloor", 1.0f));
 				s.Fields["xpanningfloor"] = new UniValue(UniversalType.Float, nx);
 				s.Fields["ypanningfloor"] = new UniValue(UniversalType.Float, ny);
 			}
@@ -402,6 +441,7 @@ namespace CodeImp.DoomBuilder.BuilderModes
 		//mxd. Texture scale change
 		protected override void ChangeTextureScale(int incrementX, int incrementY) 
 		{
+			if(Texture == null || !Texture.IsImageLoaded) return;
 			Sector s = GetControlSector();
 			float scaleX = s.Fields.GetValue("xscalefloor", 1.0f);
 			float scaleY = s.Fields.GetValue("yscalefloor", 1.0f);
@@ -422,21 +462,6 @@ namespace CodeImp.DoomBuilder.BuilderModes
 				float newscaleY = (float)Math.Round(pix / Texture.Height, 3);
 				scaleY = (newscaleY == 0 ? scaleY * -1 : newscaleY);
 				UniFields.SetFloat(s.Fields, "yscalefloor", scaleY, 1.0f);
-			}
-
-			// Update geometry
-			if(mode.VisualSectorExists(level.sector))
-			{
-				BaseVisualSector vs = (BaseVisualSector)mode.GetVisualSector(level.sector);
-				vs.UpdateSectorGeometry(false);
-			}
-
-			s.UpdateNeeded = true;
-			s.UpdateCache();
-			if(s.Index != Sector.Sector.Index) 
-			{
-				Sector.Sector.UpdateNeeded = true;
-				Sector.Sector.UpdateCache();
 			}
 
 			mode.SetActionResult("Floor scale changed to " + scaleX.ToString("F03", CultureInfo.InvariantCulture) + ", " + scaleY.ToString("F03", CultureInfo.InvariantCulture) + " (" + (int)Math.Round(Texture.Width / scaleX) + " x " + (int)Math.Round(Texture.Height / scaleY) + ").");

@@ -1063,12 +1063,11 @@ namespace CodeImp.DoomBuilder.Windows
 			this.MaximizeBox = false;
 			this.MinimizeBox = false;
 			this.Name = "SectorEditFormMeridian";
-			this.Opacity = 1D;
+			this.Opacity = 0;
 			this.ShowIcon = false;
 			this.ShowInTaskbar = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Text = "Edit Sector";
-			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SectorEditForm_FormClosing);
 			this.HelpRequested += new System.Windows.Forms.HelpEventHandler(this.SectorEditForm_HelpRequested);
 			groupfloorceiling.ResumeLayout(false);
 			groupfloorceiling.PerformLayout();

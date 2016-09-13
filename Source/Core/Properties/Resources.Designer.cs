@@ -473,16 +473,6 @@ namespace CodeImp.DoomBuilder.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap fx {
-            get {
-                object obj = ResourceManager.GetObject("fx", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
         internal static System.Drawing.Bitmap Grid2 {
             get {
                 object obj = ResourceManager.GetObject("Grid2", resourceCulture);

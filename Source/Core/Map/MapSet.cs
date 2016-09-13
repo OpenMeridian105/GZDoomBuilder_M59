@@ -163,6 +163,11 @@ namespace CodeImp.DoomBuilder.Map
 
 		internal bool AutoRemove { get { return autoremove; } set { autoremove = value; } }
 
+		/// <summary>
+		/// Set to true if something in the map gets changed during map loading.
+		/// </summary>
+		public bool ChangedDuringLoad;
+
 		#endregion
 
 		#region ================== Constructor / Disposer
@@ -183,7 +188,8 @@ namespace CodeImp.DoomBuilder.Map
 			indexholes = new List<int>();
 			lastsectorindex = 0;
 			autoremove = true;
-			
+			ChangedDuringLoad = false;
+
 			// We have no destructor
 			GC.SuppressFinalize(this);
 		}
@@ -2133,29 +2139,29 @@ namespace CodeImp.DoomBuilder.Map
 
 			EndAddRemove();
 
+			// Collect changed lines... We need those in by-vertex-index order
+			// (otherwise SectorBuilder logic in some cases will incorrectly assign sector propertes)
+			List<Vertex> markedverts = GetMarkedVertices(true);
+			List<Linedef> changedlines = new List<Linedef>(markedverts.Count / 2);
+			HashSet<Linedef> changedlineshash = new HashSet<Linedef>();
+			foreach(Vertex v in markedverts)
+			{
+				foreach(Linedef l in v.Linedefs)
+				{
+					if(!changedlineshash.Contains(l))
+					{
+						changedlines.Add(l);
+						changedlineshash.Add(l);
+					}
+				}
+			}
+
 			//mxd. Correct sector references
 			if(mergemode != MergeGeometryMode.CLASSIC)
 			{
 				// Linedefs cache needs to be up to date...
 				Update(true, false);
-
-				// Collect changed lines... We need those in by-vertex-index order
-				// (otherwise SectorBuilder logic in some cases will incorrectly assign sector propertes)
-				List<Vertex> markedverts = GetMarkedVertices(true);
-				List<Linedef> changedlines = new List<Linedef>(markedverts.Count / 2);
-				HashSet<Linedef> changedlineshash = new HashSet<Linedef>();
-				foreach(Vertex v in markedverts)
-				{
-					foreach(Linedef l in v.Linedefs)
-					{
-						if(!changedlineshash.Contains(l))
-						{
-							changedlines.Add(l);
-							changedlineshash.Add(l);
-						}
-					}
-				}
-
+				
 				// Fix stuff...
 				CorrectSectorReferences(changedlines, true);
 				CorrectOuterSides(new HashSet<Linedef>(changedlines));
@@ -2164,6 +2170,10 @@ namespace CodeImp.DoomBuilder.Map
 				ClearMarkedSectors(false);
 				HashSet<Sector> changedsectors = GetSectorsFromLinedefs(changedlines);
 				foreach(Sector s in changedsectors) s.Marked = true;
+			}
+			else
+			{
+				FlipBackwardLinedefs(changedlines);
 			}
 			
 			return true;
@@ -2480,7 +2490,7 @@ namespace CodeImp.DoomBuilder.Map
 			foreach(Linedef line in linesmissingfront)
 			{
 				// Line is now inside a sector? (check from the missing side!)
-				Sector nearest = Tools.FindPotentialSector(line, true);
+				Sector nearest = Tools.FindSectorContaining(line, true);
 
 				// We can reattach our line!
 				if(nearest != null) linefrontsectorref[line] = nearest;
@@ -2490,7 +2500,7 @@ namespace CodeImp.DoomBuilder.Map
 			foreach(Linedef line in linesmissingback)
 			{
 				// Line is now inside a sector? (check from the missing side!)
-				Sector nearest = Tools.FindPotentialSector(line, false);
+				Sector nearest = Tools.FindSectorContaining(line, false);
 
 				// We can reattach our line!
 				if(nearest != null) linebacksectorref[line] = nearest;
@@ -3086,6 +3096,11 @@ namespace CodeImp.DoomBuilder.Map
 								//mxd. Round to map format precision
 								intersection.x = (float)Math.Round(intersection.x, General.Map.FormatInterface.VertexDecimals);
 								intersection.y = (float)Math.Round(intersection.y, General.Map.FormatInterface.VertexDecimals);
+
+								//mxd. Skip when intersection matches start/end position.
+								// Otherwise infinite ammount of 0-length lines will be created...
+								if( l1.Start.Position == intersection || l1.End.Position == intersection ||
+									l2.Start.Position == intersection || l2.End.Position == intersection) continue;
 
 								//mxd. Do we already have a vertex here?
 								bool existingvert = false;

@@ -1387,7 +1387,7 @@ namespace CodeImp.DoomBuilder.Map
 						if((oldline.back.MiddleRequired() && oldline.back.LongMiddleTexture != MapSet.EmptyLongName) || oldline.back.HighRequired() || oldline.back.LowRequired()) 
 						{
 							int distance = (int)Vector2D.Distance(newline.start.Position, newline.end.Position);
-							if(General.Map.UDMF) 
+							if(General.Map.UDMF && General.Map.Config.UseLocalSidedefTextureOffsets) 
 							{
 								if(distance != 0) oldline.back.SetUdmfTextureOffsetX(distance);
 							} 
@@ -1401,7 +1401,7 @@ namespace CodeImp.DoomBuilder.Map
 					if(newline.front != null && ((newline.front.MiddleRequired() || newline.front.LongMiddleTexture != MapSet.EmptyLongName) || newline.front.HighRequired() || newline.front.LowRequired())) 
 					{
 						int distance = (int)Vector2D.Distance(oldline.start.Position, oldline.end.Position);
-						if(General.Map.UDMF) 
+						if(General.Map.UDMF && General.Map.Config.UseLocalSidedefTextureOffsets) 
 						{
 							if(distance != 0) newline.front.SetUdmfTextureOffsetX(distance);
 						} 
@@ -1425,7 +1425,8 @@ namespace CodeImp.DoomBuilder.Map
 							texture = General.Map.Data.GetTextureImage(newline.front.LowTexture);
 
 						//clamp offsetX
-						if(texture != null) newline.front.OffsetX %= texture.Width;
+						if(texture != null && texture.IsImageLoaded) 
+							newline.front.OffsetX %= texture.Width;
 					}
 
 					if((oldline.back != null) && (newline.back != null)) 
@@ -1441,7 +1442,8 @@ namespace CodeImp.DoomBuilder.Map
 							texture = General.Map.Data.GetTextureImage(newline.back.LowTexture);
 
 						//clamp offsetX
-						if(texture != null) newline.back.OffsetX %= texture.Width;
+						if(texture != null && texture.IsImageLoaded) 
+							newline.back.OffsetX %= texture.Width;
 					}
 
 					break;
@@ -1453,7 +1455,7 @@ namespace CodeImp.DoomBuilder.Map
 						newline.front.OffsetY = oldline.front.OffsetY;
 
 						//mxd. Copy UDMF offsets as well
-						if(General.Map.UDMF) 
+						if(General.Map.UDMF && General.Map.Config.UseLocalSidedefTextureOffsets) 
 						{
 							UniFields.SetFloat(newline.front.Fields, "offsetx_top", oldline.front.Fields.GetValue("offsetx_top", 0f));
 							UniFields.SetFloat(newline.front.Fields, "offsetx_mid", oldline.front.Fields.GetValue("offsetx_mid", 0f));
@@ -1471,7 +1473,7 @@ namespace CodeImp.DoomBuilder.Map
 						newline.back.OffsetY = oldline.back.OffsetY;
 
 						//mxd. Copy UDMF offsets as well
-						if(General.Map.UDMF) 
+						if(General.Map.UDMF && General.Map.Config.UseLocalSidedefTextureOffsets) 
 						{
 							UniFields.SetFloat(newline.back.Fields, "offsetx_top", oldline.back.Fields.GetValue("offsetx_top", 0f));
 							UniFields.SetFloat(newline.back.Fields, "offsetx_mid", oldline.back.Fields.GetValue("offsetx_mid", 0f));
@@ -1491,7 +1493,7 @@ namespace CodeImp.DoomBuilder.Map
 						newline.front.OffsetY = oldline.front.OffsetY;
 
 						//mxd. Reset UDMF X offset as well
-						if(General.Map.UDMF) 
+						if(General.Map.UDMF && General.Map.Config.UseLocalSidedefTextureOffsets) 
 						{
 							UniFields.SetFloat(newline.front.Fields, "offsetx_top", 0f);
 							UniFields.SetFloat(newline.front.Fields, "offsetx_mid", 0f);
@@ -1505,7 +1507,7 @@ namespace CodeImp.DoomBuilder.Map
 						newline.back.OffsetY = oldline.back.OffsetY;
 
 						//mxd. Reset UDMF X offset and copy Y offset as well
-						if(General.Map.UDMF) 
+						if(General.Map.UDMF && General.Map.Config.UseLocalSidedefTextureOffsets) 
 						{
 							UniFields.SetFloat(newline.back.Fields, "offsetx_top", 0f);
 							UniFields.SetFloat(newline.back.Fields, "offsetx_mid", 0f);
@@ -1524,7 +1526,7 @@ namespace CodeImp.DoomBuilder.Map
 						newline.front.OffsetX = 0;
 						newline.front.OffsetY = 0;
 
-						if(General.Map.UDMF) 
+						if(General.Map.UDMF && General.Map.Config.UseLocalSidedefTextureOffsets) 
 						{
 							UniFields.SetFloat(newline.front.Fields, "offsetx_top", 0f);
 							UniFields.SetFloat(newline.front.Fields, "offsetx_mid", 0f);
@@ -1541,7 +1543,7 @@ namespace CodeImp.DoomBuilder.Map
 						newline.back.OffsetX = 0;
 						newline.back.OffsetY = 0;
 
-						if(General.Map.UDMF) 
+						if(General.Map.UDMF && General.Map.Config.UseLocalSidedefTextureOffsets) 
 						{
 							UniFields.SetFloat(newline.back.Fields, "offsetx_top", 0f);
 							UniFields.SetFloat(newline.back.Fields, "offsetx_mid", 0f);
